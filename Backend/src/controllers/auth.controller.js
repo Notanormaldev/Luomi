@@ -10,7 +10,8 @@ async function tokenresponse(user,res,msg){
    },config.JWT,{expiresIn:'7d'})
 
    res.cookie('token',token)
-  
+   
+   user.password=undefined
    return res.status(201).json({
     msg,
     success:true,
@@ -18,9 +19,6 @@ async function tokenresponse(user,res,msg){
    })
 
 }
-
-
-
 async function register(req,res){
   const {email,contact,fullname,password,isseller}=req.body
 
@@ -41,7 +39,7 @@ async function register(req,res){
         email,contact,fullname,password,role:isseller ? "seller" :"buyer"
     })
 
-  await tokenresponse(user,res,msg="User register successfully");
+  await tokenresponse(user,res,"User register successfully");
 
   } catch (error) {
     console.log(error);
@@ -62,7 +60,7 @@ async function login(req,res){
     $or:[
         {email},{contact}
     ]
-  })
+  }).select('+password')
 
   if(!user){
     return res.status(400).json({
@@ -70,16 +68,16 @@ async function login(req,res){
     })
   }
 
-  const isvalid = await user.comparePassword(password),
+  const isvalid = await user.comparePassword(password);
 
   if(!isvalid){
     return res.status(401).json({
    msg:"Invalid password"
     })
-
-    await tokenresponse(user,res,msg="Login successfully")
-    
   }
+    await tokenresponse(user,res,"Login successfully")
+    
+  
 
   } catch (error) {
       console.log(error);
