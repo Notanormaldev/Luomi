@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken"
 async function tokenresponse(user,res,msg){
    const token = jwt.sign({
     id:user._id,
+    user:user
    },config.JWT,{expiresIn:'7d'})
 
    res.cookie('token',token)
@@ -86,6 +87,33 @@ async function login(req,res){
     })
   }
 }
+async function getme(req,res){
+     const decoded = req.user
+
+     try {
+        const user = await usermodel.findById(decoded.id)
+
+     if(!user){
+        return res.status(404).json({
+            success:false,
+            msg:"user not exist"
+        })
+     }
+
+
+     return res.status(200).json({
+        success:true,
+        user:user
+     })
+     } catch (error) {
+         console.log(error);
+
+        return res.status(500).json({
+            success: false,
+            msg: "Internal server error"
+        });
+     }
+}
 
 
 
@@ -123,5 +151,5 @@ async function login(req,res){
 
 
 export default {
-    register,login
+    register,login,getme
 }
