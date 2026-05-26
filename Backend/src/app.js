@@ -12,5 +12,10 @@ app.use(cors({
     credentials:true,
     Methods:["GET","POST","PUT","DELETE"],
 }))
+
+
+
+
+
 app.use('/api/auth',authrouter)
 export default app

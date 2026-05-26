@@ -12,7 +12,9 @@ if(!process.env.JWT){
 
  const config={
     MONGOURI:process.env.MONGO_URI ,
-    JWT:process.env.JWT
+    JWT:process.env.JWT,
+    GOOGLE_CLIENT_ID:process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET:process.env.GOOGLE_CLIENT_SECRET
 }
 
 
