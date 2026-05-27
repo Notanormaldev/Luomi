@@ -6,18 +6,33 @@ const userSchema = mongoose.Schema({
         require:true,
         unique:true
     },
+    profilepic:{
+        type:String,
+        default:"https://ik.imagekit.io/r5nxypvid/image.png?updatedAt=1778947673109"
+    },
     contact:{
         type:String,
-        require:true,
+        require:false,
     },
     password:{
         type:String,
-        require:true,
+        require:function(){
+            return !this.googleid;
+        },
         select:false
     },
     fullname:{
         type:String,
         require:true
+    },
+    isverified:{
+        type:Boolean,
+        require:true,
+        default:false
+    },
+    googleid:{
+        type:String,
+        require:false
     },
     role:{
         type:String,

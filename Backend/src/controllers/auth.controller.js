@@ -3,7 +3,7 @@ import usermodel from "../models/user.model.js"
 import jwt from "jsonwebtoken"
 import { OAuth2Client } from 'google-auth-library'
 
-const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID)
+
 
 
 
@@ -117,8 +117,35 @@ async function getme(req,res){
         });
      }
 }
+async function verifiedemail(req,res){
+   
+}
 async function googlecallback(req,res){
   console.log(req.user);
+  
+  const {emails,id,displayName,photos} = req.user
+  const email=emails[0].value
+  const profilepic=photos[0].value
+  const isverified=emails[0].verified
+
+  const user = await usermodel.findOne({email})
+
+  if(!user){
+     user = await usermodel.create({
+      email:email,
+      fullname:displayName,
+      profilepic:profilepic,
+      isverified:isverified,
+      googleid:id
+    })
+  }
+
+
+  const token=jwt.sign({
+    id:user._id,
+    user:user
+  },config.JWT,{expiresIn:"7d"})
+  res.cookie('token',token)
   res.redirect('http://localhost:5173')
 }
 
@@ -129,5 +156,5 @@ export default {
     login,
     getme,
     googlecallback,
-    
+    verifiedemail  
 }

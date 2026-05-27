@@ -3,6 +3,7 @@ import { validatonlogin, validatonregister } from "../validator/auth.validator.j
 import authController from "../controllers/auth.controller.js";
 import { authtokenmiddleware } from "../Middleware/authtoken.middleware.js";
 import passport from "passport";
+import config from "../config/config.js";
 
 const authrouter = Router()
 
@@ -16,7 +17,7 @@ authrouter.get('/google',
 )
 
 authrouter.get('/google/callback',
-    passport.authenticate('google', { session: false }),
+    passport.authenticate('google', { session: false ,failureRedirect:config.NODE_ENVIRONMENT == "development" ?'http://localhost:5173/login':'/login'}),
     authController.googlecallback
 )
 

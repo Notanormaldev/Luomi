@@ -14,7 +14,8 @@ if(!process.env.JWT){
     MONGOURI:process.env.MONGO_URI ,
     JWT:process.env.JWT,
     GOOGLE_CLIENT_ID:process.env.GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET:process.env.GOOGLE_CLIENT_SECRET
+    GOOGLE_CLIENT_SECRET:process.env.GOOGLE_CLIENT_SECRET,
+    NODE_ENVIRONMENT:process.env.NODE_ENVIRONMENT
 }
 
 
