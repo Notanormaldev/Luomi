@@ -26,9 +26,9 @@ export async function verifyOtp({email,otp}){
      }
 
 }
-export async function login({email,contact,password}){
+export async function login({email,password}){
      try {
-        const res=await authapi.post('/login',{email,contact,password})
+        const res=await authapi.post('/login',{email,password})
 
         return res.data
      } catch (error) {

@@ -39,12 +39,12 @@ export const useauth = () => {
       }
     }
 
-    async function handlelogin({email,contact,password})
+    async function handlelogin({email,password})
     {
       dispatch(setloading(true))
       dispatch(seterror(null))
       try {
-        const data = await login({email,password,contact})
+        const data = await login({email,password})
         dispatch(setuser(data.user))
         dispatch(setloading(false))
         return { success: true, data }

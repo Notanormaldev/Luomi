@@ -23,10 +23,7 @@ export const validatonregister=[
 ]
 
 export const validatonlogin=[
-    body("email").isEmail().withMessage("INVALID EMAIL").optional(),
-
-    body('contact').notEmpty().withMessage("contact required").optional()
-    .matches(/^[0-9]{10}$/).withMessage("contact must be 10 digit number"),
+    body("email").isEmail().withMessage("INVALID EMAIL"),
 
     body('password').isLength({min:8}).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/).withMessage("password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
 

@@ -12,7 +12,7 @@ function Login() {
   const navigate = useNavigate()
   const { handlelogin, handlegoogleauth, loading } = useauth()
 
-  const [emailOrPhone, setEmailOrPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -146,8 +146,8 @@ function Login() {
     e.preventDefault()
     setError('')
     
-    if (!emailOrPhone) {
-      setError('Please enter your email or contact number.')
+    if (!email) {
+      setError('Please enter your email.')
       return
     }
     if (!password) {
@@ -155,30 +155,15 @@ function Login() {
       return
     }
 
-    const isEmail = emailOrPhone.includes('@')
-    const payload = {
-      password,
-      email: isEmail ? emailOrPhone.trim() : undefined,
-      contact: !isEmail ? emailOrPhone.trim() : undefined
-    }
-
-    // Client-side validations
-    if (isEmail) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(emailOrPhone)) {
-        setError('Please enter a valid email address.')
-        return
-      }
-    } else {
-      const contactRegex = /^[0-9]{10}$/
-      if (!contactRegex.test(emailOrPhone)) {
-        setError('Contact number must be exactly 10 digits.')
-        return
-      }
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.')
+      return
     }
 
     try {
-      const res = await handlelogin(payload)
+      const res = await handlelogin({ email, password })
       if (res && res.success) {
         navigate('/')
       }
@@ -264,14 +249,14 @@ function Login() {
               </p>
             )}
 
-            {/* Field 1: Email / Contact */}
+            {/* Field 1: Email */}
             <div className="auth-input-wrapper flex flex-col">
-              <label className="auth-label">Email or Contact Number</label>
+              <label className="auth-label">Email Address</label>
               <input
-                type="text"
-                placeholder="Enter email or contact..."
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
+                type="email"
+                placeholder="Enter email address..."
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="auth-input"
               />
               <span className="input-underline" />
