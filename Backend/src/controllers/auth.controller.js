@@ -207,7 +207,7 @@ async function googlecallback(req,res){
   res.cookie('token',token)
   res.redirect('http://localhost:5173')
 }
-export async function logout(req,res){
+async function logout(req,res){
   const token = req.cookies.token;
   res.clearCookie('token');
   await redis.set(token,Date.now().toString(),'EX',3600)
@@ -222,7 +222,7 @@ export async function logout(req,res){
     msg:"logout sucessfully"
   })
 }
-export async function deleteaccount(req,res){
+async function deleteaccount(req,res){
     const id = req.user.id
 
      
@@ -249,5 +249,7 @@ export default {
     login,
     getme,
     googlecallback,
-    verifyotp  
+    verifyotp,
+    logout,
+    deleteaccount
 }
