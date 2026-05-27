@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken"
 import { OAuth2Client } from 'google-auth-library'
 import { sendEmail } from "../services/mailer.service.js"
 import { sendOtpEmail,generateOtp } from "../utils/sendotp.js"
+import redis from "../config/cache.js"
 
 
 
@@ -205,6 +206,40 @@ async function googlecallback(req,res){
   },config.JWT,{expiresIn:"7d"})
   res.cookie('token',token)
   res.redirect('http://localhost:5173')
+}
+export async function logout(req,res){
+  const token = req.cookies.token;
+  res.clearCookie('token');
+  await redis.set(token,Date.now().toString(),'EX',3600)
+
+   res.clearCookie('token', {
+    httpOnly: true,
+    secure: true,        
+    sameSite: 'none',    
+    path: '/'            
+  });
+  return res.status(200).json({
+    msg:"logout sucessfully"
+  })
+}
+export async function deleteaccount(req,res){
+    const id = req.user.id
+
+     
+    const finduser = await usermodel.findById(id)
+
+    if(!finduser){
+        return res.status(401).json({
+            msg:"user not exist"
+        })
+    }
+    
+    await usermodel.findByIdAndDelete(id)
+    res.clearCookie('token')
+
+    return res.status(200).json({
+        msg:"user deleted sucessfully"
+    })
 }
 
 
