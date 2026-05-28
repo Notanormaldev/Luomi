@@ -2,12 +2,26 @@ import { configDotenv } from "dotenv";
 configDotenv()
 
 
-if(!process.env.MONGO_URI){
-    throw new Error("MONGO_URI is not defined in .env file");
-}
-if(!process.env.JWT){   
-    throw new Error("JWT is not defined in .env file");
-}
+const requireenvs=[
+    "MONGO_URI",
+    "JWT",
+   "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "BREVO_API_KEY",
+    "GOOGLE_EMAIL",
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_PASSWORD",
+    "NODE_ENVIRONMENT"
+]
+requireenvs.forEach((key)=>{
+    if(!process.env[key]){
+        throw new Error(`${key} is not defined in .env file`)
+    }
+})
+
+
+
 
 
  const config={
@@ -17,7 +31,9 @@ if(!process.env.JWT){
     GOOGLE_CLIENT_SECRET:process.env.GOOGLE_CLIENT_SECRET,
     BREVO_API_KEY:process.env.BREVO_API_KEY,
     GOOGLE_EMAIL:process.env.GOOGLE_EMAIL,
-    GOOGLE_APP_PASS:process.env.GOOGLE_APP_PASS,
+    REDIS_HOST:process.env.REDIS_HOST,
+    REDIS_PORT:process.env.REDIS_PORT,
+    REDIS_PASSWORD:process.env.REDIS_PASSWORD,
     NODE_ENVIRONMENT:process.env.NODE_ENVIRONMENT
 }
 

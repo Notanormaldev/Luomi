@@ -3,13 +3,13 @@ import config from "../config/config.js";
 
 
 
-// Setup
+//Setup
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 defaultClient.authentications["api-key"].apiKey = config.BREVO_API_KEY;
 
 const client = new SibApiV3Sdk.TransactionalEmailsApi();
 
-// Verify
+//Verify
 client.sendTransacEmail({ 
   sender: { 
   email: config.GOOGLE_EMAIL,
@@ -22,7 +22,7 @@ client.sendTransacEmail({
   .then(() => console.log("Email server is ready to send messages"))
   .catch((e) => console.error("Error connecting to email server:", e.message));
 
-// Same function
+//function
 export async function sendEmail({ to, html, subject, text }) {
   const mailOptions = {
     sender: { email: config.GOOGLE_EMAIL },
