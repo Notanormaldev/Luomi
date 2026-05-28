@@ -15,8 +15,8 @@ export const validatecreateproduct=[
     body("title").notEmpty().withMessage("title is required")
     .isLength({min:3}).withMessage("title must be 3 chars long"),
     body("description").optional().isLength({max:500}).withMessage("description must be less than 500 chars"),
-    body("price.amount").notEmpty().withMessage("price is required")
+    body("priceamount").notEmpty().withMessage("price is required")
     .isNumeric().withMessage("price must be a number"),
-    body("price.currency").optional().isIn(['USD','INR','JPY','GBP','EUR']).withMessage("currency must be one of USD, INR, JPY, GBP, EUR"),
+    body("pricecurrency").optional().isIn(['USD','INR','JPY','GBP','EUR']).withMessage("currency must be one of USD, INR, JPY, GBP, EUR"),
     validatereq
 ]
