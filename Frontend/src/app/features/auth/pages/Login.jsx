@@ -164,9 +164,14 @@ function Login() {
 
     try {
       const res = await handlelogin({ email, password })
-      if (res && res.success) {
+      console.log(res);
+      
+      if (res.data.user.role == "buyer" && res.success) {
         navigate('/')
+      }else if(res.data.user.role == "seller" && res.success){
+        navigate('/dashbord/seller')
       }
+
     } catch (err) {
       if (err.errors && Array.isArray(err.errors)) {
         setError(err.errors[0].msg)

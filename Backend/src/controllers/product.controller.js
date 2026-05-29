@@ -55,7 +55,15 @@ async function sellergetproducts(req,res){
       products
      })
 }
+async function getallproducts(req,res){
+     const products= await productmodel.find()
 
+     return res.status(200).json({
+      msg:"All products fetched",
+      success:true,
+      products
+     })
+}
 export default {
-    createproduct,sellergetproducts
+    createproduct,sellergetproducts,getallproducts
 }

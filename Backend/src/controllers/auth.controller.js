@@ -205,7 +205,11 @@ async function googlecallback(req,res){
     user:user
   },config.JWT,{expiresIn:"7d"})
   res.cookie('token',token)
-  res.redirect('http://localhost:5173')
+   if(user.role === "seller"){
+       res.redirect("http://localhost:5173/dashbord/seller")
+    }else{
+       res.redirect("http://localhost:5173")
+    }
 }
 async function logout(req,res){
   const token = req.cookies.token;

@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+.logo-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 200;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  background-image: linear-gradient(135deg, #C0C0C0, #FFFFFF, #888888);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme='light'] .logo-text {
+  background-image: linear-gradient(135deg, #555555, #111111, #333333);
+}
+
+.logo-icon {
+  fill: url(#metallic-grad);
+}
+
+[data-theme='light'] .logo-icon {
+  fill: url(#dark-metallic-grad);
+}

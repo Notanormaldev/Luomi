@@ -210,6 +210,9 @@ function Register() {
         setStep(2)
         setResendTimer(30)
       }
+
+
+      
     } catch (err) {
       if (err.errors && Array.isArray(err.errors)) {
         setError(err.errors[0].msg)
@@ -239,8 +242,10 @@ function Register() {
         email: otpEmail,
         otp
       })
-      if (res && res.success) {
+        if (res.user.role == "buyer" && res.success) {
         navigate('/')
+      }else if(res.user.role == "seller" && res.success){
+        navigate('/dashbord/seller')
       }
     } catch (err) {
       if (err.msg === 'OTP expired') {

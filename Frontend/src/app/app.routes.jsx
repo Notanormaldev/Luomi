@@ -3,12 +3,14 @@ import Login from './features/auth/pages/Login'
 import Register from './features/auth/pages/Register'
 import CreateProduct from './features/products/pages/CreateProduct'
 import Dashbord from './features/products/pages/Dashbord'
+import Protected from './features/auth/components/Protected'
+import Home from './features/products/pages/Home'
 
 
 export  const router = createBrowserRouter([
      {
         path:'/',
-        element:<h1 className='bg-black w-full h-screen text-white text-4xl '>Home</h1>
+        element:<Home/>
      },
      {
         path:'/login',
@@ -20,10 +22,14 @@ export  const router = createBrowserRouter([
      },
      {
         path:'/createproduct/seller',
-        element:<CreateProduct/>
+        element:<Protected role="seller">
+         <CreateProduct/>
+         </Protected>
      },{
       path:'/dashbord/seller',
-      element:<Dashbord/>
+      element:<Protected role='seller'>
+         <Dashbord/>
+         </Protected>
      }
 
 ])

@@ -30,3 +30,15 @@ export async function getsellerproduct(){
         throw error.response?.data || { msg: "Failed to fetch products" }
     }
 }
+
+export async function getallproducts(){
+    try {
+         const res = await productapi.get('/')
+         
+         
+        return res.data
+    } catch (error) {
+         console.log("Api error:", error)
+        throw error.response?.data || { msg: "Failed to fetch products" }
+    }
+}

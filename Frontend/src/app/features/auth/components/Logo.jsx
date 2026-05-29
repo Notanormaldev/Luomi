@@ -1,6 +1,6 @@
 import React from 'react'
-import { DiJoomla } from 'react-icons/di'
 import { DiJira } from "react-icons/di";
+
 function Logo() {
   return (
     <div className="flex items-center justify-center gap-2 select-none logo-container">
@@ -13,22 +13,18 @@ function Logo() {
               <stop offset="50%" stopColor="#FFFFFF" />
               <stop offset="100%" stopColor="#888888" />
             </linearGradient>
+            <linearGradient id="dark-metallic-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#555555" />
+              <stop offset="50%" stopColor="#111111" />
+              <stop offset="100%" stopColor="#333333" />
+            </linearGradient>
           </defs>
         </svg>
-        <DiJira size={30} style={{ fill: 'url(#metallic-grad)' }} />
+        <DiJira size={30} className="logo-icon" />
       </div>
       
       {/* Text "LUOMI" */}
-      <span 
-        className="text-[20px] font-semibold tracking-[5px] leading-none uppercase" 
-        style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          background: 'linear-gradient(135deg, #C0C0C0, #FFFFFF, #888888)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontWeight: 200
-        }}
-      >
+      <span className="logo-text">
         LUOMI
       </span>
     </div>
