@@ -27,6 +27,26 @@ const productSchema = mongoose.Schema({
         default:"INR"
        }
     },
+    variants:[
+        {
+            images:[
+            {
+                url:{
+                    type:String,
+                    require:false
+                }
+            }
+        ],
+        stock:{
+            type:Number,
+            default:0
+        },
+        attributes:{
+            type:map,
+            of:String
+        }
+        }
+    ],
     seller:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"users",

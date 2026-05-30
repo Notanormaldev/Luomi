@@ -67,7 +67,8 @@ async function getallproducts(req,res){
 async function getoneproduct(req,res){
   const {id}=req.params
 
-  const product = await productmodel.findById(id)
+  const product = await productmodel.findById(id).populate('seller')
+
   
   if(!product){
     return res.status(404).json({

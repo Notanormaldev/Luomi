@@ -153,8 +153,7 @@ function Home() {
   const cartCurrencySymbol = cart.length > 0 ? getCurrencySymbol(cart[0].product.price?.currency) : '₹'
 
   const handleSelectProduct = (product) => {
-    setSelectedProduct(product)
-    setActiveImgIndex(0)
+    navigate(`/product/${product._id}`)
   }
 
   return (

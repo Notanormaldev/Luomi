@@ -5,6 +5,7 @@ import CreateProduct from './features/products/pages/CreateProduct'
 import Dashbord from './features/products/pages/Dashbord'
 import Protected from './features/auth/components/Protected'
 import Home from './features/products/pages/Home'
+import Productdetails from './features/products/pages/Productdetails'
 
 
 export  const router = createBrowserRouter([
@@ -19,6 +20,10 @@ export  const router = createBrowserRouter([
      {
         path:'/register',
         element:<Register/>
+     },
+     {
+       path:'/product/:id',
+       element:<Productdetails/>
      },
      {
         path:'/createproduct/seller',

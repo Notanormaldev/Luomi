@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { createproduct, getallproducts, getsellerproduct } from "../services/product.api"
+import { createproduct, getallproducts, getoneproduct, getsellerproduct } from "../services/product.api"
 import { setproducts, setSellerproducts } from "../prodcut.slice";
 
 
@@ -41,9 +41,20 @@ export const useproduct = () => {
         }
     }
 
+
+    async function handlegetoneprodcut({productid}) {
+        try {
+            const data = await getoneproduct({productid})
+            return { success: true, products: data.product }
+        } catch (error) {
+            console.log('hook get error', error)
+            return { success: false, error: error.msg || "Failed to fetch products" }
+        }
+    }
+
     return {
         sellerproducts,
         handlecreateproduct,
-        handlegetsellerprodcut,handlegetallprodcuts
+        handlegetsellerprodcut,handlegetallprodcuts,handlegetoneprodcut
     }
 }
