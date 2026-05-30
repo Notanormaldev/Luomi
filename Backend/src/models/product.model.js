@@ -27,6 +27,9 @@ const productSchema = mongoose.Schema({
         default:"INR"
        }
     },
+    stock:{
+        type:Number
+    },
     variants:[
         {
             images:[
@@ -44,7 +47,18 @@ const productSchema = mongoose.Schema({
         attributes:{
             type:Map,
             of:String
-        }
+        },
+          price:{
+       amount:{
+        type:Number,
+        require:true
+       },
+       currency:{
+        type:String,
+        enum:['USD','INR','JPY','GBP','EUR'],
+        default:"INR"
+       }
+    }
         }
     ],
     seller:{

@@ -2,11 +2,66 @@
 
 /* Brand Design Tokens & Custom CSS styles */
 
+:root {
+  --bg-color: #0A0A0A;
+  --text-color: #F0F0F0;
+  --input-bg: #111111;
+  --input-border: #2A2A2A;
+  --input-text: #F0F0F0;
+  --input-placeholder: #444444;
+  --label-color: #888888;
+  --border-active: #C0C0C0;
+  --button-bg: linear-gradient(135deg, #1A1A1A, #2E2E2E);
+  --button-border: #C0C0C0;
+  --button-text: #F0F0F0;
+  --button-hover-bg: #2E2E2E;
+  --button-hover-border: #FFFFFF;
+  --switch-bg: #222222;
+  --switch-handle: #888888;
+  --divider-color: #1E1E1E;
+  --social-divider-line: #2a2a2a;
+  --google-bg: #121212;
+  --google-border: #2a2a2a;
+  --google-text: #ffffff;
+  --cursor-dot: #ffffff;
+  --cursor-ring: rgba(255, 255, 255, 0.3);
+  --quote-text: #F0F0F0;
+  --quote-author: #888888;
+}
+
+[data-theme='light'] {
+  --bg-color: #FAFAFA;
+  --text-color: #111111;
+  --input-bg: #FFFFFF;
+  --input-border: #D1D1D1;
+  --input-text: #111111;
+  --input-placeholder: #A0A0A0;
+  --label-color: #666666;
+  --border-active: #111111;
+  --button-bg: linear-gradient(135deg, #111111, #333333);
+  --button-border: #111111;
+  --button-text: #FFFFFF;
+  --button-hover-bg: #333333;
+  --button-hover-border: #000000;
+  --switch-bg: #E5E5E5;
+  --switch-handle: #888888;
+  --divider-color: #E5E5E5;
+  --social-divider-line: #D1D1D1;
+  --google-bg: #FFFFFF;
+  --google-border: #D1D1D1;
+  --google-text: #111111;
+  --cursor-dot: #111111;
+  --cursor-ring: rgba(0, 0, 0, 0.2);
+  --quote-text: #111111;
+  --quote-author: #555555;
+}
+
 body {
   margin: 0;
-  background-color: #0A0A0A;
-  color: #F0F0F0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 /* Custom fonts */
@@ -52,7 +107,8 @@ label,
 [data-scroll-container] {
   width: 100%;
   min-height: 100vh;
-  background-color: #0A0A0A;
+  background-color: var(--bg-color);
+  transition: background-color 0.4s ease;
 }
 
 /* Custom interactive elements */
@@ -65,23 +121,23 @@ label,
 .auth-input {
   width: 100%;
   height: 52px;
-  background-color: #111111;
-  border: 0.5px solid #2A2A2A;
+  background-color: var(--input-bg);
+  border: 0.5px solid var(--input-border);
   border-radius: 2px;
   padding: 14px 16px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
-  color: #F0F0F0;
+  color: var(--input-text);
   outline: none;
-  transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.4s ease, border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease;
 }
 
 .auth-input::placeholder {
-  color: #444444;
+  color: var(--input-placeholder);
 }
 
 .auth-input:focus {
-  border-color: #C0C0C0;
+  border-color: var(--border-active);
 }
 
 /* Input floating label (always up, uppercase, Space Grotesk) */
@@ -92,9 +148,10 @@ label,
   font-weight: 500;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #888888;
+  color: var(--label-color);
   margin-bottom: 8px;
   text-align: left;
+  transition: color 0.4s ease;
 }
 
 /* Focus underline indicator */
@@ -104,7 +161,7 @@ label,
   left: 0;
   height: 1px;
   width: 0%;
-  background-color: #C0C0C0;
+  background-color: var(--border-active);
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -116,7 +173,7 @@ label,
 .custom-cursor-dot {
   width: 6px;
   height: 6px;
-  background-color: #ffffff;
+  background-color: var(--cursor-dot);
   border-radius: 50%;
   position: fixed;
   pointer-events: none;
@@ -128,7 +185,7 @@ label,
 .custom-cursor-ring {
   width: 30px;
   height: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--cursor-ring);
   border-radius: 50%;
   position: fixed;
   pointer-events: none;
@@ -141,7 +198,7 @@ label,
 .custom-cursor-ring.hovered {
   width: 60px;
   height: 60px;
-  border-color: #C0C0C0;
+  border-color: var(--border-active);
 }
 
 /* Hide cursor on touch devices */
@@ -156,9 +213,9 @@ label,
 .cta-button {
   width: 100%;
   height: 52px;
-  background: linear-gradient(135deg, #1A1A1A, #2E2E2E);
-  border: 0.5px solid #C0C0C0;
-  color: #F0F0F0;
+  background: var(--button-bg);
+  border: 0.5px solid var(--button-border);
+  color: var(--button-text);
   border-radius: 2px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
@@ -169,17 +226,18 @@ label,
   outline: none;
   position: relative;
   overflow: hidden;
-  transition: background-color 0.3s ease, letter-spacing 0.3s ease, border-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .cta-button:hover {
-  background: #2E2E2E;
+  background: var(--button-hover-bg);
   letter-spacing: 4px;
-  border-color: #FFFFFF;
+  border-color: var(--button-hover-border);
 }
 
 .cta-button:active {
-  background: #111111;
+  background: var(--text-color);
+  color: var(--bg-color);
   letter-spacing: 3px;
 }
 
@@ -190,33 +248,33 @@ label,
   gap: 8px;
   font-size: 11px;
   font-family: 'Inter', sans-serif;
-  color: #888888;
+  color: var(--label-color);
   cursor: pointer;
   user-select: none;
   transition: color 0.3s ease;
 }
 
 .switch-container.active {
-  color: #C0C0C0;
+  color: var(--text-color);
 }
 
 .pill-switch {
   width: 24px;
   height: 12px;
-  background-color: #222222;
+  background-color: var(--switch-bg);
   border-radius: 6px;
   position: relative;
   transition: background-color 0.3s ease;
 }
 
 .switch-container.active .pill-switch {
-  background-color: #C0C0C0;
+  background-color: var(--border-active);
 }
 
 .pill-switch-handle {
   width: 8px;
   height: 8px;
-  background-color: #888888;
+  background-color: var(--switch-handle);
   border-radius: 50%;
   position: absolute;
   top: 2px;
@@ -226,7 +284,7 @@ label,
 
 .switch-container.active .pill-switch-handle {
   transform: translateX(12px);
-  background-color: #0A0A0A;
+  background-color: var(--bg-color);
 }
 
 /* Responsive columns scaling details */
@@ -249,7 +307,6 @@ label,
   scrollbar-width: none;  /* Firefox */
 }
 
-
 /* Google Sign-In Button Container */
 .google-signin-container {
   width: 100%;
@@ -262,16 +319,16 @@ label,
   width: 100%;
   min-height: 44px;
   height: auto;
-  background-color: #121212 !important;
-  border: 1px solid #2a2a2a !important;
+  background-color: var(--google-bg) !important;
+  border: 1px solid var(--google-border) !important;
   border-radius: 4px !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.4),
-              0 2px 6px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1),
+              0 2px 6px rgba(0,0,0,0.05) !important;
 
   font-family: 'Space Grotesk', sans-serif !important;
   font-size: 14px !important;
   font-weight: 500 !important;
-  color: #ffffff !important;
+  color: var(--google-text) !important;
 
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -282,21 +339,9 @@ label,
 }
 
 .google-signin-container .google-login-button:hover {
-  background-color: #1c1c1c !important;
-  border-color: #3a3a3a !important;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.45) !important;
-}
-
-.google-signin-container .google-login-button:active {
-  background-color: #0f0f0f !important;
-  transform: scale(0.99);
-}
-
-/* Google icon */
-.google-signin-container .google-login-button svg {
-  margin-right: 8px !important;
-  width: 20px !important;
-  height: 20px !important;
+  background-color: var(--google-bg) !important;
+  border-color: var(--border-active) !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12) !important;
 }
 
 /* Custom Dark Google Button */
@@ -304,8 +349,8 @@ label,
   width: 100%;
   height: 44px;
 
-  background-color: #121212;
-  border: 1px solid #2a2a2a;
+  background-color: var(--google-bg);
+  border: 1px solid var(--google-border);
   border-radius: 4px;
 
   display: flex;
@@ -316,7 +361,7 @@ label,
   font-family: 'Space Grotesk', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--google-text);
 
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -324,20 +369,19 @@ label,
   cursor: pointer;
   transition: all 0.3s ease;
 
-  box-shadow: 0 1px 2px rgba(0,0,0,0.4),
-              0 2px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1),
+              0 2px 6px rgba(0,0,0,0.05);
 
   outline: none;
 }
 
 .google-button-custom:hover {
-  background-color: #1c1c1c;
-  border-color: #3a3a3a;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.45);
+  background-color: var(--google-bg);
+  border-color: var(--border-active);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
 }
 
 .google-button-custom:active {
-  background-color: #0f0f0f;
   transform: scale(0.99);
 }
 
@@ -363,7 +407,8 @@ label,
 .social-divider-line {
   flex: 1;
   height: 1px;
-  background-color: #2a2a2a;
+  background-color: var(--social-divider-line);
+  transition: background-color 0.4s ease;
 }
 
 .social-divider-text {
@@ -374,8 +419,9 @@ label,
   letter-spacing: 1.5px;
   text-transform: uppercase;
 
-  color: #888888;
+  color: var(--label-color);
   white-space: nowrap;
+  transition: color 0.4s ease;
 }
 
 /* OTP Input Styling */
@@ -388,16 +434,16 @@ label,
 
 .otp-input::placeholder {
   letter-spacing: 8px;
-  color: #444444;
+  color: var(--input-placeholder);
 }
 
 /* Resend OTP Button */
 .resend-otp-button {
   width: 100%;
   height: 52px;
-  background: linear-gradient(135deg, #1A1A1A, #2E2E2E);
-  border: 0.5px solid #C0C0C0;
-  color: #F0F0F0;
+  background: var(--button-bg);
+  border: 0.5px solid var(--button-border);
+  color: var(--button-text);
   border-radius: 2px;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
@@ -408,25 +454,20 @@ label,
   outline: none;
   position: relative;
   overflow: hidden;
-  transition: background-color 0.3s ease, letter-spacing 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .resend-otp-button:hover:not(:disabled) {
-  background: #2E2E2E;
+  background: var(--button-hover-bg);
   letter-spacing: 4px;
-  border-color: #FFFFFF;
-}
-
-.resend-otp-button:active:not(:disabled) {
-  background: #111111;
-  letter-spacing: 3px;
+  border-color: var(--button-hover-border);
 }
 
 .resend-otp-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: linear-gradient(135deg, #1A1A1A, #2E2E2E);
-  border-color: #666666;
+  background: var(--button-bg);
+  border-color: var(--input-border);
 }
 
 /* Mobile */
@@ -458,3 +499,113 @@ label,
     letter-spacing: 6px;
   }
 }
+
+/* Designer Floating Theme Toggle */
+.theme-toggle-floating {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-toggle-floating:hover {
+  transform: scale(1.08);
+  border-color: var(--border-active);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Adjustments for the Left Editorial fashion quote/overlay */
+/* Light mode: use a very subtle gradient only at the edges for text legibility,
+   leaving the center fully transparent so the editorial photo is clearly visible */
+[data-theme='light'] .editorial-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.0) 30%,
+    rgba(255, 255, 255, 0.0) 60%,
+    rgba(255, 255, 255, 0.55) 100%
+  ) !important;
+  opacity: 1 !important;
+}
+
+[data-theme='dark'] .editorial-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.75) 0%,
+    rgba(0, 0, 0, 0.0) 30%,
+    rgba(0, 0, 0, 0.0) 60%,
+    rgba(0, 0, 0, 0.80) 100%
+  ) !important;
+  opacity: 1 !important;
+}
+
+[data-theme='light'] .divider-line {
+  background-color: var(--divider-color) !important;
+}
+
+/* Theme-Aware Classes for Login & Register forms */
+.auth-heading {
+  color: var(--text-color);
+  transition: color 0.4s ease;
+}
+
+.auth-link {
+  color: var(--text-color);
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+  color: var(--label-color);
+}
+
+.auth-editorial-quote {
+  color: var(--quote-text);
+  transition: color 0.4s ease;
+}
+
+.auth-editorial-sub {
+  color: var(--quote-author);
+  transition: color 0.4s ease;
+}
+
+.auth-editorial-line {
+  background-color: var(--quote-text);
+  opacity: 0.3;
+  transition: background-color 0.4s ease;
+}
+
+.auth-divider-line {
+  background-color: var(--divider-color);
+  transition: background-color 0.4s ease;
+}
+
+.auth-text-muted {
+  color: var(--label-color);
+  transition: color 0.4s ease;
+}
+
+.auth-text-otp-desc {
+  color: var(--text-color);
+  opacity: 0.8;
+  transition: color 0.4s ease;
+}
+
+.auth-legal-text {
+  color: var(--label-color);
+  opacity: 0.7;
+  transition: color 0.4s ease;
+}
+

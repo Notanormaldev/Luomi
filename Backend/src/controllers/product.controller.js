@@ -3,40 +3,81 @@ import { uploadfile } from "../services/storage.service.js"
 
 
 
-async function createproduct(req,res){
-   const {title,description,priceamount,pricecurrency}=req.body
-  
-    
-   const user=req.user
+async function createproduct(req, res) {
+  try {
+    const { title, description, priceamount, pricecurrency ,stock} = req.body;
+    const user = req.user;
+
    
-  const images= await Promise.all(req.files.map(async (file)=>{
-    return await uploadfile(
-       { buffer:file.buffer,
-        fileName:file.originalname
+    let variants = [];
+    if (req.body.variants) {
+      try {
+        variants = JSON.parse(req.body.variants);
+      } catch {
+        return res.status(400).json({ msg: "Variants JSON invalid ", success: false });
+      }
     }
-    )
-  }))
+
+    
+    const productFiles = req.files["images"] || [];
+    if (productFiles.length === 0) {
+      return res.status(400).json({ msg: "need atleast one img", success: false });
+    }
+
+    const images = await Promise.all(
+      productFiles.map(file =>
+        uploadfile({ buffer: file.buffer, fileName: file.originalname })
+      )
+    );
+
+ 
+    const builtVariants = await Promise.all(
+      variants.map(async (variant, i) => {
+        const variantFiles = req.files[`variant_images_${i}`] || [];
+
+        const variantImages = await Promise.all(
+          variantFiles.map(file =>
+            uploadfile({ buffer: file.buffer, fileName: file.originalname })
+          )
+        );
+
+        return {
+          images: variantImages,
+          stock: variant.stock ?? 0,
+          attributes: variant.attributes ?? {},
+          price: {
+            amount: variant.priceamount,
+            currency: variant.pricecurrency ?? pricecurrency ?? "INR",
+          },
+        };
+      })
+    );
 
 
-  const product = await productmodel.create({
-    title,
-    description,
-    price:{
-        amount:priceamount,
-        currency:pricecurrency
-    },
-    images:images,
-    seller:user._id
+    const product = await productmodel.create({
+      title,
+      description,
+      stock,
+      price: {
+        amount: priceamount,
+        currency: pricecurrency ?? "INR",
+      },
+      images,
+      variants: builtVariants,
+      seller: user._id,
+    });
 
-  })
-   
+    res.status(201).json({
+      msg: "Product created successfully",
+      product,
+      success: true,
+    });
 
-  res.status(200).json({
-    msg:"Product created successfully",
-    product,
-    success:true
-  })
+  } catch (error) {
+    res.status(500).json({ msg: error.message, success: false });
+  }
 }
+
 async function sellergetproducts(req,res){
      const user=req.user
       

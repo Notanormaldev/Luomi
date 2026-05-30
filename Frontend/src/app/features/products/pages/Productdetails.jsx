@@ -13,7 +13,7 @@ import {
   FiMinus, 
   FiArrowLeft,
   FiUser,
-  FiInfo,
+  FiRefreshCw,
   FiTruck,
   FiShield
 } from 'react-icons/fi'
@@ -32,9 +32,13 @@ function Productdetails() {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [activeImgIndex, setActiveImgIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
   
+  // Dynamic Selected Variant & Visual Assets
+  const [selectedVariant, setSelectedVariant] = useState(null)
+  const [galleryImages, setGalleryImages] = useState([])
+  const [activeImgUrl, setActiveImgUrl] = useState('')
+
   // Accordion open/close state
   const [openTabs, setOpenTabs] = useState({
     specifications: true,
@@ -72,8 +76,28 @@ function Productdetails() {
       try {
         const response = await handlegetoneprodcut({ productid: id })
         if (response.success && response.products) {
-          setProduct(response.products)
-          setActiveImgIndex(0)
+          const prod = response.products
+          setProduct(prod)
+          
+          const primaryImgs = prod.images ? prod.images.map(img => img.url) : []
+          const variantImgs = prod.variants 
+            ? prod.variants.reduce((acc, curr) => {
+                if (curr.images) {
+                  curr.images.forEach(img => {
+                    if (img.url && !acc.includes(img.url)) acc.push(img.url)
+                  })
+                }
+                return acc
+              }, [])
+            : []
+          
+          const allImages = [...primaryImgs, ...variantImgs]
+          setGalleryImages(allImages)
+          if (allImages.length > 0) {
+            setActiveImgUrl(allImages[0])
+          }
+
+
         } else {
           setError("This artisanal piece could not be found.")
         }
@@ -91,26 +115,41 @@ function Productdetails() {
   }, [id])
 
   // Cart Operations
-  const addToCart = (productObj, selectedQty = 1) => {
+  const addToCart = (productObj, selectedQty = 1, variantObj = null) => {
     if (!productObj) return
+    const variantId = variantObj?._id || '';
+    const itemKey = variantObj ? `${productObj._id}-${variantId}` : productObj._id;
+    
     setCart(prev => {
-      const existing = prev.find(item => item.product._id === productObj._id)
+      const existing = prev.find(item => {
+        const currentItemKey = item.selectedVariant 
+          ? `${item.product._id}-${item.selectedVariant._id}` 
+          : item.product._id;
+        return currentItemKey === itemKey;
+      })
+      
       if (existing) {
-        return prev.map(item => 
-          item.product._id === productObj._id 
+        return prev.map(item => {
+          const currentItemKey = item.selectedVariant 
+            ? `${item.product._id}-${item.selectedVariant._id}` 
+            : item.product._id;
+          return currentItemKey === itemKey
             ? { ...item, quantity: item.quantity + selectedQty }
             : item
-        )
+        })
       }
-      return [...prev, { product: productObj, quantity: selectedQty }]
+      return [...prev, { product: productObj, selectedVariant: variantObj, quantity: selectedQty }]
     })
     setIsCartOpen(true)
   }
 
-  const updateCartQty = (productId, delta) => {
+  const updateCartQty = (itemKey, delta) => {
     setCart(prev => {
       return prev.map(item => {
-        if (item.product._id === productId) {
+        const currentItemKey = item.selectedVariant 
+          ? `${item.product._id}-${item.selectedVariant._id}` 
+          : item.product._id;
+        if (currentItemKey === itemKey) {
           const newQty = item.quantity + delta
           return newQty > 0 ? { ...item, quantity: newQty } : null
         }
@@ -119,8 +158,13 @@ function Productdetails() {
     })
   }
 
-  const removeFromCart = (productId) => {
-    setCart(prev => prev.filter(item => item.product._id !== productId))
+  const removeFromCart = (itemKey) => {
+    setCart(prev => prev.filter(item => {
+      const currentItemKey = item.selectedVariant 
+        ? `${item.product._id}-${item.selectedVariant._id}` 
+        : item.product._id;
+      return currentItemKey !== itemKey;
+    }))
   }
 
   const getCurrencySymbol = (currency) => {
@@ -154,10 +198,20 @@ function Productdetails() {
   // Calculate cart subtotal
   const totalCartItems = cart.reduce((acc, curr) => acc + curr.quantity, 0)
   const cartTotal = cart.reduce((acc, curr) => {
-    const amt = parseFloat(curr.product.price?.amount || 0)
+    const priceObj = curr.selectedVariant?.price || curr.product.price
+    const amt = parseFloat(priceObj?.amount || 0)
     return acc + (isNaN(amt) ? 0 : amt) * curr.quantity
   }, 0)
-  const cartCurrencySymbol = cart.length > 0 ? getCurrencySymbol(cart[0].product.price?.currency) : '₹'
+  const cartCurrencySymbol = cart.length > 0 
+    ? getCurrencySymbol(cart[0].selectedVariant?.price?.currency || cart[0].product.price?.currency) 
+    : '₹'
+
+  // Calculate price comparison variables (Amazon/Flipkart inspired)
+  const basePrice = product ? parseFloat(product.price?.amount || 0) : 0;
+  const currentPrice = product ? parseFloat(selectedVariant?.price?.amount ?? product.price?.amount ?? 0) : 0;
+  const hasDiscount = basePrice > 0 && currentPrice > 0 && basePrice > currentPrice;
+  const discountPercent = hasDiscount ? Math.round(((basePrice - currentPrice) / basePrice) * 100) : 0;
+  const savingsAmt = hasDiscount ? (basePrice - currentPrice) : 0;
 
   return (
     <div className="prod-details-container">
@@ -249,25 +303,26 @@ function Productdetails() {
             </button>
           </div>
         ) : (
-          /* Premium Content Grid */
           <div className="details-main-grid">
             
             {/* Column Left: High-End Photo Gallery */}
             <div className="details-gallery-section">
               <div className="main-image-viewport">
-                {product.images && product.images.length > 0 ? (
+                {activeImgUrl ? (
                   <>
                     <img 
-                      src={product.images[activeImgIndex]?.url || product.images[0]?.url} 
+                      src={activeImgUrl} 
                       alt={product.title} 
                     />
-                    {product.images.length > 1 && (
+                    {galleryImages.length > 1 && (
                       <>
                         <button 
                           className="gallery-nav-btn prev-btn" 
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImgIndex(prev => (prev - 1 + product.images.length) % product.images.length);
+                            const currIdx = galleryImages.indexOf(activeImgUrl);
+                            const nextIdx = (currIdx - 1 + galleryImages.length) % galleryImages.length;
+                            setActiveImgUrl(galleryImages[nextIdx]);
                           }}
                           aria-label="Previous Image"
                         >
@@ -279,7 +334,9 @@ function Productdetails() {
                           className="gallery-nav-btn next-btn" 
                           onClick={(e) => {
                             e.stopPropagation();
-                            setActiveImgIndex(prev => (prev + 1) % product.images.length);
+                            const currIdx = galleryImages.indexOf(activeImgUrl);
+                            const nextIdx = (currIdx + 1) % galleryImages.length;
+                            setActiveImgUrl(galleryImages[nextIdx]);
                           }}
                           aria-label="Next Image"
                         >
@@ -298,16 +355,16 @@ function Productdetails() {
               </div>
 
               {/* Dynamic Thumbnail list displaying all photos */}
-              {product.images && product.images.length > 1 && (
+              {galleryImages.length > 1 && (
                 <div className="thumbnail-tray">
-                  {product.images.map((img, idx) => (
+                  {galleryImages.map((imgUrl, idx) => (
                     <div 
-                      key={img._id || idx} 
-                      className={`thumbnail-wrapper ${activeImgIndex === idx ? 'active' : ''}`}
-                      onClick={() => setActiveImgIndex(idx)}
+                      key={idx} 
+                      className={`thumbnail-wrapper ${activeImgUrl === imgUrl ? 'active' : ''}`}
+                      onClick={() => setActiveImgUrl(imgUrl)}
                     >
                       <img 
-                        src={img.url} 
+                        src={imgUrl} 
                         alt={`${product.title} view ${idx + 1}`} 
                       />
                     </div>
@@ -316,67 +373,133 @@ function Productdetails() {
               )}
             </div>
 
-            {/* Column Right: Specifications and Purchase Actions */}
+            {/* Column Right: Product Info */}
             <div className="details-info-section">
               <div className="details-meta-labels">
                 <span className="details-brand-tag">LUOMI MAISON</span>
                 <h1 className="details-title">{product.title || 'Untitled Piece'}</h1>
               </div>
 
-              <div className="details-price-tag">
-                <span className="details-currency">{getCurrencySymbol(product.price?.currency)}</span>
-                <span className="details-amount">{formatPrice(product.price?.amount)}</span>
+              {/* Price Display */}
+              <div className="price-comparison-row">
+                <div className="details-price-tag">
+                  <span className="details-currency">
+                    {getCurrencySymbol(selectedVariant?.price?.currency || product.price?.currency)}
+                  </span>
+                  <span className="details-amount">
+                    {formatPrice(selectedVariant?.price?.amount ?? product.price?.amount)}
+                  </span>
+                </div>
+                {hasDiscount && (
+                  <>
+                    <span className="details-original-price">
+                      {getCurrencySymbol(product.price?.currency)}
+                      {formatPrice(product.price?.amount)}
+                    </span>
+                    <span className="details-discount-badge">
+                      Save {discountPercent}%
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="details-desc-area">
-                {product.description || "Artisanal creation waiting to be discovered. Hand-tailored silhouetted lines, structured textures, and monochrome excellence."}
+                {product.description || "Artisanal creation waiting to be discovered."}
               </div>
 
-              {/* Verified Seller Badge */}
-              {product.seller ? (
-                <div className="verified-seller-badge">
-                  {typeof product.seller === 'object' && product.seller.profilepic ? (
-                    <img 
-                      src={product.seller.profilepic} 
-                      alt={product.seller.fullname || 'Seller'} 
-                      className="verified-seller-pic" 
-                    />
-                  ) : (
-                    <div className="verified-seller-pic-fallback">
-                      {typeof product.seller === 'object' && product.seller.fullname 
-                        ? product.seller.fullname[0].toUpperCase() 
-                        : 'S'}
-                    </div>
-                  )}
-                  <div className="verified-seller-info">
-                    <span className="verified-seller-name">
-                      {typeof product.seller === 'object' 
-                        ? (product.seller.fullname || 'Independent Atelier') 
-                        : `Independent Atelier #${product.seller.substring(0, 6).toUpperCase()}`}
-                    </span>
-                    {(typeof product.seller !== 'object' || product.seller.isverified) && (
-                      <div className="verified-seller-check">
-                        <svg className="verified-check-icon" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        <span className="verified-check-text">Verified Seller</span>
-                      </div>
+              {/* Variant Picker — Main Product + Variants */}
+              <div className="variants-selector-container">
+                <span className="qty-label">Select Option</span>
+                <div className="variants-selector-grid">
+
+                  {/* Main Product Card (Original / Base) */}
+                  <div 
+                    className={`variant-select-card ${!selectedVariant ? 'selected' : ''}`}
+                    onClick={() => {
+                      setSelectedVariant(null)
+                      const mainImgs = product.images ? product.images.map(i => i.url) : []
+                      setGalleryImages(mainImgs)
+                      if (mainImgs.length > 0) setActiveImgUrl(mainImgs[0])
+                    }}
+                  >
+                    {product.images?.[0]?.url && (
+                      <img 
+                        src={product.images[0].url} 
+                        alt="Original" 
+                        className="variant-mini-thumb"
+                      />
                     )}
+                    <div className="variant-card-info">
+                      <div className="variant-select-header">
+                        <span className="variant-select-name">Original</span>
+                        {typeof product.stock === 'number' && product.stock <= 0 && <span className="variant-select-badge out-of-stock">Sold Out</span>}
+                        {typeof product.stock === 'number' && product.stock > 0 && product.stock <= 5 && <span className="variant-select-badge low-stock">{product.stock} left</span>}
+                      </div>
+                      <div className="variant-select-attributes">
+                        <span className="variant-attr-pill">{product.images?.length || 0} images</span>
+                      </div>
+                      <div className="variant-select-price">
+                        {getCurrencySymbol(product.price?.currency)}
+                        {formatPrice(product.price?.amount)}
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Actual Variants */}
+                  {product.variants && product.variants.map((variant, idx) => {
+                    const isSelected = selectedVariant?._id === variant._id
+                    const miniThumb = variant.images?.[0]?.url || product.images?.[0]?.url
+                    const attrSummary = Object.entries(variant.attributes || {})
+                      .filter(([k]) => ['color', 'size'].includes(k.toLowerCase()))
+                      .map(([, v]) => v)
+                      .join(' / ')
+                    
+                    return (
+                      <div 
+                        key={variant._id || idx} 
+                        className={`variant-select-card ${isSelected ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSelectedVariant(variant)
+                          const vImgs = variant.images ? variant.images.map(i => i.url) : []
+                          const imgs = vImgs.length > 0 ? vImgs : (product.images ? product.images.map(i => i.url) : [])
+                          setGalleryImages(imgs)
+                          if (imgs.length > 0) setActiveImgUrl(imgs[0])
+                        }}
+                      >
+                        {miniThumb && (
+                          <img 
+                            src={miniThumb} 
+                            alt={attrSummary || `Variant ${idx + 1}`} 
+                            className="variant-mini-thumb"
+                          />
+                        )}
+                        <div className="variant-card-info">
+                          <div className="variant-select-header">
+                            <span className="variant-select-name">{attrSummary || `Option ${idx + 1}`}</span>
+                            {variant.stock <= 0 && <span className="variant-select-badge out-of-stock">Sold Out</span>}
+                            {variant.stock > 0 && variant.stock <= 5 && <span className="variant-select-badge low-stock">{variant.stock} left</span>}
+                          </div>
+                          <div className="variant-select-attributes">
+                            {Object.entries(variant.attributes || {}).map(([key, val], aIdx) => (
+                              <span key={aIdx} className="variant-attr-pill">
+                                {key}: {val}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="variant-select-price">
+                            {getCurrencySymbol(variant.price?.currency || product.price?.currency)}
+                            {formatPrice(variant.price?.amount ?? product.price?.amount)}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+
                 </div>
-              ) : (
-                <div className="verified-seller-badge">
-                  <div className="verified-seller-pic-fallback">L</div>
-                  <div className="verified-seller-info">
-                    <span className="verified-seller-name">LUOMI House</span>
-                  </div>
-                </div>
-              )}
+              </div>
 
               {/* Purchase Controls */}
               <div className="purchase-controls">
-                
-                {/* Quantity Numeric Switcher */}
                 <div className="qty-selection-row">
                   <span className="qty-label">Quantity</span>
                   <div className="qty-widget">
@@ -396,30 +519,29 @@ function Productdetails() {
                   </div>
                 </div>
 
-                {/* Call To Action Buttons */}
                 <div className="cta-buttons-stack">
                   <button 
                     className="btn-add-bag-details"
-                    onClick={() => addToCart(product, quantity)}
+                    disabled={selectedVariant ? selectedVariant.stock <= 0 : false}
+                    onClick={() => addToCart(product, quantity, selectedVariant)}
                   >
-                    Add to Bag
+                    {selectedVariant && selectedVariant.stock <= 0 ? 'Out of Stock' : 'Add to Bag'}
                   </button>
                   <button 
                     className="btn-buy-now-details"
+                    disabled={selectedVariant ? selectedVariant.stock <= 0 : false}
                     onClick={() => {
-                      addToCart(product, quantity)
+                      addToCart(product, quantity, selectedVariant)
                       setIsCartOpen(true)
                     }}
                   >
-                    Buy Now
+                    {selectedVariant && selectedVariant.stock <= 0 ? 'Out of Stock' : 'Buy Now'}
                   </button>
                 </div>
               </div>
 
-              {/* Premium Details Accordions */}
+              {/* Accordions */}
               <div className="details-tabs-accordions">
-                
-                {/* Accordion Item 1 */}
                 <div className={`accordion-tab ${openTabs.specifications ? 'open' : ''}`}>
                   <button className="accordion-tab-head" onClick={() => toggleTab('specifications')}>
                     <span className="accordion-tab-title">Specifications</span>
@@ -427,19 +549,18 @@ function Productdetails() {
                   </button>
                   <div className="accordion-tab-body">
                     <div className="specs-grid">
-                      <span className="specs-label">Material</span>
-                      <span className="specs-val">100% Organic Silk & Tailored Linen blend</span>
-                      <span className="specs-label">Care</span>
-                      <span className="specs-val">Dry clean only. Store on soft padded hangers.</span>
-                      <span className="specs-label">Origin</span>
-                      <span className="specs-val">Handcrafted in independent regional atelier</span>
+                      {selectedVariant && Object.entries(selectedVariant.attributes || {}).map(([key, val], i) => (
+                        <React.Fragment key={i}>
+                          <span className="specs-label">{key}</span>
+                          <span className="specs-val">{val}</span>
+                        </React.Fragment>
+                      ))}
                       <span className="specs-label">Updated</span>
                       <span className="specs-val">{new Date(product.updatedAt || Date.now()).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Accordion Item 2 */}
                 <div className={`accordion-tab ${openTabs.delivery ? 'open' : ''}`}>
                   <button className="accordion-tab-head" onClick={() => toggleTab('delivery')}>
                     <span className="accordion-tab-title">Shipping & Returns</span>
@@ -447,18 +568,18 @@ function Productdetails() {
                   </button>
                   <div className="accordion-tab-body">
                     <p style={{ margin: 0 }}>
-                      Complementary courier shipping on all regional atelier creations. Express delivery arrives within 3-5 business days complete with signature receipt.
+                      Complementary courier shipping on all regional atelier creations. Express delivery arrives within 3-5 business days.
                     </p>
                     <p style={{ margin: '8px 0 0 0' }}>
-                      Easy returns accepted within 14 days of delivery. Silhouettes must remain unworn, unaltered, and intact with all primary security tags.
+                      Easy returns accepted within 14 days of delivery. Items must remain unworn and intact with all tags.
                     </p>
                   </div>
                 </div>
-
               </div>
 
-            </div>
 
+
+            </div>
           </div>
         )}
 
@@ -481,37 +602,56 @@ function Productdetails() {
                 <p className="cart-empty-label">Bag is Empty</p>
               </div>
             ) : (
-              cart.map((item) => (
-                <div key={item.product._id} className="cart-item">
-                  <img 
-                    src={item.product.images?.[0]?.url} 
-                    alt={item.product.title} 
-                    className="cart-item-thumb"
-                  />
-                  <div className="cart-item-details">
-                    <h4 className="cart-item-name">{item.product.title}</h4>
-                    <span className="cart-item-price">
-                      {getCurrencySymbol(item.product.price?.currency)}
-                      {formatPrice(item.product.price?.amount)}
-                    </span>
-                    
-                    <div className="cart-item-controls">
-                      <div className="qty-row">
-                        <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, -1)}>
-                          <FiMinus size={10} />
-                        </button>
-                        <span className="qty-num">{item.quantity}</span>
-                        <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, 1)}>
-                          <FiPlus size={10} />
+              cart.map((item) => {
+                const itemKey = item.selectedVariant 
+                  ? `${item.product._id}-${item.selectedVariant._id}` 
+                  : item.product._id;
+                const priceObj = item.selectedVariant?.price || item.product.price;
+                const imgUrl = item.selectedVariant?.images?.[0]?.url || item.product.images?.[0]?.url;
+                
+                return (
+                  <div key={itemKey} className="cart-item">
+                    <img 
+                      src={imgUrl} 
+                      alt={item.product.title} 
+                      className="cart-item-thumb"
+                    />
+                    <div className="cart-item-details">
+                      <h4 className="cart-item-name">{item.product.title}</h4>
+                      
+                      {item.selectedVariant && (
+                        <div className="cart-item-variant-attrs">
+                          {Object.entries(item.selectedVariant.attributes || {}).map(([key, val], aIdx) => (
+                            <span key={aIdx} className="cart-item-attr-pill">
+                              {key}: {val}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <span className="cart-item-price">
+                        {getCurrencySymbol(priceObj?.currency)}
+                        {formatPrice(priceObj?.amount)}
+                      </span>
+                      
+                      <div className="cart-item-controls">
+                        <div className="qty-row">
+                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(itemKey, -1)}>
+                            <FiMinus size={10} />
+                          </button>
+                          <span className="qty-num">{item.quantity}</span>
+                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(itemKey, 1)}>
+                            <FiPlus size={10} />
+                          </button>
+                        </div>
+                        <button className="btn-remove" onClick={() => removeFromCart(itemKey)}>
+                          Remove
                         </button>
                       </div>
-                      <button className="btn-remove" onClick={() => removeFromCart(item.product._id)}>
-                        Remove
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
 

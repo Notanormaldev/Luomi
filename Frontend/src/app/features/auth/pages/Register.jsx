@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import gsap from 'gsap'
 import LocomotiveScroll from 'locomotive-scroll'
 import 'locomotive-scroll/dist/locomotive-scroll.css'
+import { FiSun, FiMoon } from 'react-icons/fi'
 import Logo from '../components/Logo'
 import GoogleSignInButton from '../components/GoogleSignInButton'
 import { useauth } from '../hook/useauth'
@@ -26,6 +27,20 @@ function Register() {
   const [otpEmail, setOtpEmail] = useState('')
   const [resendTimer, setResendTimer] = useState(0)
   const [resendLoading, setResendLoading] = useState(false)
+
+  // Theme State
+  const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
+
+  // Sync theme
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('luomi-theme', theme)
+  }, [theme])
+
+  // Toggle Theme
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
+  }
 
   // Refs for GSAP animations
   const scrollRef = useRef(null)
@@ -292,7 +307,17 @@ function Register() {
   const headingText = step === 1 ? "Create Account" : "Verify Email"
 
   return (
-    <div data-scroll-container ref={scrollRef} className="w-full min-h-screen bg-[#0A0A0A] flex flex-row overflow-hidden relative">
+    <div data-scroll-container ref={scrollRef} className="w-full min-h-screen flex flex-row overflow-hidden relative">
+      {/* Floating Theme Toggle */}
+      <button 
+        type="button" 
+        className="theme-toggle-floating" 
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+      >
+        {theme === 'dark' ? <FiSun size={16} /> : <FiMoon size={16} />}
+      </button>
+
       {/* Custom Cursors */}
       <div ref={cursorDotRef} className="custom-cursor-dot" />
       <div ref={cursorRingRef} className="custom-cursor-ring" />
@@ -302,44 +327,44 @@ function Register() {
         ref={editorialRef}
         className="editorial-column w-[55%] h-screen relative hidden md:block overflow-hidden"
       >
-        {/* Dark overlay and slow parallax image */}
+        {/* Dark/Light overlay and slow parallax image */}
         <div 
           className="absolute inset-0 w-full h-full object-cover scale-110"
           data-scroll
           data-scroll-speed="-2"
           style={{
-            backgroundImage: "url('/editorial_fashion.png')",
+            backgroundImage: theme === 'dark' ? "url('/editorial_fashion.png')" : "url('/editorial_fashion_light.png')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         />
-        {/* Dark luxury overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black pointer-events-none opacity-80" />
+        {/* Theme-aware overlay gradient — subtle in light mode, deeper in dark */}
+        <div className="editorial-overlay absolute inset-0 pointer-events-none" />
         
         {/* High-fashion brand Statement Pull Quote */}
         <div className="absolute inset-x-12 bottom-20 z-10 flex flex-col justify-end text-left select-none">
-          <p className="font-logo text-3xl lg:text-4xl italic text-[#F0F0F0] leading-relaxed tracking-wider font-light max-w-xl">
+          <p className="font-logo text-3xl lg:text-4xl italic auth-editorial-quote leading-relaxed tracking-wider font-light max-w-xl">
             "A study in silent luxury. The architecture of modern attire."
           </p>
-          <div className="h-[1px] w-20 bg-[#C0C0C0] mt-6 opacity-60" />
-          <span className="font-label text-[11px] font-medium tracking-[2px] uppercase text-[#888888] mt-3">
+          <div className="h-[1px] w-20 auth-editorial-line mt-6" />
+          <span className="font-label text-[11px] font-medium tracking-[2px] uppercase auth-editorial-sub mt-3">
             LUOMI EDITORIAL STILLS
           </span>
         </div>
       </div>
 
       {/* Right Form column (45%) */}
-      <div className="form-column w-full md:w-[45%] h-screen bg-[#0A0A0A] flex flex-col justify-between py-8 px-8 sm:px-16 overflow-y-auto z-10 no-scrollbar">
+      <div className="form-column w-full md:w-[45%] h-screen flex flex-col justify-between py-8 px-8 sm:px-16 overflow-y-auto z-10 no-scrollbar">
         {/* Top brand header */}
         <div className="w-full flex flex-col items-center shrink-0">
           <Logo />
-          <div className="divider-line h-[1px] bg-[#1E1E1E] w-full mt-4 mb-2 origin-center" />
+          <div className="divider-line h-[1px] auth-divider-line w-full mt-4 mb-2 origin-center" />
         </div>
 
         {/* Center Auth Form */}
         <div className="flex-1 w-full max-w-[400px] mx-auto flex flex-col justify-center">
           {/* Header */}
-          <h1 className="font-heading text-[34px] sm:text-[38px] font-medium text-[#F0F0F0] mb-5 leading-none tracking-tight flex flex-row flex-wrap">
+          <h1 className="font-heading text-[34px] sm:text-[38px] font-medium auth-heading mb-5 leading-none tracking-tight flex flex-row flex-wrap">
             {headingText.split(" ").map((word, wordIdx) => (
               <span key={wordIdx} className="flex flex-row mr-3">
                 {word.split("").map((char, charIdx) => (
@@ -475,7 +500,7 @@ function Register() {
                 )}
 
                 {/* OTP sent message */}
-                <p className="font-body text-sm text-[#C0C0C0] mb-6 tracking-wide">
+                <p className="font-body text-sm auth-text-otp-desc mb-6 tracking-wide">
                   OTP sent to: <span className="font-semibold">{otpEmail}</span>
                 </p>
 
@@ -531,14 +556,14 @@ function Register() {
         {/* Bottom Footer links — with proper breathing room */}
         <div className="w-full text-center flex flex-col items-center gap-3 pt-6 shrink-0">
           {step === 1 && (
-            <p className="font-label text-xs text-[#888888]">
+            <p className="font-label text-xs auth-text-muted">
               Already have an account?{' '}
-              <Link to="/login" className="text-[#F0F0F0] hover:text-[#C0C0C0] underline transition-colors">
+              <Link to="/login" className="auth-link hover:text-[#C0C0C0] transition-colors">
                 Log in
               </Link>
             </p>
           )}
-          <p className="font-legal text-[11px] text-[#444444] tracking-wide">
+          <p className="font-legal text-[11px] auth-legal-text tracking-wide">
             © 2026 LUOMI LTD. ALL RIGHTS RESERVED.
           </p>
         </div>
