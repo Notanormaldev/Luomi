@@ -169,7 +169,9 @@ function Dashbord() {
           ) : (
             <div className="products-grid">
               {products.map((product) => (
-                <div key={product._id} className="luxury-product-card">
+                <div key={product._id} onClick={()=>{
+                  navigate(`/product/${product._id}/seller`)
+                }} className="luxury-product-card">
                   <div className="product-image-wrapper">
                     {product.images && product.images.length > 0 ? (
                       <img 

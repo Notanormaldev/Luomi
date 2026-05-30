@@ -42,7 +42,7 @@ const productSchema = mongoose.Schema({
             default:0
         },
         attributes:{
-            type:map,
+            type:Map,
             of:String
         }
         }
