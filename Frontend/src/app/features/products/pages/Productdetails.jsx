@@ -5,6 +5,7 @@ import { useproduct } from '../hook/useproduct'
 import { useauth } from '../../auth/hook/useauth'
 import { usecart } from '../../cart/hook/usecart'
 import Logo from '../../auth/components/Logo'
+import axios from 'axios'
 import { 
   FiShoppingBag, 
   FiSun, 
@@ -16,7 +17,8 @@ import {
   FiUser,
   FiRefreshCw,
   FiTruck,
-  FiShield
+  FiShield,
+  FiMessageSquare
 } from 'react-icons/fi'
 import './Productdetails.css'
 
@@ -25,7 +27,7 @@ function Productdetails() {
   const navigate = useNavigate()
   const { handlegetoneprodcut } = useproduct()
   const { user } = useauth()
-  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart } = usecart()
+  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
 
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'dark')
@@ -35,6 +37,14 @@ function Productdetails() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
+
+  // ASK JERRY AI Style Assistant State
+  const [isJerryOpen, setIsJerryOpen] = useState(false)
+  const [jerryMessages, setJerryMessages] = useState([
+    { sender: 'jerry', text: "Hello! I'm **Jerry**, your AI style counselor. How can I assist you with this silhouette?" }
+  ])
+  const [jerryInput, setJerryInput] = useState('')
+  const [jerryLoading, setJerryLoading] = useState(false)
   
   // Dynamic Selected Variant & Visual Assets
   const [selectedVariant, setSelectedVariant] = useState(null)
@@ -49,11 +59,17 @@ function Productdetails() {
 
   const [isCartOpen, setIsCartOpen] = useState(false)
 
-  // Sync theme
+  // Listen for theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('luomi-theme', theme)
-  }, [theme])
+    const syncTheme = () => {
+      const currentTheme = localStorage.getItem('luomi-theme') || 'dark'
+      setTheme(currentTheme)
+      document.documentElement.setAttribute('data-theme', currentTheme)
+    }
+    syncTheme()
+    window.addEventListener('theme-changed', syncTheme)
+    return () => window.removeEventListener('theme-changed', syncTheme)
+  }, [])
 
   // Sync cart from cloud DB if logged in
   useEffect(() => {
@@ -61,11 +77,6 @@ function Productdetails() {
       handleGetCart()
     }
   }, [user])
-
-  // Toggle Theme
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
 
   // Fetch product detail on mount
   useEffect(() => {
@@ -220,6 +231,46 @@ function Productdetails() {
     setQuantity(1)
   }, [selectedVariant])
 
+  // Handle Ask Jerry Submit
+  const handleAskJerrySubmit = async (e, customMessage = '') => {
+    if (e) e.preventDefault()
+    
+    const messageText = customMessage || jerryInput
+    if (!messageText.trim()) return
+
+    const updatedMessages = [...jerryMessages, { sender: 'user', text: messageText }]
+    setJerryMessages(updatedMessages)
+    setJerryInput('')
+    setJerryLoading(true)
+
+    try {
+      const res = await axios.post(`/api/ai/${id}/ask-jerry`, { message: messageText })
+      if (res.data.success) {
+        setJerryMessages(prev => [...prev, { sender: 'jerry', text: res.data.reply }])
+      } else {
+        setJerryMessages(prev => [...prev, { sender: 'jerry', text: "I'm having trouble retrieving details right now." }])
+      }
+    } catch (err) {
+      setJerryMessages(prev => [...prev, { sender: 'jerry', text: "Connection error. Failed to reach the style node." }])
+    } finally {
+      setJerryLoading(false)
+    }
+  }
+
+  const triggerCheckout = async () => {
+    try {
+      const res = await handleCheckout()
+      if (res.success) {
+        alert("Order placed successfully! Stock levels updated.")
+        setIsCartOpen(false)
+      } else {
+        alert(res.error || "Checkout failed.")
+      }
+    } catch (err) {
+      alert("Checkout failed.")
+    }
+  }
+
   const handlePageQtyChange = (delta) => {
     const availableStock = selectedVariant ? selectedVariant.stock : (product ? (product.stock || 0) : 0)
     const newQty = quantity + delta
@@ -249,14 +300,7 @@ function Productdetails() {
           </div>
 
           <div className="nav-right">
-            {/* Theme Toggle */}
-            <button 
-              className="btn-icon-round" 
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-            >
-              {theme === 'dark' ? <FiSun size={16} /> : <FiMoon size={16} />}
-            </button>
+            
 
             {/* Shopping Bag Button */}
             <div className="btn-bag-wrap">
@@ -269,7 +313,7 @@ function Productdetails() {
             {/* Seller / Profile Action */}
             {user ? (
               <Link 
-                to="/dashbord/seller" 
+                to="/settings" 
                 className="btn-nav-pill"
               >
                 <FiUser size={13} />
@@ -686,13 +730,93 @@ function Productdetails() {
                   {cartCurrencySymbol}{formatPrice(cartTotal)}
                 </span>
               </div>
-              <button className="btn-checkout" onClick={() => alert("Checkout pipeline initialized.")}>
+              <button className="btn-checkout" onClick={triggerCheckout}>
                 Secure Checkout
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* ASK JERRY AI floating style assistant trigger */}
+      <button 
+        onClick={() => setIsJerryOpen(!isJerryOpen)}
+        className="ask-jerry-trigger"
+        title="Ask Jerry - AI Style Assistant"
+      >
+        {isJerryOpen ? <FiX size={20} /> : <FiMessageSquare size={20} />}
+      </button>
+
+      {/* ASK JERRY Chat Widget Drawer */}
+      {isJerryOpen && (
+        <div className="ask-jerry-widget">
+          <div className="jerry-header">
+            <span className="jerry-header-title text-[var(--text)]">ASK JERRY • AI Style Assistant</span>
+            <button onClick={() => setIsJerryOpen(false)} className="jerry-close-btn">
+              <FiX size={14} />
+            </button>
+          </div>
+
+          <div className="jerry-messages-area">
+            {jerryMessages.map((msg, idx) => (
+              <div key={idx} className={`jerry-msg ${msg.sender} rounded-none`}>
+                {msg.text.split("**").map((part, i) => (
+                  i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+                ))}
+              </div>
+            ))}
+            {jerryLoading && (
+              <div className="jerry-loading-indicator text-xs font-semibold uppercase">
+                Jerry is styling suggestions...
+              </div>
+            )}
+          </div>
+
+          {/* Style query suggestions chips */}
+          <div className="jerry-chips-container">
+            <button 
+              onClick={(e) => handleAskJerrySubmit(e, "styling ideas for this item?")} 
+              className="jerry-chip"
+              disabled={jerryLoading}
+            >
+              Styling Coordinates
+            </button>
+            <button 
+              onClick={(e) => handleAskJerrySubmit(e, "what materials are used?")} 
+              className="jerry-chip"
+              disabled={jerryLoading}
+            >
+              Material Composition
+            </button>
+            <button 
+              onClick={(e) => handleAskJerrySubmit(e, "what fit is this?")} 
+              className="jerry-chip"
+              disabled={jerryLoading}
+            >
+              Fit & Drape Profile
+            </button>
+          </div>
+
+          {/* Text Input area */}
+          <form onSubmit={(e) => handleAskJerrySubmit(e)} className="jerry-input-area">
+            <input
+              type="text"
+              placeholder="Ask Jerry a custom style question..."
+              value={jerryInput}
+              onChange={(e) => setJerryInput(e.target.value)}
+              className="jerry-input-box text-[var(--text)]"
+              disabled={jerryLoading}
+            />
+            <button 
+              type="submit" 
+              className="jerry-send-btn"
+              disabled={jerryLoading || !jerryInput.trim()}
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      )}
 
     </div>
   )

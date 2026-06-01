@@ -203,7 +203,10 @@ async function removeFromCart(req, res) {
         console.error("removeFromCart Error:", error);
         return res.status(500).json({ success: false, msg: "Failed to remove item from cart" });
     }
+}
+
 async function checkout(req, res) {
+
     try {
         const userId = req.user.id;
         const cart = await cartModel.findOne({ user: userId }).populate('items.product');

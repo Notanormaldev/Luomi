@@ -7,6 +7,7 @@ import Protected from './features/auth/components/Protected'
 import Home from './features/products/pages/Home'
 import Productdetails from './features/products/pages/Productdetails'
 import Sellerproductdetails from './features/products/pages/Sellerproductdetails'
+import Settings from './features/auth/pages/Settings'
 
 
 export  const router = createBrowserRouter([
@@ -41,6 +42,9 @@ export  const router = createBrowserRouter([
       element:<Protected role='seller'>
          <Sellerproductdetails/>
          </Protected>
+     },{
+       path:'/settings',
+       element:<Settings/>
      }
 
 ])

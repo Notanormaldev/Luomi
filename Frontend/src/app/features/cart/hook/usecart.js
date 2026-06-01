@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getCart, addToCartApi, updateCartApi, removeFromCartApi } from "../services/cart.api";
+import { getCart, addToCartApi, updateCartApi, removeFromCartApi, checkoutApi } from "../services/cart.api";
 import { setCartItems, setLoading, setError, clearCart } from "../cart.slice";
 
 export const usecart = () => {
@@ -74,6 +74,22 @@ export const usecart = () => {
         dispatch(clearCart());
     }
 
+    async function handleCheckout() {
+        dispatch(setLoading(true));
+        dispatch(setError(null));
+        try {
+            const data = await checkoutApi();
+            dispatch(clearCart());
+            dispatch(setLoading(false));
+            return { success: true, order: data.order, msg: data.msg };
+        } catch (err) {
+            console.error("usecart: handleCheckout error", err);
+            dispatch(setError(err.msg || "Checkout failed"));
+            dispatch(setLoading(false));
+            return { success: false, error: err.msg };
+        }
+    }
+
     return {
         items,
         loading,
@@ -82,6 +98,7 @@ export const usecart = () => {
         handleAddToCart,
         handleUpdateCart,
         handleRemoveFromCart,
-        handleClearCart
+        handleClearCart,
+        handleCheckout
     };
 };

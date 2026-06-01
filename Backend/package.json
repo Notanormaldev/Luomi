@@ -13,6 +13,8 @@
   "type": "module",
   "dependencies": {
     "@imagekit/nodejs": "^7.6.2",
+    "@langchain/core": "^1.1.48",
+    "@langchain/ollama": "^1.2.7",
     "backend": "^0.0.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",

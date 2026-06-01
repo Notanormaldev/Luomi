@@ -22,7 +22,7 @@ function Home() {
   const navigate = useNavigate()
   const { handlegetallprodcuts } = useproduct()
   const { user } = useauth()
-  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart } = usecart()
+  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
 
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'dark')
@@ -39,11 +39,17 @@ function Home() {
   // Cart overlay state
   const [isCartOpen, setIsCartOpen] = useState(false)
 
-  // Sync theme
+  // Listen for theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('luomi-theme', theme)
-  }, [theme])
+    const syncTheme = () => {
+      const currentTheme = localStorage.getItem('luomi-theme') || 'dark'
+      setTheme(currentTheme)
+      document.documentElement.setAttribute('data-theme', currentTheme)
+    }
+    syncTheme()
+    window.addEventListener('theme-changed', syncTheme)
+    return () => window.removeEventListener('theme-changed', syncTheme)
+  }, [])
 
   // Sync cart from cloud DB if logged in
   useEffect(() => {
@@ -69,10 +75,7 @@ function Home() {
 
   const allProducts = useSelector(state => state.product.products) || []
 
-  // Toggle Theme
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
+
 
   // Cart Operations
   const addToCart = async (product) => {
@@ -97,6 +100,20 @@ function Home() {
       setIsCartOpen(true)
     } else {
       alert(res.error || "Failed to add to cart")
+    }
+  }
+
+  const triggerCheckout = async () => {
+    try {
+      const res = await handleCheckout()
+      if (res.success) {
+        alert("Order placed successfully! Stock levels updated.")
+        setIsCartOpen(false)
+      } else {
+        alert(res.error || "Checkout failed.")
+      }
+    } catch (err) {
+      alert("Checkout failed.")
     }
   }
 
@@ -248,14 +265,7 @@ function Home() {
 
           <div className="nav-right">
             
-            {/* Theme Toggle */}
-            <button 
-              className="btn-icon-round" 
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-            >
-              {theme === 'dark' ? <FiSun size={16} /> : <FiMoon size={16} />}
-            </button>
+
 
             {/* Shopping Bag Button */}
             <div className="btn-bag-wrap">
@@ -268,7 +278,7 @@ function Home() {
             {/* Seller / Profile Action */}
             {user ? (
               <Link 
-                to="/dashbord/seller" 
+                to="/settings" 
                 className="btn-nav-pill"
               >
                 <FiUser size={13} />
@@ -486,7 +496,7 @@ function Home() {
                   {cartCurrencySymbol}{formatPrice(cartTotal)}
                 </span>
               </div>
-              <button className="btn-checkout" onClick={() => alert("Checkout pipeline initialized.")}>
+              <button className="btn-checkout" onClick={triggerCheckout}>
                 Secure Checkout
               </button>
             </div>

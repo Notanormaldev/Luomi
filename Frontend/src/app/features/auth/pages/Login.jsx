@@ -89,18 +89,12 @@ function Login() {
 
 
   // Theme State
-  const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
+  const [theme] = useState(localStorage.getItem('luomi-theme') || 'light')
 
   // Sync theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('luomi-theme', theme)
   }, [theme])
-
-  // Toggle Theme
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
 
   // Refs for GSAP animations
   const scrollRef = useRef(null)
@@ -272,15 +266,7 @@ function Login() {
 
   return (
     <div data-scroll-container ref={scrollRef} className="w-full min-h-screen flex flex-row overflow-hidden relative">
-      {/* Floating Theme Toggle */}
-      <button 
-        type="button" 
-        className="theme-toggle-floating" 
-        onClick={toggleTheme}
-        title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-      >
-        {theme === 'dark' ? <FiSun size={16} /> : <FiMoon size={16} />}
-      </button>
+
 
       {/* Custom Cursors */}
       <div ref={cursorDotRef} className="custom-cursor-dot" />

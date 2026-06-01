@@ -40,3 +40,13 @@ export async function removeFromCartApi({ productId, variantId }) {
         throw error.response?.data || { msg: "Failed to remove from cart" };
     }
 }
+
+export async function checkoutApi() {
+    try {
+        const res = await cartapi.post('/checkout');
+        return res.data;
+    } catch (error) {
+        throw error.response?.data || { msg: "Checkout failed" };
+    }
+}
+

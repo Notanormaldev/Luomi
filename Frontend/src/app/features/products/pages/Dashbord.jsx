@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux'
 import { useproduct } from '../hook/useproduct'
 import { useauth } from '../../auth/hook/useauth'
 import Logo from '../../auth/components/Logo'
+import axios from 'axios'
 import { FiPlus, FiArrowRight, FiShoppingBag, FiLayers, FiSun, FiMoon } from 'react-icons/fi'
 import './Dashbord.css'
 
@@ -13,20 +14,23 @@ function Dashbord() {
   const { user } = useauth()
   
   const [loading, setLoading] = useState(true)
+  const [orders, setOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(true)
   
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
 
-  // Sync theme
+  // Listen for theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('luomi-theme', theme)
-  }, [theme])
-
-  // Toggle Theme
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
+    const syncTheme = () => {
+      const currentTheme = localStorage.getItem('luomi-theme') || 'dark'
+      setTheme(currentTheme)
+      document.documentElement.setAttribute('data-theme', currentTheme)
+    }
+    syncTheme()
+    window.addEventListener('theme-changed', syncTheme)
+    return () => window.removeEventListener('theme-changed', syncTheme)
+  }, [])
 
   useEffect(() => {
     const fetchSellerProducts = async () => {
@@ -39,7 +43,23 @@ function Dashbord() {
         setLoading(false)
       }
     }
+
+    const fetchSellerOrders = async () => {
+      setOrdersLoading(true)
+      try {
+        const res = await axios.get('/api/product/orders/seller', { withCredentials: true })
+        if (res.data.success) {
+          setOrders(res.data.orders)
+        }
+      } catch (err) {
+        console.error("Failed to fetch seller orders:", err)
+      } finally {
+        setOrdersLoading(false)
+      }
+    }
+
     fetchSellerProducts()
+    fetchSellerOrders()
   }, [])
 
   const products = useSelector(state => state.product.sellerproducts) || []
@@ -86,16 +106,6 @@ function Dashbord() {
 
   return (
     <div className="dashboard-container">
-      {/* Floating Theme Toggle */}
-      <button 
-        type="button" 
-        className="dash-theme-toggle" 
-        onClick={toggleTheme}
-        title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-      >
-        {theme === 'dark' ? <FiSun size={18} /> : <FiMoon size={18} />}
-      </button>
-
       <div className="dashboard-wrapper">
         
         {/* Top Centered Brand Logo */}
@@ -111,7 +121,7 @@ function Dashbord() {
           </div>
 
           <div className="dashboard-user-actions">
-            <div className="seller-profile-minimal">
+            <div className="seller-profile-minimal cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/settings')}>
               <span className="seller-name">{user?.fullname || 'Artisan Seller'}</span>
               <span className="seller-badge">Seller Atelier</span>
             </div>
@@ -251,6 +261,111 @@ function Dashbord() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Client Orders Section */}
+        <div className="orders-section mt-12 border-t border-[rgba(255,255,255,0.05)] pt-8">
+          <div className="catalog-header-row mb-6">
+            <h2 className="catalog-section-title">Client Purchases & Orders</h2>
+            <span className="text-xs text-[#888888] font-label uppercase">Total orders: {orders.length}</span>
+          </div>
+          
+          {ordersLoading ? (
+            <div className="text-center py-12 text-xs text-[#888888] font-label uppercase tracking-widest">
+              Retrieving client purchases...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="empty-orders-box text-center py-12 border border-dashed border-[var(--dash-card-border)] bg-[var(--dash-card-bg)]">
+              <p className="text-sm text-[var(--dash-text)] font-semibold mb-1">No Orders Yet</p>
+              <p className="text-xs text-[#888888] font-body">When clients purchase your silhouettes, their order information will materialize here.</p>
+            </div>
+          ) : (
+            <div className="orders-table-wrapper overflow-x-auto">
+              <table className="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Buyer Details</th>
+                    <th>Creation Purchased</th>
+                    <th style={{ textAlign: 'center' }}>Qty</th>
+                    <th style={{ textAlign: 'right' }}>Price</th>
+                    <th>Order Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    order.items.map((item, itemIdx) => {
+                      const prod = item.product;
+                      if (!prod) return null;
+                      
+                      const orderIdStr = order._id.toString();
+                      const displayId = `#${orderIdStr.slice(-6).toUpperCase()}`;
+                      
+                      return (
+                        <tr key={`${order._id}-${itemIdx}`}>
+                          {itemIdx === 0 ? (
+                            <td className="font-label font-bold text-[var(--dash-title)]" rowSpan={order.items.length}>
+                              {displayId}
+                            </td>
+                          ) : null}
+                          
+                          {itemIdx === 0 ? (
+                            <td rowSpan={order.items.length}>
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-[var(--dash-text)]">{order.buyer?.fullname || 'Unknown Buyer'}</span>
+                                <span className="text-[10px] text-[#888888]">{order.buyer?.email || 'N/A'}</span>
+                              </div>
+                            </td>
+                          ) : null}
+                          
+                          <td>
+                            <div className="flex items-center gap-3">
+                              {prod.images && prod.images.length > 0 ? (
+                                <img src={prod.images[0].url} alt={prod.title} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '2px', border: '0.5px solid var(--dash-card-border)' }} />
+                              ) : (
+                                <div style={{ width: '40px', height: '40px', border: '0.5px solid var(--dash-card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '8px' }}>LUOMI</div>
+                              )}
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-[var(--dash-text)]">{prod.title}</span>
+                                <span className="text-[10px] text-[#888888] capitalize">{prod.subCategory} ({prod.genderCategory})</span>
+                              </div>
+                            </div>
+                          </td>
+                          
+                          <td style={{ textAlign: 'center', fontWeight: '600', color: 'var(--dash-title)' }}>
+                            {item.quantity}
+                          </td>
+                          
+                          <td style={{ textAlign: 'right', fontWeight: '600', color: 'var(--dash-title)' }}>
+                            {getCurrencySymbol(item.price?.currency)}{formatPrice(item.price?.amount)}
+                          </td>
+                          
+                          {itemIdx === 0 ? (
+                            <td rowSpan={order.items.length}>
+                              <span className={`status-badge-inline status-${order.status}`}>
+                                {order.status}
+                              </span>
+                            </td>
+                          ) : null}
+                          
+                          {itemIdx === 0 ? (
+                            <td style={{ color: 'var(--dash-subtitle)' }} rowSpan={order.items.length}>
+                              {new Date(order.createdAt).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </td>
+                          ) : null}
+                        </tr>
+                      );
+                    })
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

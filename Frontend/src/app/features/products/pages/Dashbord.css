@@ -576,3 +576,83 @@
   border-color: var(--dash-title);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
+
+/* Client Orders Table Styling */
+.orders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.orders-table-wrapper {
+  background-color: var(--dash-card-bg);
+  border: 0.5px solid var(--dash-card-border);
+  border-radius: 2px;
+  overflow-x: auto;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  color: var(--dash-text);
+  text-align: left;
+}
+
+.orders-table th {
+  padding: 14px 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dash-subtitle);
+  border-bottom: 0.5px solid var(--dash-card-border);
+  background-color: rgba(120, 120, 120, 0.02);
+}
+
+.orders-table td {
+  padding: 14px 16px;
+  border-bottom: 0.5px solid var(--dash-card-border);
+  vertical-align: middle;
+}
+
+.orders-table tr:hover {
+  background-color: rgba(120, 120, 120, 0.02);
+}
+
+.status-badge-inline {
+  display: inline-block;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+.status-badge-inline.status-pending {
+  background-color: rgba(255, 180, 0, 0.1);
+  color: #FFB400;
+  border: 0.5px solid rgba(255, 180, 0, 0.25);
+}
+
+.status-badge-inline.status-processing {
+  background-color: rgba(58, 140, 255, 0.1);
+  color: #3A8CFF;
+  border: 0.5px solid rgba(58, 140, 255, 0.25);
+}
+
+.status-badge-inline.status-delivered {
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22C55E;
+  border: 0.5px solid rgba(34, 197, 94, 0.25);
+}
+
+.status-badge-inline.status-cancelled {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  border: 0.5px solid rgba(239, 68, 68, 0.25);
+}
+

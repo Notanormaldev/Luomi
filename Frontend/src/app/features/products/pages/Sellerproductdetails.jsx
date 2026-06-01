@@ -31,16 +31,17 @@ function Sellerproductdetails() {
   const [activeImgUrl, setActiveImgUrl] = useState('')
   const [galleryImages, setGalleryImages] = useState([])
 
-  // Sync theme
+  // Listen for theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('luomi-theme', theme)
-  }, [theme])
-
-  // Toggle Theme
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
+    const syncTheme = () => {
+      const currentTheme = localStorage.getItem('luomi-theme') || 'dark'
+      setTheme(currentTheme)
+      document.documentElement.setAttribute('data-theme', currentTheme)
+    }
+    syncTheme()
+    window.addEventListener('theme-changed', syncTheme)
+    return () => window.removeEventListener('theme-changed', syncTheme)
+  }, [])
 
   // Fetch product detail on mount
   useEffect(() => {
@@ -129,25 +130,17 @@ function Sellerproductdetails() {
           </div>
 
           <div className="nav-right">
-            {/* Theme Toggle */}
-            <button 
-              className="btn-icon-round" 
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-            >
-              {theme === 'dark' ? <FiSun size={16} /> : <FiMoon size={16} />}
-            </button>
-
             {/* Profile Action */}
             {user && (
-              <div className="btn-nav-pill">
+              <Link to="/settings" className="btn-nav-pill">
                 <FiUser size={13} />
                 <span className="hidden sm:inline">{user.fullname}</span>
-              </div>
+              </Link>
             )}
           </div>
         </div>
       </div>
+
 
       <div className="seller-details-wrapper">
         
