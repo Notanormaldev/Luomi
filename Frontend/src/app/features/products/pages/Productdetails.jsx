@@ -76,16 +76,21 @@ function Productdetails() {
     const fetch = async () => {
       setLoading(true)
       try {
-        const data = await handlegetoneprodcut(id)
-        if (data) {
-          setProduct(data)
-          const imgs = data.images ? data.images.map(i => i.url) : []
+        // Fix: hook expects { productid } object, returns { success, products: product }
+        const data = await handlegetoneprodcut({ productid: id })
+        if (data && data.success && data.products) {
+          const prod = data.products
+          setProduct(prod)
+          const imgs = prod.images ? prod.images.map(i => i.url) : []
           setGalleryImages(imgs)
           if (imgs.length > 0) setActiveImgUrl(imgs[0])
         } else {
           setError('Product not found')
         }
-      } catch { setError('Failed to load product') }
+      } catch (e) {
+        console.error('Product fetch error:', e)
+        setError('Failed to load product')
+      }
       finally { setLoading(false) }
     }
     fetch()
@@ -131,15 +136,18 @@ function Productdetails() {
   const handleAttributeSelect = (key, val) => {
     setSelectedAttributes(prev => {
       const next = { ...prev, [key]: val }
-      const anyMatch = product.variants.some(v =>
-        Object.entries(next).every(([k, vVal]) => getAttr(v.attributes, k) === vVal)
-      )
-      if (anyMatch) return next
-      const firstMatch = product.variants.find(v => getAttr(v.attributes, key) === val)
-      if (firstMatch) {
-        const resolved = {}
-        Object.entries(firstMatch.attributes || {}).forEach(([k, v]) => { resolved[k.toLowerCase()] = v })
-        return resolved
+      
+      // If color was changed, check if the previously selected size is available in this new color.
+      // If not, clear size selection so they must explicitly choose an available size again.
+      if (key.toLowerCase() === 'color' && prev['size']) {
+        const sizeVal = prev['size']
+        const isCompatible = product.variants.some(v => 
+          getAttr(v.attributes, 'color') === val && 
+          getAttr(v.attributes, 'size') === sizeVal
+        )
+        if (!isCompatible) {
+          delete next['size']
+        }
       }
       return next
     })
@@ -192,7 +200,10 @@ function Productdetails() {
     return a + (isNaN(price) ? 0 : price) * c.quantity
   }, 0)
 
-  const availableStock = selectedVariant ? selectedVariant.stock : (product?.stock || 0)
+  const hasVariants = product?.variants && product.variants.length > 0
+  const availableStock = hasVariants
+    ? (selectedVariant ? selectedVariant.stock : 0)
+    : (product?.stock || 0)
 
   const addToCart = async () => {
     if (!user) { navigate('/login'); return }
@@ -447,26 +458,43 @@ function Productdetails() {
                   <button onClick={() => handlePageQtyChange(1)} className="pd-qty-btn"><FiPlus size={12}/></button>
                 </div>
                 <span className="pd-stock-info">
-                  {availableStock > 0
-                    ? (availableStock <= 5 ? `⚠ Only ${availableStock} left!` : `${availableStock} in stock`)
-                    : '❌ Out of stock'}
+                  {hasVariants ? (
+                    !selectedAttributes['size'] ? (
+                      'Select a size to check stock'
+                    ) : (
+                      selectedVariant ? (
+                        selectedVariant.stock > 0 ? (
+                          selectedVariant.stock <= 5 ? `⚠ Only ${selectedVariant.stock} left!` : `${selectedVariant.stock} in stock`
+                        ) : '❌ Out of stock'
+                      ) : '❌ Out of stock'
+                    )
+                  ) : (
+                    product?.stock > 0
+                      ? (product.stock <= 5 ? `⚠ Only ${product.stock} left!` : `${product.stock} in stock`)
+                      : '❌ Out of stock'
+                  )}
                 </span>
               </div>
 
               <div className="pd-cta-row">
                 <button
                   className="pd-add-bag-btn"
-                  disabled={availableStock <= 0}
+                  disabled={hasVariants ? !selectedVariant || selectedVariant.stock <= 0 : product?.stock <= 0}
                   onClick={addToCart}
                 >
-                  {availableStock <= 0 ? 'OUT OF STOCK' : 'ADD TO BAG'}
+                  {hasVariants 
+                    ? (!selectedAttributes['size'] 
+                        ? 'SELECT SIZE' 
+                        : (selectedVariant && selectedVariant.stock > 0 ? 'ADD TO BAG' : 'OUT OF STOCK'))
+                    : (product?.stock > 0 ? 'ADD TO BAG' : 'OUT OF STOCK')
+                  }
                 </button>
                 <button
                   className="pd-buy-now-btn"
-                  disabled={availableStock <= 0}
+                  disabled={hasVariants ? !selectedVariant || selectedVariant.stock <= 0 : product?.stock <= 0}
                   onClick={() => { addToCart(); setTimeout(() => setIsCartOpen(true), 200) }}
                 >
-                  BUY NOW
+                  {hasVariants && !selectedAttributes['size'] ? 'SELECT SIZE' : 'BUY NOW'}
                 </button>
               </div>
             </div>

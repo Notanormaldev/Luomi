@@ -31,18 +31,18 @@ const CATEGORY_TABS = [
 ]
 
 const FEATURED_CATS = [
-  { label: 'SHIRTS',      sub: 'shirt',     tagline: 'Fresh & Sharp' },
-  { label: 'TROUSERS',    sub: 'trouser',   tagline: 'Clean Silhouette' },
-  { label: 'POLOS',       sub: 'polos',     tagline: 'Everyday Essential' },
-  { label: 'JEANS',       sub: 'jeans',     tagline: 'Effortlessly Cool' },
-  { label: 'CARGOS',      sub: 'cargos',    tagline: 'Street-Ready' },
-  { label: 'T-SHIRTS',    sub: 't-shirt',   tagline: 'Always On Trend' },
+  { label: 'SHIRTS',      sub: 'shirt',     tagline: 'Fresh & Sharp', defaultImg: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=600&auto=format&fit=crop' },
+  { label: 'TROUSERS',    sub: 'trouser',   tagline: 'Clean Silhouette', defaultImg: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=600&auto=format&fit=crop' },
+  { label: 'POLOS',       sub: 'polos',     tagline: 'Everyday Essential', defaultImg: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=600&auto=format&fit=crop' },
+  { label: 'JEANS',       sub: 'jeans',     tagline: 'Effortlessly Cool', defaultImg: 'https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=600&auto=format&fit=crop' },
+  { label: 'CARGOS',      sub: 'cargos',    tagline: 'Street-Ready', defaultImg: 'https://images.unsplash.com/photo-1517423568366-8b83523034fd?q=80&w=600&auto=format&fit=crop' },
+  { label: 'T-SHIRTS',    sub: 't-shirt',   tagline: 'Always On Trend', defaultImg: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop' },
 ]
 
 const HERO_PANELS = [
-  { sub: 'shirt',   headline: 'LINEN EDIT',    sub2: 'SOFT ON SKIN.\nSHARP ON STYLE.' },
-  { sub: 'jeans',   headline: 'DENIM DROP',    sub2: 'CLASSIC CUTS.\nMODERN FITS.' },
-  { sub: 't-shirt', headline: 'STREET SELECTS',sub2: 'KEEP IT SIMPLE.\nWEAR IT BOLD.' },
+  { sub: 'shirt',   headline: 'LINEN EDIT',    sub2: 'SOFT ON SKIN.\nSHARP ON STYLE.', defaultImg: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=1000&auto=format&fit=crop' },
+  { sub: 'jeans',   headline: 'DENIM DROP',    sub2: 'CLASSIC CUTS.\nMODERN FITS.', defaultImg: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=1000&auto=format&fit=crop' },
+  { sub: 't-shirt', headline: 'STREET SELECTS',sub2: 'KEEP IT SIMPLE.\nWEAR IT BOLD.', defaultImg: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop' },
 ]
 
 const TOP_SEARCHES = ['Slim Fit Shirts', 'Black T-Shirts', 'Cargo Pants', 'Relaxed Jeans', 'Polo T-Shirts', 'Linen Shirts']
@@ -101,6 +101,22 @@ export default function Home() {
   /* pick first product for a sub-category (returns full product object) */
   const getSubProduct = (sub) => {
     return allProducts.find(x => x.subCategory?.toLowerCase() === sub.toLowerCase() && x.images?.length > 0) || null
+  }
+
+  /* Click handler to find product, navigate or fallback to tab filter */
+  const handleHeroClick = (sub) => {
+    const prod = getSubProduct(sub)
+    if (prod) {
+      navigate(`/product/${prod._id}`)
+    } else {
+      const tabIdx = CATEGORY_TABS.findIndex(t => t.sub.toLowerCase() === sub.toLowerCase())
+      if (tabIdx !== -1) {
+        setActiveTab(tabIdx)
+        setTimeout(() => {
+          document.querySelector('.sn-main')?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
+      }
+    }
   }
 
   /* filter */
@@ -309,13 +325,14 @@ export default function Home() {
                 <div
                   key={i}
                   className="sn-hero-panel"
-                  onClick={() => prod && navigate(`/product/${prod._id}`)}
+                  onClick={() => handleHeroClick(panel.sub)}
                 >
-                  {/* real img tag so image always renders */}
-                  {prod?.images?.[0]?.url
-                    ? <img src={prod.images[0].url} alt={panel.headline} className="sn-hero-bg-img" />
-                    : <div className="sn-hero-placeholder" />
-                  }
+                  {/* real img tag so image always renders, using Unsplash lifestyle fallback */}
+                  <img 
+                    src={prod?.images?.[0]?.url || panel.defaultImg} 
+                    alt={panel.headline} 
+                    className="sn-hero-bg-img" 
+                  />
                   <div className="sn-hero-overlay" />
                   <div className="sn-hero-text">
                     <p className="sn-hero-headline">{panel.headline}</p>
@@ -334,11 +351,13 @@ export default function Home() {
                 <div
                   key={i}
                   className={`sn-hero-slide${heroIdx === i ? ' active' : ''}`}
-                  onClick={() => prod && navigate(`/product/${prod._id}`)}
+                  onClick={() => handleHeroClick(panel.sub)}
                 >
-                  {prod?.images?.[0]?.url && (
-                    <img src={prod.images[0].url} alt={panel.headline} className="sn-hero-bg-img" />
-                  )}
+                  <img 
+                    src={prod?.images?.[0]?.url || panel.defaultImg} 
+                    alt={panel.headline} 
+                    className="sn-hero-bg-img" 
+                  />
                   <div className="sn-hero-overlay" />
                   <div className="sn-hero-text">
                     <p className="sn-hero-headline">{panel.headline}</p>
@@ -368,18 +387,18 @@ export default function Home() {
             <div className="sn-feat-grid">
               {FEATURED_CATS.map(cat => {
                 const prod   = getSubProduct(cat.sub)
-                const tabIdx = CATEGORY_TABS.findIndex(t => t.sub === cat.sub)
                 return (
                   <div
                     key={cat.label}
                     className="sn-feat-card"
-                    onClick={() => prod ? navigate(`/product/${prod._id}`) : (tabIdx !== -1 && setActiveTab(tabIdx))}
+                    onClick={() => handleHeroClick(cat.sub)}
                   >
                     <div className="sn-feat-card-inner">
-                      {prod?.images?.[0]?.url
-                        ? <img src={prod.images[0].url} alt={cat.label} className="sn-feat-img" />
-                        : <div className="sn-feat-img-ph"><span>{cat.label.slice(0,1)}</span></div>
-                      }
+                      <img 
+                        src={prod?.images?.[0]?.url || cat.defaultImg} 
+                        alt={cat.label} 
+                        className="sn-feat-img" 
+                      />
                     </div>
                     <div className="sn-feat-label">
                       <span className="sn-feat-name">{cat.label}</span>

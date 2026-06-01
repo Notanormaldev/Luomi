@@ -48,18 +48,26 @@ Rules:
 
     let reply = "";
     try {
+      // Fast check if local Ollama is responsive (500ms timeout)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 500);
+      await fetch("http://localhost:11434", { signal: controller.signal }).catch(() => {
+        throw new Error("Ollama is offline");
+      });
+      clearTimeout(timeoutId);
+
       const response = await model.invoke([
         ["system", systemPrompt],
         ["user", message]
       ]);
       reply = response.content;
     } catch (ollamaErr) {
-      console.warn("Ollama offline, using smart fallback:", ollamaErr.message);
+      console.warn("Ollama offline/failed, using smart dynamic fallback:", ollamaErr.message);
 
       const query = message.toLowerCase();
       const desc = (product.description || "").toLowerCase();
 
-      // Extract actual sizes from variants
+      // Extract unique sizes and colors
       const sizes = [];
       const colors = [];
       (product.variants || []).forEach(v => {
@@ -72,50 +80,93 @@ Rules:
       const uniqueSizes = [...new Set(sizes)];
       const uniqueColors = [...new Set(colors)];
 
-      if (query.includes("size") || query.includes("sizing") || query.includes("fit size") || query.includes("what size")) {
+      const matchedAnswers = [];
+
+      // 1. SIZES & FIT
+      if (query.includes("size") || query.includes("sizing") || query.includes("fit") || query.includes("tight") || query.includes("loose") || query.includes("baggy") || query.includes("run")) {
+        let fitText = "";
+        if (desc.includes("oversized")) fitText = "It features an oversized fit (runs slightly large for a relaxed street look).";
+        else if (desc.includes("slim") || desc.includes("skinny")) fitText = "It features a modern slim fit (fits close to the body).";
+        else if (desc.includes("relaxed")) fitText = "It has a relaxed, comfortable fit.";
+        else fitText = "It fits true to size.";
+
         if (uniqueSizes.length > 0) {
-          reply = `Available sizes for **${product.title}** are: **${uniqueSizes.join(', ')}**. ${desc.includes('slim') ? 'This has a slim fit — consider sizing up if you prefer a relaxed feel.' : desc.includes('oversized') ? 'This is oversized — it runs large, so you may want to size down.' : desc.includes('relaxed') ? 'This has a relaxed fit — true to size or size down for a fitted look.' : 'It runs true to size.'}`;
+          matchedAnswers.push(`**Sizes & Fit:** Available in **${uniqueSizes.join(', ')}**. ${fitText}`);
         } else {
-          reply = `**${product.title}** doesn't have specific size variants listed. ${desc.includes('slim') ? 'Based on the description, it has a slim fit.' : desc.includes('relaxed') ? 'It has a relaxed fit.' : 'Check the description for fit details.'}`;
+          matchedAnswers.push(`**Sizes & Fit:** ${fitText}`);
         }
-      } else if (query.includes("color") || query.includes("colour") || query.includes("colors available")) {
+      }
+
+      // 2. COLORS
+      if (query.includes("color") || query.includes("colour") || query.includes("shade") || query.includes("what color")) {
         if (uniqueColors.length > 0) {
-          reply = `**${product.title}** is available in: **${uniqueColors.join(', ')}**. You can select your preferred color from the swatches above.`;
+          matchedAnswers.push(`**Colors:** Available in **${uniqueColors.join(', ')}**.`);
         } else {
-          reply = `No specific color variants are listed for **${product.title}**. The product comes as shown in the images.`;
+          matchedAnswers.push(`**Colors:** Available in the primary color shown in the display images.`);
         }
-      } else if (query.includes("material") || query.includes("fabric") || query.includes("made of") || query.includes("composition")) {
-        let mat = "fabric details not specified in description";
-        if (desc.includes("linen")) mat = "linen fabric — lightweight, breathable, great for summer";
-        else if (desc.includes("cotton")) mat = "cotton — comfortable, soft, and easy to care for";
-        else if (desc.includes("denim") || product.subCategory === "jeans") mat = "denim fabric";
-        else if (desc.includes("wool")) mat = "wool";
-        else if (desc.includes("polyester")) mat = "polyester blend";
-        else if (desc.includes("stretch")) mat = "stretch fabric — great for all-day comfort";
-        reply = `**${product.title}** is made from ${mat}. ${desc.includes("cold") || desc.includes("wash") ? "Recommended cold wash." : "Check the label for washing instructions."}`;
-      } else if (query.includes("fit") || query.includes("tight") || query.includes("loose") || query.includes("baggy")) {
-        let fitType = "regular fit";
-        if (desc.includes("oversized")) fitType = "oversized — runs large";
-        else if (desc.includes("slim") || desc.includes("skinny")) fitType = "slim fit — runs close to the body";
-        else if (desc.includes("regular")) fitType = "regular fit — true to size";
-        else if (desc.includes("baggy") || desc.includes("relaxed")) fitType = "relaxed fit — looser and comfortable";
-        reply = `**${product.title}** has a **${fitType}**. ${uniqueSizes.length > 0 ? `Available in sizes: ${uniqueSizes.join(', ')}.` : ''} If between sizes, go one size up for comfort.`;
-      } else if (query.includes("stock") || query.includes("available") || query.includes("in stock")) {
+      }
+
+      // 3. MATERIAL / FABRIC
+      if (query.includes("material") || query.includes("fabric") || query.includes("made of") || query.includes("composition") || query.includes("wash") || query.includes("cotton") || query.includes("linen") || query.includes("polyester")) {
+        let mat = "premium comfort fabric";
+        if (desc.includes("linen")) mat = "linen — lightweight, breathable, and perfect for warm weather";
+        else if (desc.includes("cotton")) mat = "100% premium cotton — soft, comfortable, and breathable";
+        else if (desc.includes("denim") || product.subCategory?.toLowerCase() === "jeans") mat = "durable premium denim";
+        else if (desc.includes("wool")) mat = "warm, insulating wool blend";
+        else if (desc.includes("polyester")) mat = "crease-resistant polyester blend";
+        else if (desc.includes("viscose")) mat = "silky soft viscose";
+        else if (desc.includes("stretch")) mat = "stretch blend for added mobility";
+
+        let washText = desc.includes("cold") || desc.includes("wash") ? " Recommend gentle cold machine wash." : "";
+        matchedAnswers.push(`**Material & Care:** Crafted from ${mat}.${washText}`);
+      }
+
+      // 4. STOCK & AVAILABILITY
+      if (query.includes("stock") || query.includes("available") || query.includes("buy") || query.includes("order") || query.includes("quantity")) {
         const totalStock = (product.variants || []).reduce((acc, v) => acc + (v.stock || 0), product.stock || 0);
-        reply = `**${product.title}** has **${totalStock} items** available across all variants. ${totalStock < 5 ? "⚠️ Low stock — order soon!" : "Stock is good!"}`;
-      } else if (query.includes("price") || query.includes("cost") || query.includes("how much")) {
-        reply = `**${product.title}** is priced at **₹${product.price?.amount?.toLocaleString() || 'N/A'}**. ${(product.variants || []).length > 0 ? 'Some variants may have different pricing — check when you select a variant.' : ''}`;
-      } else if (query.includes("about") || query.includes("tell me") || query.includes("what is") || query.includes("detail")) {
-        reply = `**${product.title}** is a ${product.genderCategory}'s ${product.subCategory} priced at ₹${product.price?.amount?.toLocaleString()}. ${product.description || ''} ${uniqueSizes.length > 0 ? `Available sizes: ${uniqueSizes.join(', ')}.` : ''}`;
-      } else if (query.includes("pair") || query.includes("match") || query.includes("wear with") || query.includes("style")) {
-        const isTop = ['shirt', 't-shirt', 'polos'].includes(product.subCategory);
-        if (isTop) {
-          reply = `**${product.title}** pairs well with jeans, chinos, or cargo pants. Keep the bottom simple to let the top stand out.`;
+        if (totalStock <= 0) {
+          matchedAnswers.push(`**Availability:** This product is currently **Out of Stock**.`);
+        } else if (totalStock < 5) {
+          matchedAnswers.push(`**Availability:** Only **${totalStock} items left** in stock. Grab yours before it sells out!`);
         } else {
-          reply = `**${product.title}** looks great with a simple t-shirt or a casual shirt on top. Sneakers or loafers work well as footwear.`;
+          matchedAnswers.push(`**Availability:** Ready to ship (**${totalStock} items in stock**).`);
         }
+      }
+
+      // 5. PRICE
+      if (query.includes("price") || query.includes("cost") || query.includes("how much") || query.includes("rupee") || query.includes("inr")) {
+        matchedAnswers.push(`**Price:** It is priced at **₹${product.price?.amount?.toLocaleString()}**.`);
+      }
+
+      // 6. STYLING / PAIRING
+      if (query.includes("style") || query.includes("pair") || query.includes("match") || query.includes("wear with") || query.includes("look")) {
+        const isTop = ['shirt', 't-shirt', 'polos'].includes(product.subCategory?.toLowerCase());
+        if (isTop) {
+          matchedAnswers.push(`**Styling Tip:** This top looks great when paired with casual denim, structured chinos, or modern cargos. Keep bottoms simple to emphasize the fit.`);
+        } else {
+          matchedAnswers.push(`**Styling Tip:** Style these bottoms with an oversized solid tee or a relaxed button-down shirt. Complete the look with clean white sneakers.`);
+        }
+      }
+
+      // If they ask a generic query or "tell me about this product"
+      if (matchedAnswers.length === 0 && (query.includes("tell") || query.includes("about") || query.includes("what is") || query.includes("detail") || query.includes("info"))) {
+        matchedAnswers.push(`**${product.title}** is a ${product.genderCategory}'s ${product.subCategory || 'apparel'} priced at **₹${product.price?.amount?.toLocaleString()}**. ${product.description || ''}`);
+        if (uniqueSizes.length > 0) matchedAnswers.push(`**Sizes:** ${uniqueSizes.join(', ')}`);
+      }
+
+      if (matchedAnswers.length > 0) {
+        reply = matchedAnswers.join('\n\n');
       } else {
-        reply = `I can help you with info about **${product.title}**! Ask me about sizes, fit, material, colors, or how to style it. What would you like to know?`;
+        reply = `Hi! I'm **Jerry** 👋, your Luomi personal shopping assistant. 
+
+I can answer any questions about **${product.title}**:
+- **Sizes & Fit** (available sizes, fit recommendation)
+- **Fabric & Care** (materials, wash instructions)
+- **Colors** (shades and swatches)
+- **Stock Status** & **Pricing**
+- **Styling Suggestions**
+
+What would you like to know?`;
       }
     }
 

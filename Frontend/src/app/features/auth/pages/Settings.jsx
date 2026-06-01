@@ -37,7 +37,7 @@ function Settings() {
     try {
       const res = await handlebecomeseller()
       if (res.success) {
-        setBecomeSellerSuccess('Congratulations! You are now a registered Atelier Seller.')
+        setBecomeSellerSuccess('Congratulations! You are now a registered Seller.')
         setTimeout(() => {
           navigate('/dashbord/seller')
         }, 2000)
@@ -86,7 +86,7 @@ function Settings() {
         <div className="settings-layout-inner">
           
           <h1 className="settings-title font-heading">
-            Atelier Settings
+            Account Settings
           </h1>
           <p className="settings-subtitle font-body">
             Manage your account configurations, theme preferences, and merchant status.
@@ -107,7 +107,7 @@ function Settings() {
                   <h3 className="profile-name">{user.fullname}</h3>
                   <span className="profile-email">{user.email}</span>
                   <div className={`role-badge ${user.role}`}>
-                    {user.role === 'seller' ? 'ATELIER SELLER' : 'BUYER PROFILE'}
+                    {user.role === 'seller' ? 'SELLER PROFILE' : 'BUYER PROFILE'}
                   </div>
                 </div>
               </div>
@@ -140,8 +140,8 @@ function Settings() {
                   >
                     <FiSun size={18} className="theme-option-icon" />
                     <div className="theme-option-details">
-                      <span className="theme-option-title">Light Silhouette</span>
-                      <span className="theme-option-desc">Minimal high-contrast light luxury theme</span>
+                      <span className="theme-option-title">Light Mode</span>
+                      <span className="theme-option-desc">Minimal high-contrast light fashion theme</span>
                     </div>
                     {selectedTheme === 'light' && <FiCheck className="checked-icon" />}
                   </button>
@@ -152,7 +152,7 @@ function Settings() {
                   >
                     <FiMoon size={18} className="theme-option-icon" />
                     <div className="theme-option-details">
-                      <span className="theme-option-title">Dark Atelier</span>
+                      <span className="theme-option-title">Dark Mode</span>
                       <span className="theme-option-desc">Deep monochrome luxury night-mode theme</span>
                     </div>
                     {selectedTheme === 'dark' && <FiCheck className="checked-icon" />}
@@ -165,10 +165,10 @@ function Settings() {
                 {user.role === 'seller' ? (
                   <div className="seller-status-active">
                     <h2 className="section-title text-green-500 font-semibold mb-2">
-                      Seller Atelier Enabled
+                      Seller Account Activated
                     </h2>
                     <p className="section-desc mb-6">
-                      You are a registered Luomi Atelier Seller. You can create product listings, manage live stock levels, and view orders from your central dashboard.
+                      You are a registered Luomi Seller. You can create product listings, manage stock levels, and view customer orders from your central dashboard.
                     </p>
                     <Link to="/dashbord/seller" className="settings-cta-btn font-label text-center">
                       Go to Seller Dashboard
@@ -178,15 +178,15 @@ function Settings() {
                   <div className="become-seller-onboarding">
                     <h2 className="section-title mb-2">Become a Seller</h2>
                     <p className="section-desc mb-6">
-                      Upgrade your buyer account to a merchant Atelier role. Seller status grants you access to list products and monitor customer purchases.
+                      Upgrade your buyer account to a merchant seller account. Seller status grants you access to list products and monitor customer purchases.
                     </p>
 
                     {/* Onboarding Rules Box */}
                     <div className="seller-rules-box">
-                      <h4 className="rules-heading font-label">Atelier Seller Rules & Guidelines</h4>
+                      <h4 className="rules-heading font-label">Seller Rules & Guidelines</h4>
                       <ol className="rules-list">
                         <li>
-                          <strong>Original Silhouettes:</strong> Only sell original fashion designs, tailored products, or carefully curated boutique pieces. No dropshipping.
+                          <strong>Original Designs:</strong> Only sell original fashion designs, tailored products, or carefully curated boutique pieces. No dropshipping.
                         </li>
                         <li>
                           <strong>Live Stock Enforcement:</strong> You must maintain accurate stock metrics. The system blocks buyers from placing orders when quantities exceed availability.
@@ -223,7 +223,7 @@ function Settings() {
                           className="terms-checkbox"
                         />
                         <span className="checkbox-text font-body">
-                          I agree to follow all Atelier Guidelines and Terms of Service.
+                          I agree to follow all Seller Guidelines and Terms of Service.
                         </span>
                       </label>
 
@@ -232,7 +232,7 @@ function Settings() {
                         disabled={!agreeToTerms || upgrading}
                         className={`settings-cta-btn ${(!agreeToTerms || upgrading) ? 'disabled' : ''}`}
                       >
-                        {upgrading ? 'PROVISIONING MERCHANT ATELIER...' : 'APPLY & BECOME SELLER'}
+                        {upgrading ? 'PROVISIONING SELLER ACCOUNT...' : 'ACTIVATE SELLER ACCOUNT'}
                       </button>
                     </div>
                   </div>
