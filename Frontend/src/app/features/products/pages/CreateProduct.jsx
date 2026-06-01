@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MdCloudUpload } from 'react-icons/md'
-import { FiPlus, FiTrash2, FiArrowLeft, FiSun, FiMoon } from 'react-icons/fi'
+import { FiPlus, FiTrash2, FiArrowLeft } from 'react-icons/fi'
 import Logo from '../../auth/components/Logo'
 import { useproduct } from '../hook/useproduct'
 import './CreateProduct.css'
@@ -13,16 +13,17 @@ function CreateProduct() {
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
 
-  // Sync theme
+  // Listen for theme changes
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('luomi-theme', theme)
-  }, [theme])
-
-  // Toggle Theme
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
+    const syncTheme = () => {
+      const currentTheme = localStorage.getItem('luomi-theme') || 'light'
+      setTheme(currentTheme)
+      document.documentElement.setAttribute('data-theme', currentTheme)
+    }
+    syncTheme()
+    window.addEventListener('theme-changed', syncTheme)
+    return () => window.removeEventListener('theme-changed', syncTheme)
+  }, [])
 
   // Form state
   const [formData, setFormData] = useState({
@@ -100,7 +101,7 @@ function CreateProduct() {
       {
         stock: '0',
         priceamount: formData.priceamount || '',
-        pricecurrency: formData.pricecurrency || 'INR',
+        pricecurrency: 'INR',
         attributes: [{ key: 'color', value: '' }],
         images: [],
         previews: []
@@ -302,7 +303,7 @@ function CreateProduct() {
           stock: parseInt(v.stock) || 0,
           attributes: attributesMap,
           priceamount: parseFloat(v.priceamount) || parseFloat(formData.priceamount),
-          pricecurrency: v.pricecurrency || formData.pricecurrency
+          pricecurrency: 'INR'
         }
       })
 
@@ -356,15 +357,7 @@ function CreateProduct() {
 
   return (
     <div className="createproduct-container">
-      {/* Floating Theme Toggle */}
-      <button 
-        type="button" 
-        className="create-theme-toggle" 
-        onClick={toggleTheme}
-        title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-      >
-        {theme === 'dark' ? <FiSun size={18} /> : <FiMoon size={18} />}
-      </button>
+
 
       <div className="createproduct-wrapper">
         <div className="createproduct-header-section">
@@ -453,15 +446,10 @@ function CreateProduct() {
                   <select
                     name="pricecurrency"
                     className="form-select"
-                    value={formData.pricecurrency}
-                    onChange={handleInputChange}
-                    disabled={loading}
+                    value="INR"
+                    disabled
                   >
                     <option value="INR">INR - Indian Rupee (₹)</option>
-                    <option value="USD">USD - US Dollar ($)</option>
-                    <option value="EUR">EUR - Euro (€)</option>
-                    <option value="JPY">JPY - Japanese Yen (¥)</option>
-                    <option value="GBP">GBP - British Pound (£)</option>
                   </select>
                 </div>
 
@@ -658,14 +646,10 @@ function CreateProduct() {
                             <label className="form-label">Currency</label>
                             <select
                               className="form-select"
-                              value={variant.pricecurrency}
-                              onChange={(e) => handleVariantChange(vIdx, 'pricecurrency', e.target.value)}
+                              value="INR"
+                              disabled
                             >
                               <option value="INR">INR (₹)</option>
-                              <option value="USD">USD ($)</option>
-                              <option value="EUR">EUR (€)</option>
-                              <option value="JPY">JPY (¥)</option>
-                              <option value="GBP">GBP (£)</option>
                             </select>
                           </div>
                         </div>
