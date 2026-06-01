@@ -61,59 +61,44 @@
 
 .sn-nav-inner {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
-  height: 58px;
+  padding: 0 24px;
+  height: 60px;
   max-width: 1440px;
   margin: 0 auto;
 }
 
-.sn-nav-left  { display: flex; align-items: center; gap: 10px; }
-.sn-nav-right { display: flex; align-items: center; gap: 6px; }
-.sn-logo-link { display: flex; align-items: center; text-decoration: none; }
+.sn-nav-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
 
-/* ── Category tabs ── */
-.sn-cat-tabs {
+.sn-nav-center {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
-.sn-cat-tabs::-webkit-scrollbar { display: none; }
 
-.sn-cat-tab {
-  font-family: 'Inter', sans-serif;
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  color: var(--sn-tab-text);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 19px 13px;
-  white-space: nowrap;
-  position: relative;
-  transition: color .2s;
+.sn-nav-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
 }
-.sn-cat-tab:hover { color: var(--sn-text); }
-.sn-cat-tab.active { color: var(--sn-text); }
-.sn-cat-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 13px; right: 13px;
-  height: 2px;
-  background: var(--sn-text);
-  border-radius: 2px 2px 0 0;
+
+.sn-logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
 }
 
 /* ── Icon btn ── */
 .sn-icon-btn {
   background: none; border: none; cursor: pointer;
   color: var(--sn-text);
-  padding: 7px; border-radius: 6px;
+  padding: 8px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   text-decoration: none;
   transition: background .15s;
@@ -122,14 +107,21 @@
 
 .sn-cart-btn { position: relative; }
 .sn-cart-badge {
-  position: absolute; top: 1px; right: 1px;
-  width: 15px; height: 15px;
-  background: #111; color: #fff;
-  font-size: 8px; font-weight: 800;
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 15px;
+  height: 15px;
+  background: #ff5a36;
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 800;
   border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-[data-theme='dark'] .sn-cart-badge { background: #fff; color: #111; }
+[data-theme='dark'] .sn-cart-badge { background: #ff5a36; color: #fff; }
 
 /* ── Search ── */
 .sn-search-wrap {
@@ -137,23 +129,25 @@
   display: flex; align-items: center;
 }
 .sn-search-icon {
-  position: absolute; left: 10px;
-  color: var(--sn-text-muted); pointer-events: none;
+  position: absolute; left: 12px;
+  color: var(--sn-text); pointer-events: none;
 }
 .sn-search-input {
-  width: 200px; height: 35px;
-  background: var(--sn-search-bg);
-  border: 1.5px solid transparent;
-  border-radius: 7px;
-  padding: 0 30px 0 30px;
-  font-size: 12.5px; font-family: 'Inter', sans-serif;
+  width: 220px; height: 38px;
+  background: transparent;
+  border: 1.5px solid var(--sn-text);
+  border-radius: 2px;
+  padding: 0 32px 0 34px;
+  font-size: 12px; font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   color: var(--sn-text); outline: none;
-  transition: all .2s;
+  transition: width .25s ease;
 }
-.sn-search-input:focus { border-color: var(--sn-border); width: 260px; background: var(--sn-bg); }
-.sn-search-input::placeholder { color: var(--sn-text-subtle); }
+.sn-search-input:focus { width: 280px; background: var(--sn-bg); }
+.sn-search-input::placeholder { color: var(--sn-text-subtle); text-transform: uppercase; }
 .sn-search-clear {
-  position: absolute; right: 8px;
+  position: absolute; right: 10px;
   background: none; border: none; cursor: pointer;
   color: var(--sn-text-muted);
   display: flex; align-items: center; padding: 2px;
@@ -211,13 +205,34 @@
 
 /* ─── CATEGORY SIDEBAR ─────────────── */
 .sn-cat-overlay {
-  position: fixed; inset: 0; background: var(--sn-overlay);
-  z-index: 400; display: flex;
+  position: fixed;
+  inset: 0;
+  background: var(--sn-overlay);
+  z-index: 400;
+  display: flex;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
+.sn-cat-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .sn-cat-sidebar {
-  width: 270px; max-width: 80vw; height: 100%;
+  width: 280px;
+  max-width: 85vw;
+  height: 100%;
   background: var(--sn-drawer-bg);
-  display: flex; flex-direction: column; padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+}
+.sn-cat-overlay.open .sn-cat-sidebar {
+  transform: translateX(0);
 }
 .sn-cat-sidebar-head {
   display: flex; align-items: center; gap: 10px;

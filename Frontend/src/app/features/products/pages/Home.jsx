@@ -119,6 +119,16 @@ export default function Home() {
     }
   }
 
+  /* Click handler for categories in the drawer overlay */
+  const handleCategorySelectInDrawer = (index) => {
+    setActiveTab(index)
+    setIsCatOpen(false)
+    setSearchQuery('')
+    setTimeout(() => {
+      document.querySelector('.sn-main')?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  }
+
   /* filter */
   const currentTab      = CATEGORY_TABS[activeTab]
   const filteredProducts = allProducts.filter(p => {
@@ -183,28 +193,19 @@ export default function Home() {
       <div className="sn-navbar">
         <div className="sn-nav-inner">
 
-          {/* left */}
+          {/* left: Hamburger menu only */}
           <div className="sn-nav-left">
             <button className="sn-icon-btn" onClick={() => setIsCatOpen(true)} aria-label="Menu">
               <FiMenu size={20} />
             </button>
+          </div>
+
+          {/* center: Centered Logo */}
+          <div className="sn-nav-center">
             <Link to="/" className="sn-logo-link"><Logo /></Link>
           </div>
 
-          {/* center tabs */}
-          <nav className="sn-cat-tabs" aria-label="Categories">
-            {CATEGORY_TABS.map((tab, i) => (
-              <button
-                key={tab.label}
-                className={`sn-cat-tab${activeTab === i ? ' active' : ''}`}
-                onClick={() => { setActiveTab(i); setSearchQuery('') }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* right */}
+          {/* right: Search, User and Cart */}
           <div className="sn-nav-right">
             {/* search */}
             <div className="sn-search-wrap" ref={searchRef}>
@@ -212,7 +213,7 @@ export default function Home() {
               <input
                 type="text"
                 className="sn-search-input"
-                placeholder='Search "POLO T-SHIRTS"'
+                placeholder='Search "BROWN SHIRTS"'
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
@@ -295,24 +296,22 @@ export default function Home() {
       </div>
 
       {/* ════════════════ CATEGORY SIDEBAR ════════════════ */}
-      {isCatOpen && (
-        <div className="sn-cat-overlay" onClick={() => setIsCatOpen(false)}>
-          <div className="sn-cat-sidebar" onClick={e => e.stopPropagation()}>
-            <div className="sn-cat-sidebar-head">
-              <button className="sn-icon-btn" onClick={() => setIsCatOpen(false)}><FiX size={20} /></button>
-              <span className="sn-cat-sidebar-label">CATEGORIES</span>
-            </div>
-            <div className="sn-cat-sidebar-body">
-              {CATEGORY_TABS.map((tab, i) => (
-                <button key={tab.label} className="sn-cat-sidebar-link"
-                  onClick={() => { setActiveTab(i); setIsCatOpen(false) }}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+      <div className={`sn-cat-overlay ${isCatOpen ? 'open' : ''}`} onClick={() => setIsCatOpen(false)}>
+        <div className="sn-cat-sidebar" onClick={e => e.stopPropagation()}>
+          <div className="sn-cat-sidebar-head">
+            <button className="sn-icon-btn" onClick={() => setIsCatOpen(false)}><FiX size={20} /></button>
+            <span className="sn-cat-sidebar-label">CATEGORIES</span>
+          </div>
+          <div className="sn-cat-sidebar-body">
+            {CATEGORY_TABS.map((tab, i) => (
+              <button key={tab.label} className="sn-cat-sidebar-link"
+                onClick={() => handleCategorySelectInDrawer(i)}>
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
       {/* ════════════════ HERO — only on Discover tab ════════════════ */}
       {activeTab === 0 && !searchQuery && (
