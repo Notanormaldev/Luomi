@@ -271,6 +271,15 @@ function Productdetails() {
     "How to style this?",
   ]
 
+  if (loading) {
+    return (
+      <div className="sn-page-loader">
+        <div className="sn-nano-bar"></div>
+        <h1 className="sn-loader-logo">LUOMI</h1>
+      </div>
+    )
+  }
+
   return (
     <div className="pd-root">
 

@@ -47,6 +47,15 @@ const HERO_PANELS = [
 
 const TOP_SEARCHES = ['Slim Fit Shirts', 'Black T-Shirts', 'Cargo Pants', 'Relaxed Jeans', 'Polo T-Shirts', 'Linen Shirts']
 
+const PLACEHOLDERS = [
+  'Search "Shirts"',
+  'Search "Jeans"',
+  'Search "Polos"',
+  'Search "Cargos"',
+  'Search "T-Shirts"',
+  'Search "Trousers"'
+]
+
 /* ── Component ──────────────────────── */
 export default function Home() {
   const navigate   = useNavigate()
@@ -61,9 +70,17 @@ export default function Home() {
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isCartOpen,      setIsCartOpen]      = useState(false)
   const [isCatOpen,       setIsCatOpen]       = useState(false)
-  const [heroIdx,         setHeroIdx]         = useState(0)  // for mobile hero carousel
+  const [heroIdx,         setHeroIdx]         = useState(0)
+  const [placeholderIdx,  setPlaceholderIdx]  = useState(0)
 
   const searchRef = useRef(null)
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setPlaceholderIdx(i => (i + 1) % PLACEHOLDERS.length)
+    }, 3000)
+    return () => clearInterval(t)
+  }, [])
 
   /* theme sync */
   useEffect(() => {
@@ -132,20 +149,41 @@ export default function Home() {
   /* filter */
   const currentTab      = CATEGORY_TABS[activeTab]
   const filteredProducts = allProducts.filter(p => {
-    const mSearch = !searchQuery ||
-      p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.subCategory?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const mGender = currentTab.value === 'All' || p.genderCategory?.toLowerCase() === currentTab.value.toLowerCase()
     const mSub    = currentTab.sub   === 'All' || p.subCategory?.toLowerCase() === currentTab.sub.toLowerCase()
-    return mSearch && mGender && mSub
+    if (!mGender || !mSub) return false
+
+    if (!searchQuery) return true
+
+    const queryTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean)
+    return queryTerms.every(term => {
+      const title = (p.title || "").toLowerCase()
+      const sub = (p.subCategory || "").toLowerCase()
+      const desc = (p.description || "").toLowerCase()
+      
+      return title.includes(term) || 
+             sub.includes(term) || 
+             desc.includes(term) ||
+             (term.endsWith('s') && (title.includes(term.slice(0, -1)) || sub.includes(term.slice(0, -1)) || desc.includes(term.slice(0, -1)))) ||
+             (!term.endsWith('s') && (title.includes(term + 's') || sub.includes(term + 's') || desc.includes(term + 's')))
+    })
   })
 
   const searchResults = searchQuery
-    ? allProducts.filter(p =>
-        p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.subCategory?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 8)
+    ? allProducts.filter(p => {
+        const queryTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean)
+        return queryTerms.every(term => {
+          const title = (p.title || "").toLowerCase()
+          const sub = (p.subCategory || "").toLowerCase()
+          const desc = (p.description || "").toLowerCase()
+          
+          return title.includes(term) || 
+                 sub.includes(term) || 
+                 desc.includes(term) ||
+                 (term.endsWith('s') && (title.includes(term.slice(0, -1)) || sub.includes(term.slice(0, -1)) || desc.includes(term.slice(0, -1)))) ||
+                 (!term.endsWith('s') && (title.includes(term + 's') || sub.includes(term + 's') || desc.includes(term + 's')))
+        })
+      }).slice(0, 8)
     : []
 
   /* cart helpers */
@@ -186,6 +224,15 @@ export default function Home() {
   }, [])
 
   /* ── JSX ── */
+  if (loading) {
+    return (
+      <div className="sn-page-loader">
+        <div className="sn-nano-bar"></div>
+        <h1 className="sn-loader-logo">LUOMI</h1>
+      </div>
+    )
+  }
+
   return (
     <div className="sn-home">
 
@@ -217,7 +264,7 @@ export default function Home() {
               <input
                 type="text"
                 className="sn-search-input"
-                placeholder='Search "BROWN SHIRTS"'
+                placeholder={PLACEHOLDERS[placeholderIdx]}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
@@ -320,67 +367,51 @@ export default function Home() {
       {/* ════════════════ HERO — only on Discover tab ════════════════ */}
       {activeTab === 0 && !searchQuery && (
         <>
-          {/* 3-panel editorial hero (desktop) */}
-          <section className="sn-hero" aria-label="Hero banners">
+          {/* Responsive sliding Hero Carousel (Snitch & Souled Store style) */}
+          <section className="sn-hero-carousel" aria-label="Hero carousel">
             {HERO_PANELS.map((panel, i) => {
               const prod = getSubProduct(panel.sub)
+              const isActive = heroIdx === i
               return (
                 <div
                   key={i}
-                  className="sn-hero-panel"
-                  onClick={() => handleHeroClick(panel.sub)}
-                >
-                  {/* real img tag so image always renders, using Unsplash lifestyle fallback */}
-                  <img 
-                    src={prod?.images?.[0]?.url || panel.defaultImg} 
-                    alt={panel.headline} 
-                    className="sn-hero-bg-img" 
-                  />
-                  <div className="sn-hero-overlay" />
-                  <div className="sn-hero-text">
-                    <p className="sn-hero-headline">{panel.headline}</p>
-                    <p className="sn-hero-sub">{panel.sub2}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </section>
-
-          {/* mobile hero carousel */}
-          <section className="sn-hero-mobile" aria-label="Mobile hero">
-            {HERO_PANELS.map((panel, i) => {
-              const prod = getSubProduct(panel.sub)
-              return (
-                <div
-                  key={i}
-                  className={`sn-hero-slide${heroIdx === i ? ' active' : ''}`}
+                  className={`sn-hero-slide ${isActive ? 'active' : ''}`}
                   onClick={() => handleHeroClick(panel.sub)}
                 >
                   <img 
                     src={prod?.images?.[0]?.url || panel.defaultImg} 
                     alt={panel.headline} 
-                    className="sn-hero-bg-img" 
+                    className="sn-hero-slide-img" 
                   />
-                  <div className="sn-hero-overlay" />
-                  <div className="sn-hero-text">
-                    <p className="sn-hero-headline">{panel.headline}</p>
-                    <p className="sn-hero-sub">{panel.sub2}</p>
+                  <div className="sn-hero-slide-overlay" />
+                  <div className="sn-hero-slide-content">
+                    <p className="sn-hero-slide-subtitle">TRENDING COLLECTION</p>
+                    <h2 className="sn-hero-slide-title">{panel.headline}</h2>
+                    <p className="sn-hero-slide-desc">{panel.sub2}</p>
+                    <button className="sn-hero-slide-cta">SHOP COLLECTION</button>
                   </div>
                 </div>
               )
             })}
-            {/* dots */}
-            <div className="sn-hero-dots">
+            
+            {/* Dots */}
+            <div className="sn-hero-carousel-dots">
               {HERO_PANELS.map((_, i) => (
-                <button key={i} className={`sn-hero-dot${heroIdx === i ? ' active' : ''}`} onClick={() => setHeroIdx(i)} />
+                <button 
+                  key={i} 
+                  className={`sn-hero-carousel-dot ${heroIdx === i ? 'active' : ''}`} 
+                  onClick={(e) => { e.stopPropagation(); setHeroIdx(i); }} 
+                  aria-label={`Go to slide ${i + 1}`}
+                />
               ))}
             </div>
-            {/* arrows */}
-            <button className="sn-hero-arrow left" onClick={() => setHeroIdx(i => (i - 1 + HERO_PANELS.length) % HERO_PANELS.length)}>
-              <FiChevronLeft size={20} />
+
+            {/* Arrows */}
+            <button className="sn-hero-carousel-arrow left" onClick={(e) => { e.stopPropagation(); setHeroIdx(i => (i - 1 + HERO_PANELS.length) % HERO_PANELS.length); }}>
+              <FiChevronLeft size={22} />
             </button>
-            <button className="sn-hero-arrow right" onClick={() => setHeroIdx(i => (i + 1) % HERO_PANELS.length)}>
-              <FiChevronRight size={20} />
+            <button className="sn-hero-carousel-arrow right" onClick={(e) => { e.stopPropagation(); setHeroIdx(i => (i + 1) % HERO_PANELS.length); }}>
+              <FiChevronRight size={22} />
             </button>
           </section>
 

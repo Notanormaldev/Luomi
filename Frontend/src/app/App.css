@@ -23,3 +23,72 @@
 [data-theme='light'] .logo-icon {
   fill: url(#dark-metallic-grad);
 }
+
+/* ─── NANO PAGE LOADER (Ajio & Snitch style) ─── */
+.sn-page-loader {
+  position: fixed;
+  inset: 0;
+  background: var(--sn-bg, #ffffff);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+[data-theme='dark'] .sn-page-loader {
+  background: var(--sn-bg, #0f0f0f);
+}
+
+/* top running bar */
+.sn-nano-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: #ff5a36;
+  z-index: 10000;
+  animation: sn-nano-bar-anim 1.5s infinite ease-in-out;
+}
+
+@keyframes sn-nano-bar-anim {
+  0% { width: 0%; left: 0%; }
+  50% { width: 70%; left: 15%; }
+  100% { width: 0%; left: 100%; }
+}
+
+/* logo shimmer pulse */
+.sn-loader-logo {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  color: var(--sn-text, #111111);
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  animation: sn-logo-pulse 1.4s infinite ease-in-out;
+}
+[data-theme='dark'] .sn-loader-logo {
+  color: var(--sn-text, #f0f0f0);
+}
+
+@keyframes sn-logo-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+/* adding a shining linear overlay */
+.sn-loader-logo::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -150%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 90, 54, 0.4), transparent);
+  transform: skewX(-25deg);
+  animation: sn-logo-shine 1.4s infinite ease-in-out;
+}
+
+@keyframes sn-logo-shine {
+  0% { left: -150%; }
+  50%, 100% { left: 150%; }
+}
