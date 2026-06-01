@@ -689,141 +689,148 @@
 /* ══════════════════════════════════════════
    VARIANT SELECTOR — COMPACT TILES GRID
    ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   VARIANT SELECTOR — GROUPED COLOR & SIZE SWATCHES
+   ══════════════════════════════════════════ */
 .variants-selector-container {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
+  border-top: 0.5px solid var(--border);
+  padding-top: 18px;
 }
 
-.variants-selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
-}
-
-.variant-select-card {
-  background-color: var(--bg-card);
-  border: 0.5px solid var(--border);
-  border-radius: 4px;
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+.option-selector-group {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selected-val-label {
+  color: var(--text);
+  font-weight: 700;
+  text-transform: capitalize;
+  margin-left: 2px;
+}
+
+.color-swatch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.color-swatch-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background-color: var(--bg-card);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
 
-.variant-select-card:hover {
+.color-swatch-btn:hover {
+  transform: scale(1.08);
   border-color: var(--border-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.variant-select-card.selected {
+.color-swatch-btn.active {
   border-color: var(--text);
-  background-color: var(--bg);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0 0 1.5px var(--text);
+  transform: scale(1.04);
 }
 
-.variant-select-card.selected::after {
-  content: '';
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 5px;
-  height: 5px;
-  background-color: var(--text);
+.color-swatch-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: 50%;
 }
 
-.variant-mini-thumb {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 3px;
-  border: 0.5px solid var(--border);
-  flex-shrink: 0;
-  background-color: var(--bg);
-}
-
-.variant-card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.variant-select-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  justify-content: space-between;
-}
-
-.variant-select-name {
+.color-swatch-txt {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 8px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--text-dim);
-  white-space: nowrap;
+  color: var(--text);
+  text-align: center;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Stock status badges */
-.variant-select-badge {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 100px;
   white-space: nowrap;
+  max-width: 90%;
 }
 
-.variant-select-badge.out-of-stock {
-  background-color: rgba(255, 90, 90, 0.1);
-  color: #FF5A5A;
-  border: 0.5px solid rgba(255, 90, 90, 0.2);
-}
-
-.variant-select-badge.low-stock {
-  background-color: rgba(255, 180, 0, 0.1);
-  color: #FFB400;
-  border: 0.5px solid rgba(255, 180, 0, 0.2);
-}
-
-/* Attribute pills row */
-.variant-select-attributes {
+.size-badge-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 10px;
 }
 
-.variant-attr-pill {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 10px;
-  color: var(--text-muted);
-  text-transform: capitalize;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Price in card */
-.variant-select-price {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 12px;
-  font-weight: 500;
+.size-badge-btn {
+  min-width: 46px;
+  height: 46px;
+  padding: 0 14px;
+  background-color: transparent;
+  border: 1px solid var(--border);
   color: var(--text);
-  margin-top: 1px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.size-badge-btn:hover {
+  border-color: var(--text);
+  background-color: var(--bg-card);
+}
+
+.size-badge-btn.active {
+  background-color: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+.size-badge-btn.disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.size-badge-btn.disabled:hover {
+  border-color: var(--border);
+  background-color: transparent;
+}
+
+.size-badge-btn.out-of-stock {
+  opacity: 0.55;
+}
+
+.size-badge-btn .strike-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--text-dim);
+  transform: rotate(-45deg);
+  pointer-events: none;
 }
 
 /* ══════════════════════════════════════════

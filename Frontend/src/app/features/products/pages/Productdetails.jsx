@@ -48,8 +48,133 @@ function Productdetails() {
   
   // Dynamic Selected Variant & Visual Assets
   const [selectedVariant, setSelectedVariant] = useState(null)
+  const [selectedAttributes, setSelectedAttributes] = useState({})
   const [galleryImages, setGalleryImages] = useState([])
   const [activeImgUrl, setActiveImgUrl] = useState('')
+
+  // Helper to resolve attributes safely case-insensitively
+  const getAttr = (attributes, keyName) => {
+    if (!attributes) return null
+    const normalizedKey = keyName.toLowerCase()
+    for (const [key, val] of Object.entries(attributes)) {
+      if (key.toLowerCase() === normalizedKey) {
+        return val
+      }
+    }
+    return null
+  }
+
+  // Handle selected attributes change to find the matching variant
+  useEffect(() => {
+    if (!product || !product.variants || product.variants.length === 0) {
+      setSelectedVariant(null)
+      return
+    }
+
+    const match = product.variants.find(v => {
+      return Object.entries(selectedAttributes).every(([key, val]) => {
+        return getAttr(v.attributes, key) === val
+      })
+    })
+
+    if (match) {
+      setSelectedVariant(match)
+      const vImgs = match.images ? match.images.map(i => i.url) : []
+      const imgs = vImgs.length > 0 ? vImgs : (product.images ? product.images.map(i => i.url) : [])
+      setGalleryImages(imgs)
+      if (imgs.length > 0) {
+        if (!imgs.includes(activeImgUrl)) {
+          setActiveImgUrl(imgs[0])
+        }
+      }
+    }
+  }, [selectedAttributes, product])
+
+  // Initialize default attributes when product changes
+  useEffect(() => {
+    if (product && product.variants && product.variants.length > 0) {
+      const initialAttrs = {}
+      const firstVariant = product.variants[0]
+      Object.entries(firstVariant.attributes || {}).forEach(([k, v]) => {
+        initialAttrs[k.toLowerCase()] = v
+      })
+      setSelectedAttributes(initialAttrs)
+    } else {
+      setSelectedAttributes({})
+    }
+  }, [product])
+
+  // Select an attribute and resolve conflicts dynamically
+  const handleAttributeSelect = (key, val) => {
+    setSelectedAttributes(prev => {
+      const nextAttrs = { ...prev, [key]: val }
+
+      // Check if there is any variant matching all attributes
+      const matchesAny = product.variants.some(v => {
+        return Object.entries(nextAttrs).every(([k, vVal]) => {
+          return getAttr(v.attributes, k) === vVal
+        })
+      })
+
+      if (matchesAny) {
+        return nextAttrs
+      }
+
+      // If no variant matches this combination, find the first variant matching this specific choice and adapt others
+      const firstMatchingVariant = product.variants.find(v => {
+        return getAttr(v.attributes, key) === val
+      })
+
+      if (firstMatchingVariant) {
+        const resolvedAttrs = {}
+        Object.entries(firstMatchingVariant.attributes || {}).forEach(([k, vVal]) => {
+          resolvedAttrs[k.toLowerCase()] = vVal
+        })
+        return resolvedAttrs
+      }
+
+      return nextAttrs
+    })
+  }
+
+  // Size Sorting helpers
+  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL']
+  const sortSizes = (sizesArray) => {
+    return [...sizesArray].sort((a, b) => {
+      const idxA = sizeOrder.indexOf(a.toUpperCase())
+      const idxB = sizeOrder.indexOf(b.toUpperCase())
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      const numA = parseInt(a)
+      const numB = parseInt(b)
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB
+      return a.localeCompare(b)
+    })
+  }
+
+  // Extract unique attributes and values for render
+  const uniqueAttributes = {}
+  const keyCasingMap = {}
+  
+  if (product && product.variants) {
+    product.variants.forEach(v => {
+      Object.entries(v.attributes || {}).forEach(([key, val]) => {
+        const lowerKey = key.toLowerCase()
+        keyCasingMap[lowerKey] = key
+        if (!uniqueAttributes[lowerKey]) {
+          uniqueAttributes[lowerKey] = new Set()
+        }
+        uniqueAttributes[lowerKey].add(val)
+      })
+    })
+  }
+
+  const attributeList = Object.keys(uniqueAttributes).map(lowerKey => ({
+    key: lowerKey,
+    displayName: keyCasingMap[lowerKey],
+    values: Array.from(uniqueAttributes[lowerKey])
+  }))
 
   // Accordion open/close state
   const [openTabs, setOpenTabs] = useState({
@@ -469,96 +594,78 @@ function Productdetails() {
                 {product.description || "Artisanal creation waiting to be discovered."}
               </div>
 
-              {/* Variant Picker — Main Product + Variants */}
-              <div className="variants-selector-container">
-                <span className="qty-label">Select Option</span>
-                <div className="variants-selector-grid">
+              {/* Variant Picker — Dynamic Grouped Swatches & Badges */}
+              {product.variants && product.variants.length > 0 && (
+                <div className="variants-selector-container">
+                  {attributeList.map((attr) => {
+                    const isColor = attr.key === 'color'
+                    const isSize = attr.key === 'size'
+                    const currentValue = selectedAttributes[attr.key]
+                    const sortedValues = isSize ? sortSizes(attr.values) : attr.values
 
-                  {/* Main Product Card (Original / Base) */}
-                  <div 
-                    className={`variant-select-card ${!selectedVariant ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedVariant(null)
-                      const mainImgs = product.images ? product.images.map(i => i.url) : []
-                      setGalleryImages(mainImgs)
-                      if (mainImgs.length > 0) setActiveImgUrl(mainImgs[0])
-                    }}
-                  >
-                    {product.images?.[0]?.url && (
-                      <img 
-                        src={product.images[0].url} 
-                        alt="Original" 
-                        className="variant-mini-thumb"
-                      />
-                    )}
-                    <div className="variant-card-info">
-                      <div className="variant-select-header">
-                        <span className="variant-select-name">Original</span>
-                        {typeof product.stock === 'number' && product.stock <= 0 && <span className="variant-select-badge out-of-stock">Sold Out</span>}
-                        {typeof product.stock === 'number' && product.stock > 0 && product.stock <= 5 && <span className="variant-select-badge low-stock">{product.stock} left</span>}
-                      </div>
-                      <div className="variant-select-attributes">
-                        <span className="variant-attr-pill">{product.images?.length || 0} images</span>
-                      </div>
-                      <div className="variant-select-price">
-                        {getCurrencySymbol(product.price?.currency)}
-                        {formatPrice(product.price?.amount)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actual Variants */}
-                  {product.variants && product.variants.map((variant, idx) => {
-                    const isSelected = selectedVariant?._id === variant._id
-                    const miniThumb = variant.images?.[0]?.url || product.images?.[0]?.url
-                    const attrSummary = Object.entries(variant.attributes || {})
-                      .filter(([k]) => ['color', 'size'].includes(k.toLowerCase()))
-                      .map(([, v]) => v)
-                      .join(' / ')
-                    
                     return (
-                      <div 
-                        key={variant._id || idx} 
-                        className={`variant-select-card ${isSelected ? 'selected' : ''}`}
-                        onClick={() => {
-                          setSelectedVariant(variant)
-                          const vImgs = variant.images ? variant.images.map(i => i.url) : []
-                          const imgs = vImgs.length > 0 ? vImgs : (product.images ? product.images.map(i => i.url) : [])
-                          setGalleryImages(imgs)
-                          if (imgs.length > 0) setActiveImgUrl(imgs[0])
-                        }}
-                      >
-                        {miniThumb && (
-                          <img 
-                            src={miniThumb} 
-                            alt={attrSummary || `Variant ${idx + 1}`} 
-                            className="variant-mini-thumb"
-                          />
+                      <div key={attr.key} className="option-selector-group">
+                        <span className="qty-label mb-2 block">
+                          Select {attr.displayName}: <strong className="selected-val-label">{currentValue}</strong>
+                        </span>
+
+                        {isColor ? (
+                          <div className="color-swatch-list">
+                            {sortedValues.map((val) => {
+                              const isActive = currentValue === val
+                              const matchingVar = product.variants.find(v => getAttr(v.attributes, 'color') === val)
+                              const previewImg = matchingVar?.images?.[0]?.url || product.images?.[0]?.url
+
+                              return (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  className={`color-swatch-btn ${isActive ? 'active' : ''}`}
+                                  onClick={() => handleAttributeSelect(attr.key, val)}
+                                  title={val}
+                                >
+                                  {previewImg ? (
+                                    <img src={previewImg} alt={val} className="color-swatch-img" />
+                                  ) : (
+                                    <span className="color-swatch-txt">{val}</span>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <div className="size-badge-list">
+                            {sortedValues.map((val) => {
+                              const isActive = currentValue === val
+                              const testAttrs = { ...selectedAttributes, [attr.key]: val }
+                              const isAvailable = product.variants.some(v => {
+                                return Object.entries(testAttrs).every(([k, vVal]) => getAttr(v.attributes, k) === vVal)
+                              })
+                              const matchingVar = product.variants.find(v => {
+                                return Object.entries(testAttrs).every(([k, vVal]) => getAttr(v.attributes, k) === vVal)
+                              })
+                              const isOutOfStock = matchingVar ? matchingVar.stock <= 0 : true
+
+                              return (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  className={`size-badge-btn ${isActive ? 'active' : ''} ${!isAvailable ? 'disabled' : ''} ${isOutOfStock ? 'out-of-stock' : ''}`}
+                                  disabled={!isAvailable}
+                                  onClick={() => handleAttributeSelect(attr.key, val)}
+                                >
+                                  {val}
+                                  {isOutOfStock && <span className="strike-line"></span>}
+                                </button>
+                              )
+                            })}
+                          </div>
                         )}
-                        <div className="variant-card-info">
-                          <div className="variant-select-header">
-                            <span className="variant-select-name">{attrSummary || `Option ${idx + 1}`}</span>
-                            {variant.stock <= 0 && <span className="variant-select-badge out-of-stock">Sold Out</span>}
-                            {variant.stock > 0 && variant.stock <= 5 && <span className="variant-select-badge low-stock">{variant.stock} left</span>}
-                          </div>
-                          <div className="variant-select-attributes">
-                            {Object.entries(variant.attributes || {}).map(([key, val], aIdx) => (
-                              <span key={aIdx} className="variant-attr-pill">
-                                {key}: {val}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="variant-select-price">
-                            {getCurrencySymbol(variant.price?.currency || product.price?.currency)}
-                            {formatPrice(variant.price?.amount ?? product.price?.amount)}
-                          </div>
-                        </div>
                       </div>
                     )
                   })}
-
                 </div>
-              </div>
+              )}
 
               {/* Purchase Controls */}
               <div className="purchase-controls">
