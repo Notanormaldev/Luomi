@@ -1,24 +1,21 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import { useproduct } from '../hook/useproduct'
 import { useauth } from '../../auth/hook/useauth'
 import { usecart } from '../../cart/hook/usecart'
 import Logo from '../../auth/components/Logo'
 import axios from 'axios'
-import { 
-  FiShoppingBag, 
-  FiSun, 
-  FiMoon, 
-  FiX, 
-  FiPlus, 
-  FiMinus, 
+import {
+  FiShoppingBag,
+  FiX,
+  FiPlus,
+  FiMinus,
   FiArrowLeft,
   FiUser,
+  FiSend,
+  FiMessageCircle,
   FiRefreshCw,
-  FiTruck,
-  FiShield,
-  FiMessageSquare
+  FiTruck
 } from 'react-icons/fi'
 import './Productdetails.css'
 
@@ -29,798 +26,574 @@ function Productdetails() {
   const { user } = useauth()
   const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
 
-  // Theme State
-  const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'dark')
-  
-  // UI & Loading States
+  const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
+  const [isCartOpen, setIsCartOpen] = useState(false)
 
-  // ASK JERRY AI Style Assistant State
+  // Jerry
   const [isJerryOpen, setIsJerryOpen] = useState(false)
   const [jerryMessages, setJerryMessages] = useState([
-    { sender: 'jerry', text: "Hello! I'm **Jerry**, your AI style counselor. How can I assist you with this silhouette?" }
+    { sender: 'jerry', text: "Hi! I'm Jerry 👋 Ask me anything about this product — sizes, fit, material, styling tips, or stock." }
   ])
   const [jerryInput, setJerryInput] = useState('')
   const [jerryLoading, setJerryLoading] = useState(false)
-  
-  // Dynamic Selected Variant & Visual Assets
+  const jerryEndRef = useRef(null)
+
+  // Variants
   const [selectedVariant, setSelectedVariant] = useState(null)
   const [selectedAttributes, setSelectedAttributes] = useState({})
   const [galleryImages, setGalleryImages] = useState([])
   const [activeImgUrl, setActiveImgUrl] = useState('')
 
-  // Helper to resolve attributes safely case-insensitively
   const getAttr = (attributes, keyName) => {
     if (!attributes) return null
-    const normalizedKey = keyName.toLowerCase()
     for (const [key, val] of Object.entries(attributes)) {
-      if (key.toLowerCase() === normalizedKey) {
-        return val
-      }
+      if (key.toLowerCase() === keyName.toLowerCase()) return val
     }
     return null
   }
 
-  // Handle selected attributes change to find the matching variant
+  // Sync theme
   useEffect(() => {
-    if (!product || !product.variants || product.variants.length === 0) {
-      setSelectedVariant(null)
-      return
+    const sync = () => {
+      const t = localStorage.getItem('luomi-theme') || 'light'
+      setTheme(t)
+      document.documentElement.setAttribute('data-theme', t)
     }
+    sync()
+    window.addEventListener('theme-changed', sync)
+    return () => window.removeEventListener('theme-changed', sync)
+  }, [])
 
-    const match = product.variants.find(v => {
-      return Object.entries(selectedAttributes).every(([key, val]) => {
-        return getAttr(v.attributes, key) === val
-      })
-    })
+  // Fetch cart
+  useEffect(() => { if (user) handleGetCart() }, [user])
 
-    if (match) {
-      setSelectedVariant(match)
-      const vImgs = match.images ? match.images.map(i => i.url) : []
-      const imgs = vImgs.length > 0 ? vImgs : (product.images ? product.images.map(i => i.url) : [])
-      setGalleryImages(imgs)
-      if (imgs.length > 0) {
-        if (!imgs.includes(activeImgUrl)) {
-          setActiveImgUrl(imgs[0])
+  // Fetch product
+  useEffect(() => {
+    const fetch = async () => {
+      setLoading(true)
+      try {
+        const data = await handlegetoneprodcut(id)
+        if (data) {
+          setProduct(data)
+          const imgs = data.images ? data.images.map(i => i.url) : []
+          setGalleryImages(imgs)
+          if (imgs.length > 0) setActiveImgUrl(imgs[0])
+        } else {
+          setError('Product not found')
         }
-      }
+      } catch { setError('Failed to load product') }
+      finally { setLoading(false) }
     }
-  }, [selectedAttributes, product])
+    fetch()
+  }, [id])
 
-  // Initialize default attributes when product changes
+  // Init default attributes from first variant
   useEffect(() => {
-    if (product && product.variants && product.variants.length > 0) {
-      const initialAttrs = {}
+    if (product?.variants?.length > 0) {
       const firstVariant = product.variants[0]
+      const initAttrs = {}
       Object.entries(firstVariant.attributes || {}).forEach(([k, v]) => {
-        initialAttrs[k.toLowerCase()] = v
+        initAttrs[k.toLowerCase()] = v
       })
-      setSelectedAttributes(initialAttrs)
+      setSelectedAttributes(initAttrs)
     } else {
       setSelectedAttributes({})
     }
   }, [product])
 
-  // Select an attribute and resolve conflicts dynamically
+  // Resolve selected variant from selected attributes
+  useEffect(() => {
+    if (!product?.variants?.length) { setSelectedVariant(null); return }
+    const match = product.variants.find(v =>
+      Object.entries(selectedAttributes).every(([k, val]) => getAttr(v.attributes, k) === val)
+    )
+    if (match) {
+      setSelectedVariant(match)
+      const vImgs = match.images?.map(i => i.url) || []
+      const imgs = vImgs.length > 0 ? vImgs : (product.images?.map(i => i.url) || [])
+      setGalleryImages(imgs)
+      if (imgs.length > 0 && !imgs.includes(activeImgUrl)) setActiveImgUrl(imgs[0])
+    }
+  }, [selectedAttributes, product])
+
+  // Reset qty on variant change
+  useEffect(() => { setQuantity(1) }, [selectedVariant])
+
+  // Scroll Jerry messages
+  useEffect(() => {
+    jerryEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [jerryMessages, isJerryOpen])
+
   const handleAttributeSelect = (key, val) => {
     setSelectedAttributes(prev => {
-      const nextAttrs = { ...prev, [key]: val }
-
-      // Check if there is any variant matching all attributes
-      const matchesAny = product.variants.some(v => {
-        return Object.entries(nextAttrs).every(([k, vVal]) => {
-          return getAttr(v.attributes, k) === vVal
-        })
-      })
-
-      if (matchesAny) {
-        return nextAttrs
+      const next = { ...prev, [key]: val }
+      const anyMatch = product.variants.some(v =>
+        Object.entries(next).every(([k, vVal]) => getAttr(v.attributes, k) === vVal)
+      )
+      if (anyMatch) return next
+      const firstMatch = product.variants.find(v => getAttr(v.attributes, key) === val)
+      if (firstMatch) {
+        const resolved = {}
+        Object.entries(firstMatch.attributes || {}).forEach(([k, v]) => { resolved[k.toLowerCase()] = v })
+        return resolved
       }
-
-      // If no variant matches this combination, find the first variant matching this specific choice and adapt others
-      const firstMatchingVariant = product.variants.find(v => {
-        return getAttr(v.attributes, key) === val
-      })
-
-      if (firstMatchingVariant) {
-        const resolvedAttrs = {}
-        Object.entries(firstMatchingVariant.attributes || {}).forEach(([k, vVal]) => {
-          resolvedAttrs[k.toLowerCase()] = vVal
-        })
-        return resolvedAttrs
-      }
-
-      return nextAttrs
+      return next
     })
   }
 
-  // Size Sorting helpers
-  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL']
-  const sortSizes = (sizesArray) => {
-    return [...sizesArray].sort((a, b) => {
-      const idxA = sizeOrder.indexOf(a.toUpperCase())
-      const idxB = sizeOrder.indexOf(b.toUpperCase())
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB
-      if (idxA !== -1) return -1
-      if (idxB !== -1) return 1
-      const numA = parseInt(a)
-      const numB = parseInt(b)
-      if (!isNaN(numA) && !isNaN(numB)) return numA - numB
-      return a.localeCompare(b)
-    })
-  }
-
-  // Extract unique attributes and values for render
+  // Build unique attributes
   const uniqueAttributes = {}
   const keyCasingMap = {}
-  
-  if (product && product.variants) {
+  if (product?.variants) {
     product.variants.forEach(v => {
       Object.entries(v.attributes || {}).forEach(([key, val]) => {
-        const lowerKey = key.toLowerCase()
-        keyCasingMap[lowerKey] = key
-        if (!uniqueAttributes[lowerKey]) {
-          uniqueAttributes[lowerKey] = new Set()
-        }
-        uniqueAttributes[lowerKey].add(val)
+        const lk = key.toLowerCase()
+        keyCasingMap[lk] = key
+        if (!uniqueAttributes[lk]) uniqueAttributes[lk] = new Set()
+        uniqueAttributes[lk].add(val)
       })
     })
   }
 
-  const attributeList = Object.keys(uniqueAttributes).map(lowerKey => ({
-    key: lowerKey,
-    displayName: keyCasingMap[lowerKey],
-    values: Array.from(uniqueAttributes[lowerKey])
-  }))
-
-  // Accordion open/close state
-  const [openTabs, setOpenTabs] = useState({
-    specifications: true,
-    delivery: false,
+  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL']
+  const sortSizes = arr => [...arr].sort((a, b) => {
+    const ai = sizeOrder.indexOf(a.toUpperCase()), bi = sizeOrder.indexOf(b.toUpperCase())
+    if (ai !== -1 && bi !== -1) return ai - bi
+    if (ai !== -1) return -1
+    if (bi !== -1) return 1
+    return parseInt(a) - parseInt(b) || a.localeCompare(b)
   })
 
-  const [isCartOpen, setIsCartOpen] = useState(false)
+  const attributeList = Object.keys(uniqueAttributes).map(lk => ({
+    key: lk,
+    displayName: keyCasingMap[lk],
+    values: Array.from(uniqueAttributes[lk])
+  }))
 
-  // Listen for theme changes
-  useEffect(() => {
-    const syncTheme = () => {
-      const currentTheme = localStorage.getItem('luomi-theme') || 'dark'
-      setTheme(currentTheme)
-      document.documentElement.setAttribute('data-theme', currentTheme)
-    }
-    syncTheme()
-    window.addEventListener('theme-changed', syncTheme)
-    return () => window.removeEventListener('theme-changed', syncTheme)
-  }, [])
-
-  // Sync cart from cloud DB if logged in
-  useEffect(() => {
-    if (user) {
-      handleGetCart()
-    }
-  }, [user])
-
-  // Fetch product detail on mount
-  useEffect(() => {
-    const fetchSingleProduct = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const response = await handlegetoneprodcut({ productid: id })
-        if (response.success && response.products) {
-          const prod = response.products
-          setProduct(prod)
-          
-          const primaryImgs = prod.images ? prod.images.map(img => img.url) : []
-          const variantImgs = prod.variants 
-            ? prod.variants.reduce((acc, curr) => {
-                if (curr.images) {
-                  curr.images.forEach(img => {
-                    if (img.url && !acc.includes(img.url)) acc.push(img.url)
-                  })
-                }
-                return acc
-              }, [])
-            : []
-          
-          const allImages = [...primaryImgs, ...variantImgs]
-          setGalleryImages(allImages)
-          if (allImages.length > 0) {
-            setActiveImgUrl(allImages[0])
-          }
-
-
-        } else {
-          setError("This artisanal piece could not be found.")
-        }
-      } catch (err) {
-        console.error("Failed to load single product:", err)
-        setError(err.msg || "Failed to retrieve the product. Please try again.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (id) {
-      fetchSingleProduct()
-    }
-  }, [id])
-
-  // Cart Operations
-  const addToCart = async (productObj, selectedQty = 1, variantObj = null) => {
-    if (!user) {
-      alert("Please log in to add items to your atelier bag.")
-      navigate('/login')
-      return
-    }
-    if (!productObj) return
-    const variantId = variantObj?._id || ''
-    
-    // Check available stock
-    const availableStock = variantObj ? variantObj.stock : (productObj.stock || 0)
-
-    const existing = cartItems.find(item => 
-      item.product._id === productObj._id && 
-      (variantId ? item.selectedVariant === variantId : !item.selectedVariant)
-    )
-    const currentQty = existing ? existing.quantity : 0
-
-    if (currentQty + selectedQty > availableStock) {
-      alert(`Cannot add more. Only ${availableStock} items left in stock. (You already have ${currentQty} in cart)`)
-      return
-    }
-
-    const res = await handleAddToCart({ 
-      productId: productObj._id, 
-      quantity: selectedQty, 
-      variantId: variantId || null 
-    })
-    if (res.success) {
-      setIsCartOpen(true)
-    } else {
-      alert(res.error || "Failed to add to cart")
-    }
+  const fmt = (amount) => {
+    if (amount === undefined || amount === null) return '0'
+    const n = parseFloat(amount)
+    return isNaN(n) ? '0' : n.toLocaleString('en-IN')
   }
 
-  const updateCartQty = async (productId, currentQty, delta, availableStock, variantId = null) => {
-    if (delta > 0 && currentQty + 1 > availableStock) {
-      alert(`Cannot add more. Only ${availableStock} items left in stock.`)
-      return
-    }
-    const newQty = currentQty + delta
-    if (newQty <= 0) {
-      await handleRemoveFromCart({ productId, variantId })
-    } else {
-      await handleUpdateCart({ productId, quantity: newQty, variantId })
-    }
-  }
+  const currentPrice = parseFloat(selectedVariant?.price?.amount ?? product?.price?.amount ?? 0)
+  const basePrice = parseFloat(product?.price?.amount ?? 0)
+  const hasDiscount = basePrice > 0 && currentPrice > 0 && basePrice > currentPrice
+  const discountPct = hasDiscount ? Math.round(((basePrice - currentPrice) / basePrice) * 100) : 0
 
-  const removeFromCart = async (productId, variantId = null) => {
-    await handleRemoveFromCart({ productId, variantId })
-  }
-
-  const getCurrencySymbol = (currency) => {
-    switch (currency) {
-      case 'INR': return '₹'
-      case 'USD': return '$'
-      case 'EUR': return '€'
-      case 'JPY': return '¥'
-      case 'GBP': return '£'
-      default: return currency || '₹'
-    }
-  }
-
-  const formatPrice = (amount) => {
-    if (amount === undefined || amount === null) return '0.00'
-    const parsed = parseFloat(amount)
-    if (isNaN(parsed)) return '0.00'
-    return parsed.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })
-  }
-
-  const toggleTab = (tabName) => {
-    setOpenTabs(prev => ({
-      ...prev,
-      [tabName]: !prev[tabName]
-    }))
-  }
-
-  // Calculate cart subtotal
-  const totalCartItems = cartItems.reduce((acc, curr) => acc + curr.quantity, 0)
-  const cartTotal = cartItems.reduce((acc, curr) => {
-    const variantObj = curr.selectedVariant && curr.product.variants
-      ? curr.product.variants.find(v => v._id === curr.selectedVariant)
-      : null
-    const priceObj = variantObj?.price || curr.product.price
-    const amt = parseFloat(priceObj?.amount || 0)
-    return acc + (isNaN(amt) ? 0 : amt) * curr.quantity
+  const totalCartItems = cartItems.reduce((a, c) => a + c.quantity, 0)
+  const cartTotal = cartItems.reduce((a, c) => {
+    const v = c.selectedVariant && c.product.variants ? c.product.variants.find(x => x._id === c.selectedVariant) : null
+    const price = parseFloat((v?.price || c.product.price)?.amount || 0)
+    return a + (isNaN(price) ? 0 : price) * c.quantity
   }, 0)
-  const cartCurrencySymbol = cartItems.length > 0 
-    ? getCurrencySymbol(cartItems[0].product.price?.currency) 
-    : '₹'
 
-  // Calculate price comparison variables (Amazon/Flipkart inspired)
-  const basePrice = product ? parseFloat(product.price?.amount || 0) : 0;
-  const currentPrice = product ? parseFloat(selectedVariant?.price?.amount ?? product.price?.amount ?? 0) : 0;
-  const hasDiscount = basePrice > 0 && currentPrice > 0 && basePrice > currentPrice;
-  const discountPercent = hasDiscount ? Math.round(((basePrice - currentPrice) / basePrice) * 100) : 0;
-  const savingsAmt = hasDiscount ? (basePrice - currentPrice) : 0;
+  const availableStock = selectedVariant ? selectedVariant.stock : (product?.stock || 0)
 
-  // Reset quantity when variant changes
-  useEffect(() => {
-    setQuantity(1)
-  }, [selectedVariant])
+  const addToCart = async () => {
+    if (!user) { navigate('/login'); return }
+    const cartPayload = { productId: id, quantity }
+    if (selectedVariant) cartPayload.variantId = selectedVariant._id
+    const existing = cartItems.find(i => {
+      if (selectedVariant) return i.product._id === id && i.selectedVariant === selectedVariant._id
+      return i.product._id === id && !i.selectedVariant
+    })
+    const currentQty = existing?.quantity || 0
+    if (currentQty + quantity > availableStock) {
+      alert(`Only ${availableStock} available in stock`)
+      return
+    }
+    const res = await handleAddToCart(cartPayload)
+    if (res.success) setIsCartOpen(true)
+    else alert(res.error || 'Failed to add')
+  }
 
-  // Handle Ask Jerry Submit
-  const handleAskJerrySubmit = async (e, customMessage = '') => {
+  const updateCartQty = async (productId, currentQty, delta, stock, variantId = null) => {
+    if (delta > 0 && currentQty + 1 > stock) { alert(`Only ${stock} in stock`); return }
+    const newQty = currentQty + delta
+    if (newQty <= 0) await handleRemoveFromCart({ productId, variantId })
+    else await handleUpdateCart({ productId, quantity: newQty, variantId })
+  }
+
+  const triggerCheckout = async () => {
+    const res = await handleCheckout()
+    if (res.success) { alert('Order placed!'); setIsCartOpen(false) }
+    else alert(res.error || 'Checkout failed')
+  }
+
+  const handlePageQtyChange = (delta) => {
+    const newQty = quantity + delta
+    if (newQty < 1) return
+    if (newQty > availableStock) { alert(`Only ${availableStock} in stock`); return }
+    setQuantity(newQty)
+  }
+
+  const handleAskJerry = async (e, customMsg = '') => {
     if (e) e.preventDefault()
-    
-    const messageText = customMessage || jerryInput
-    if (!messageText.trim()) return
-
-    const updatedMessages = [...jerryMessages, { sender: 'user', text: messageText }]
-    setJerryMessages(updatedMessages)
+    const msg = customMsg || jerryInput
+    if (!msg.trim()) return
+    setJerryMessages(prev => [...prev, { sender: 'user', text: msg }])
     setJerryInput('')
     setJerryLoading(true)
-
     try {
-      const res = await axios.post(`/api/ai/${id}/ask-jerry`, { message: messageText })
+      const res = await axios.post(`/api/ai/${id}/ask-jerry`, { message: msg })
       if (res.data.success) {
         setJerryMessages(prev => [...prev, { sender: 'jerry', text: res.data.reply }])
       } else {
-        setJerryMessages(prev => [...prev, { sender: 'jerry', text: "I'm having trouble retrieving details right now." }])
+        setJerryMessages(prev => [...prev, { sender: 'jerry', text: "Sorry, I couldn't find an answer. Try asking differently!" }])
       }
-    } catch (err) {
-      setJerryMessages(prev => [...prev, { sender: 'jerry', text: "Connection error. Failed to reach the style node." }])
+    } catch {
+      setJerryMessages(prev => [...prev, { sender: 'jerry', text: "Connection error. Please try again." }])
     } finally {
       setJerryLoading(false)
     }
   }
 
-  const triggerCheckout = async () => {
-    try {
-      const res = await handleCheckout()
-      if (res.success) {
-        alert("Order placed successfully! Stock levels updated.")
-        setIsCartOpen(false)
-      } else {
-        alert(res.error || "Checkout failed.")
-      }
-    } catch (err) {
-      alert("Checkout failed.")
-    }
-  }
-
-  const handlePageQtyChange = (delta) => {
-    const availableStock = selectedVariant ? selectedVariant.stock : (product ? (product.stock || 0) : 0)
-    const newQty = quantity + delta
-    if (newQty < 1) return
-    if (newQty > availableStock) {
-      alert(`Only ${availableStock} items left in stock.`)
-      return
-    }
-    setQuantity(newQty)
-  }
+  const QUICK_ASKS = [
+    "What sizes are available?",
+    "How does it fit?",
+    "What is it made of?",
+    "How to style this?",
+  ]
 
   return (
-    <div className="prod-details-container">
-      
-      {/* Sticky Premium Navbar */}
-      <div className="home-nav-container">
-        <div className="home-navbar">
-          
-          <div className="nav-left">
-            <Link to="/" className="no-underline">
-              <Logo />
-            </Link>
-            <div className="nav-links">
-              <Link to="/" className="nav-link">Collections</Link>
-              <span className="nav-link" onClick={() => navigate('/dashbord/seller')}>Atelier</span>
-            </div>
+    <div className="pd-root">
+
+      {/* ── Navbar ── */}
+      <div className="pd-navbar">
+        <div className="pd-nav-inner">
+          <div className="pd-nav-left">
+            <button className="pd-icon-btn" onClick={() => navigate('/')}>
+              <FiArrowLeft size={18} />
+            </button>
+            <Link to="/" className="pd-logo-link"><Logo /></Link>
           </div>
-
-          <div className="nav-right">
-            
-
-            {/* Shopping Bag Button */}
-            <div className="btn-bag-wrap">
-              <button className="btn-icon-round" onClick={() => setIsCartOpen(true)}>
-                <FiShoppingBag size={18} />
-              </button>
-              {totalCartItems > 0 && <span className="bag-count-badge">{totalCartItems}</span>}
-            </div>
-
-            {/* Seller / Profile Action */}
+          <div className="pd-nav-right">
+            <button className="pd-cart-btn pd-icon-btn" onClick={() => setIsCartOpen(true)}>
+              <FiShoppingBag size={19} />
+              {totalCartItems > 0 && <span className="pd-cart-badge">{totalCartItems}</span>}
+            </button>
             {user ? (
-              <Link 
-                to="/settings" 
-                className="btn-nav-pill"
-              >
-                <FiUser size={13} />
-                <span className="hidden sm:inline">{user.fullname?.split(' ')[0]}</span>
-              </Link>
+              <Link to="/settings" className="pd-icon-btn"><FiUser size={19} /></Link>
             ) : (
-              <Link 
-                to="/login" 
-                className="btn-nav-pill"
-              >
-                <span>Login</span>
-              </Link>
+              <Link to="/login" className="pd-icon-btn"><FiUser size={19} /></Link>
             )}
           </div>
         </div>
       </div>
 
-      <div className="prod-details-wrapper">
-        
-        {/* Back Link Row */}
-        <div className="details-back-bar">
-          <button className="btn-back-home" onClick={() => navigate('/')}>
-            <FiArrowLeft size={12} />
-            <span>Back to Silhouettes</span>
-          </button>
+      {/* ── Main ── */}
+      {loading ? (
+        <div className="pd-skeleton-wrap">
+          <div className="pd-skeleton-gallery pd-shimmer"></div>
+          <div className="pd-skeleton-info">
+            <div className="pd-skeleton-line pd-shimmer" style={{width:'60%',height:'24px'}}></div>
+            <div className="pd-skeleton-line pd-shimmer" style={{width:'40%',height:'18px',marginTop:'10px'}}></div>
+            <div className="pd-skeleton-line pd-shimmer" style={{width:'80%',height:'14px',marginTop:'16px'}}></div>
+            <div className="pd-skeleton-line pd-shimmer" style={{width:'100%',height:'44px',marginTop:'24px'}}></div>
+          </div>
         </div>
+      ) : error || !product ? (
+        <div className="pd-error">
+          <p>{error || 'Product not found'}</p>
+          <button onClick={() => navigate('/')}>Go back</button>
+        </div>
+      ) : (
+        <div className="pd-content">
 
-        {loading ? (
-          /* Premium Shimmer Loading State */
-          <div className="details-skeleton-grid">
-            <div className="skeleton-gallery">
-              <div className="skeleton-shimmer"></div>
-            </div>
-            <div className="skeleton-specs-panel">
-              <div className="skeleton-pill"></div>
-              <div className="skeleton-title-bar"></div>
-              <div className="skeleton-pill"></div>
-              <div className="skeleton-desc-block"></div>
-              <div className="skeleton-btn-bar"></div>
-            </div>
-          </div>
-        ) : error || !product ? (
-          /* Elegant Error State */
-          <div className="home-empty-state">
-            <span className="empty-brand-mark">LUOMI</span>
-            <p className="empty-primary">{error || "Artisanal creation unavailable"}</p>
-            <button className="btn-hero-cta" onClick={() => navigate('/')}>
-              Return to Catalog
-            </button>
-          </div>
-        ) : (
-          <div className="details-main-grid">
-            
-            {/* Column Left: High-End Photo Gallery */}
-            <div className="details-gallery-section">
-              <div className="main-image-viewport">
-                {activeImgUrl ? (
-                  <>
-                    <img 
-                      src={activeImgUrl} 
-                      alt={product.title} 
-                    />
-                    {galleryImages.length > 1 && (
-                      <>
-                        <button 
-                          className="gallery-nav-btn prev-btn" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const currIdx = galleryImages.indexOf(activeImgUrl);
-                            const nextIdx = (currIdx - 1 + galleryImages.length) % galleryImages.length;
-                            setActiveImgUrl(galleryImages[nextIdx]);
-                          }}
-                          aria-label="Previous Image"
-                        >
-                          <svg width="6" height="10" viewBox="0 0 6 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5 9L1 5L5 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                        <button 
-                          className="gallery-nav-btn next-btn" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const currIdx = galleryImages.indexOf(activeImgUrl);
-                            const nextIdx = (currIdx + 1) % galleryImages.length;
-                            setActiveImgUrl(galleryImages[nextIdx]);
-                          }}
-                          aria-label="Next Image"
-                        >
-                          <svg width="6" height="10" viewBox="0 0 6 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M1 9L5 5L1 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <div className="details-gallery-empty">
-                    <span className="details-gallery-empty-label">LUOMI</span>
+          {/* Left: Gallery */}
+          <div className="pd-gallery">
+            {/* Thumbnail rail */}
+            {galleryImages.length > 1 && (
+              <div className="pd-thumbs">
+                {galleryImages.map((url, i) => (
+                  <div
+                    key={i}
+                    className={`pd-thumb ${activeImgUrl === url ? 'active' : ''}`}
+                    onClick={() => setActiveImgUrl(url)}
+                  >
+                    <img src={url} alt={`view ${i + 1}`} />
                   </div>
-                )}
+                ))}
               </div>
+            )}
 
-              {/* Dynamic Thumbnail list displaying all photos */}
+            {/* Main image */}
+            <div className="pd-main-img-wrap">
+              {activeImgUrl ? (
+                <img src={activeImgUrl} alt={product.title} className="pd-main-img" />
+              ) : (
+                <div className="pd-img-empty"><span>LUOMI</span></div>
+              )}
+              {/* Nav arrows */}
               {galleryImages.length > 1 && (
-                <div className="thumbnail-tray">
-                  {galleryImages.map((imgUrl, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`thumbnail-wrapper ${activeImgUrl === imgUrl ? 'active' : ''}`}
-                      onClick={() => setActiveImgUrl(imgUrl)}
-                    >
-                      <img 
-                        src={imgUrl} 
-                        alt={`${product.title} view ${idx + 1}`} 
-                      />
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <button className="pd-img-nav pd-img-prev" onClick={() => {
+                    const i = galleryImages.indexOf(activeImgUrl)
+                    setActiveImgUrl(galleryImages[(i - 1 + galleryImages.length) % galleryImages.length])
+                  }}>‹</button>
+                  <button className="pd-img-nav pd-img-next" onClick={() => {
+                    const i = galleryImages.indexOf(activeImgUrl)
+                    setActiveImgUrl(galleryImages[(i + 1) % galleryImages.length])
+                  }}>›</button>
+                </>
               )}
             </div>
+          </div>
 
-            {/* Column Right: Product Info */}
-            <div className="details-info-section">
-              <div className="details-meta-labels">
-                <span className="details-brand-tag">LUOMI MAISON</span>
-                <h1 className="details-title">{product.title || 'Untitled Piece'}</h1>
-              </div>
+          {/* Right: Product Info */}
+          <div className="pd-info">
 
-              {/* Price Display */}
-              <div className="price-comparison-row">
-                <div className="details-price-tag">
-                  <span className="details-currency">
-                    {getCurrencySymbol(selectedVariant?.price?.currency || product.price?.currency)}
-                  </span>
-                  <span className="details-amount">
-                    {formatPrice(selectedVariant?.price?.amount ?? product.price?.amount)}
-                  </span>
-                </div>
+            {/* Title + Price */}
+            <div className="pd-header">
+              <h1 className="pd-title">{product.title}</h1>
+              <div className="pd-price-row">
+                <span className="pd-price">₹{fmt(selectedVariant?.price?.amount ?? product.price?.amount)}</span>
                 {hasDiscount && (
                   <>
-                    <span className="details-original-price">
-                      {getCurrencySymbol(product.price?.currency)}
-                      {formatPrice(product.price?.amount)}
-                    </span>
-                    <span className="details-discount-badge">
-                      Save {discountPercent}%
-                    </span>
+                    <span className="pd-price-original">₹{fmt(product.price?.amount)}</span>
+                    <span className="pd-discount-tag">{discountPct}% OFF</span>
                   </>
                 )}
               </div>
-
-              <div className="details-desc-area">
-                {product.description || "Artisanal creation waiting to be discovered."}
-              </div>
-
-              {/* Variant Picker — Dynamic Grouped Swatches & Badges */}
-              {product.variants && product.variants.length > 0 && (
-                <div className="variants-selector-container">
-                  {attributeList.map((attr) => {
-                    const isColor = attr.key === 'color'
-                    const isSize = attr.key === 'size'
-                    const currentValue = selectedAttributes[attr.key]
-                    const sortedValues = isSize ? sortSizes(attr.values) : attr.values
-
-                    return (
-                      <div key={attr.key} className="option-selector-group">
-                        <span className="qty-label mb-2 block">
-                          Select {attr.displayName}: <strong className="selected-val-label">{currentValue}</strong>
-                        </span>
-
-                        {isColor ? (
-                          <div className="color-swatch-list">
-                            {sortedValues.map((val) => {
-                              const isActive = currentValue === val
-                              const matchingVar = product.variants.find(v => getAttr(v.attributes, 'color') === val)
-                              const previewImg = matchingVar?.images?.[0]?.url || product.images?.[0]?.url
-
-                              return (
-                                <button
-                                  key={val}
-                                  type="button"
-                                  className={`color-swatch-btn ${isActive ? 'active' : ''}`}
-                                  onClick={() => handleAttributeSelect(attr.key, val)}
-                                  title={val}
-                                >
-                                  {previewImg ? (
-                                    <img src={previewImg} alt={val} className="color-swatch-img" />
-                                  ) : (
-                                    <span className="color-swatch-txt">{val}</span>
-                                  )}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        ) : (
-                          <div className="size-badge-list">
-                            {sortedValues.map((val) => {
-                              const isActive = currentValue === val
-                              const testAttrs = { ...selectedAttributes, [attr.key]: val }
-                              const isAvailable = product.variants.some(v => {
-                                return Object.entries(testAttrs).every(([k, vVal]) => getAttr(v.attributes, k) === vVal)
-                              })
-                              const matchingVar = product.variants.find(v => {
-                                return Object.entries(testAttrs).every(([k, vVal]) => getAttr(v.attributes, k) === vVal)
-                              })
-                              const isOutOfStock = matchingVar ? matchingVar.stock <= 0 : true
-
-                              return (
-                                <button
-                                  key={val}
-                                  type="button"
-                                  className={`size-badge-btn ${isActive ? 'active' : ''} ${!isAvailable ? 'disabled' : ''} ${isOutOfStock ? 'out-of-stock' : ''}`}
-                                  disabled={!isAvailable}
-                                  onClick={() => handleAttributeSelect(attr.key, val)}
-                                >
-                                  {val}
-                                  {isOutOfStock && <span className="strike-line"></span>}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Purchase Controls */}
-              <div className="purchase-controls">
-                <div className="qty-selection-row">
-                  <span className="qty-label">Quantity</span>
-                  <div className="qty-widget">
-                    <button 
-                      className="btn-qty-action" 
-                      onClick={() => handlePageQtyChange(-1)}
-                    >
-                      <FiMinus size={11} />
-                    </button>
-                    <span className="qty-display">{quantity}</span>
-                    <button 
-                      className="btn-qty-action" 
-                      onClick={() => handlePageQtyChange(1)}
-                    >
-                      <FiPlus size={11} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="cta-buttons-stack">
-                  <button 
-                    className="btn-add-bag-details"
-                    disabled={selectedVariant ? selectedVariant.stock <= 0 : false}
-                    onClick={() => addToCart(product, quantity, selectedVariant)}
-                  >
-                    {selectedVariant && selectedVariant.stock <= 0 ? 'Out of Stock' : 'Add to Bag'}
-                  </button>
-                  <button 
-                    className="btn-buy-now-details"
-                    disabled={selectedVariant ? selectedVariant.stock <= 0 : false}
-                    onClick={() => {
-                      addToCart(product, quantity, selectedVariant)
-                      setIsCartOpen(true)
-                    }}
-                  >
-                    {selectedVariant && selectedVariant.stock <= 0 ? 'Out of Stock' : 'Buy Now'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Accordions */}
-              <div className="details-tabs-accordions">
-                <div className={`accordion-tab ${openTabs.specifications ? 'open' : ''}`}>
-                  <button className="accordion-tab-head" onClick={() => toggleTab('specifications')}>
-                    <span className="accordion-tab-title">Specifications</span>
-                    <FiPlus size={12} className="accordion-tab-icon" />
-                  </button>
-                  <div className="accordion-tab-body">
-                    <div className="specs-grid">
-                      {selectedVariant && Object.entries(selectedVariant.attributes || {}).map(([key, val], i) => (
-                        <React.Fragment key={i}>
-                          <span className="specs-label">{key}</span>
-                          <span className="specs-val">{val}</span>
-                        </React.Fragment>
-                      ))}
-                      <span className="specs-label">Updated</span>
-                      <span className="specs-val">{new Date(product.updatedAt || Date.now()).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`accordion-tab ${openTabs.delivery ? 'open' : ''}`}>
-                  <button className="accordion-tab-head" onClick={() => toggleTab('delivery')}>
-                    <span className="accordion-tab-title">Shipping & Returns</span>
-                    <FiPlus size={12} className="accordion-tab-icon" />
-                  </button>
-                  <div className="accordion-tab-body">
-                    <p style={{ margin: 0 }}>
-                      Complementary courier shipping on all regional atelier creations. Express delivery arrives within 3-5 business days.
-                    </p>
-                    <p style={{ margin: '8px 0 0 0' }}>
-                      Easy returns accepted within 14 days of delivery. Items must remain unworn and intact with all tags.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-
-
+              <p className="pd-tax-note">Inclusive of all taxes</p>
             </div>
-          </div>
-        )}
 
-      </div>
+            {/* Description */}
+            {product.description && (
+              <p className="pd-desc">{product.description}</p>
+            )}
 
-      {/* Slide-In Cart Drawer Overlay */}
-      <div className={`cart-overlay ${isCartOpen ? 'open' : ''}`} onClick={() => setIsCartOpen(false)}>
-        <div className="cart-drawer" onClick={(e) => e.stopPropagation()}>
-          <div className="cart-head">
-            <h3 className="cart-head-title">Your Atelier Bag</h3>
-            <button className="btn-close-cart" onClick={() => setIsCartOpen(false)}>
-              <FiX size={18} />
-            </button>
-          </div>
+            {/* Variant selectors */}
+            {product.variants?.length > 0 && (
+              <div className="pd-variants">
+                {attributeList.map(attr => {
+                  const isColor = attr.key === 'color'
+                  const isSize = attr.key === 'size'
+                  const current = selectedAttributes[attr.key]
+                  const vals = isSize ? sortSizes(attr.values) : attr.values
 
-          <div className="cart-items-area">
-            {cartItems.length === 0 ? (
-              <div className="cart-empty-state">
-                <FiShoppingBag size={24} />
-                <p className="cart-empty-label">Bag is Empty</p>
-              </div>
-            ) : (
-              cartItems.map((item) => {
-                const variantObj = item.selectedVariant && item.product.variants
-                  ? item.product.variants.find(v => v._id === item.selectedVariant)
-                  : null
+                  return (
+                    <div key={attr.key} className="pd-attr-group">
+                      <div className="pd-attr-label">
+                        <span>{attr.displayName}</span>
+                        {current && <span className="pd-attr-selected">{current}</span>}
+                      </div>
 
-                const priceObj = variantObj?.price || item.product.price
-                const imgUrl = variantObj?.images?.[0]?.url || item.product.images?.[0]?.url
-                const availableStock = variantObj ? variantObj.stock : (item.product.stock || 0)
-                const itemKey = item.selectedVariant 
-                  ? `${item.product._id}-${item.selectedVariant}` 
-                  : item.product._id
+                      {isColor ? (
+                        <div className="pd-color-list">
+                          {vals.map(val => {
+                            const matchVar = product.variants.find(v => getAttr(v.attributes, 'color') === val)
+                            const preview = matchVar?.images?.[0]?.url || product.images?.[0]?.url
+                            const isActive = current === val
+                            return (
+                              <button
+                                key={val}
+                                className={`pd-color-btn ${isActive ? 'active' : ''}`}
+                                onClick={() => handleAttributeSelect(attr.key, val)}
+                                title={val}
+                              >
+                                {preview
+                                  ? <img src={preview} alt={val} />
+                                  : <span>{val.slice(0,2)}</span>
+                                }
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="pd-size-list">
+                          {vals.map(val => {
+                            const testAttrs = { ...selectedAttributes, [attr.key]: val }
+                            const matchVar = product.variants.find(v =>
+                              Object.entries(testAttrs).every(([k, v2]) => getAttr(v.attributes, k) === v2)
+                            )
+                            const isActive = current === val
+                            const isOos = matchVar ? matchVar.stock <= 0 : true
+                            const notAvail = !matchVar
 
-                return (
-                  <div key={itemKey} className="cart-item">
-                    <img 
-                      src={imgUrl} 
-                      alt={item.product.title} 
-                      className="cart-item-thumb"
-                    />
-                    <div className="cart-item-details">
-                      <h4 className="cart-item-name">{item.product.title}</h4>
-                      
-                      {variantObj && (
-                        <div className="cart-item-variant-attrs" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '2px 0' }}>
-                          {Object.entries(variantObj.attributes || {}).map(([key, val], aIdx) => (
-                            <span key={aIdx} className="cart-item-attr-pill" style={{ fontSize: '9px', padding: '2px 6px', background: 'var(--badge-bg)', border: '0.5px solid var(--border)', borderRadius: '100px', color: 'var(--text-muted)' }}>
-                              {key}: {val}
-                            </span>
-                          ))}
+                            return (
+                              <button
+                                key={val}
+                                className={`pd-size-btn ${isActive ? 'active' : ''} ${isOos || notAvail ? 'oos' : ''}`}
+                                disabled={notAvail}
+                                onClick={() => handleAttributeSelect(attr.key, val)}
+                              >
+                                {val}
+                                {isOos && !notAvail && <span className="pd-oos-line"></span>}
+                              </button>
+                            )
+                          })}
                         </div>
                       )}
-                      
-                      <span className="cart-item-price">
-                        {getCurrencySymbol(priceObj?.currency)}
-                        {formatPrice(priceObj?.amount)}
-                      </span>
-                      
-                      <div className="cart-item-controls">
-                        <div className="qty-row">
-                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, item.quantity, -1, availableStock, item.selectedVariant)}>
-                            <FiMinus size={10} />
-                          </button>
-                          <span className="qty-num">{item.quantity}</span>
-                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, item.quantity, 1, availableStock, item.selectedVariant)}>
-                            <FiPlus size={10} />
-                          </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Qty + Add to bag */}
+            <div className="pd-purchase">
+              {/* Qty row */}
+              <div className="pd-qty-row">
+                <span className="pd-qty-label">Qty</span>
+                <div className="pd-qty-ctrl">
+                  <button onClick={() => handlePageQtyChange(-1)} className="pd-qty-btn"><FiMinus size={12}/></button>
+                  <span className="pd-qty-val">{quantity}</span>
+                  <button onClick={() => handlePageQtyChange(1)} className="pd-qty-btn"><FiPlus size={12}/></button>
+                </div>
+                <span className="pd-stock-info">
+                  {availableStock > 0
+                    ? (availableStock <= 5 ? `⚠ Only ${availableStock} left!` : `${availableStock} in stock`)
+                    : '❌ Out of stock'}
+                </span>
+              </div>
+
+              <div className="pd-cta-row">
+                <button
+                  className="pd-add-bag-btn"
+                  disabled={availableStock <= 0}
+                  onClick={addToCart}
+                >
+                  {availableStock <= 0 ? 'OUT OF STOCK' : 'ADD TO BAG'}
+                </button>
+                <button
+                  className="pd-buy-now-btn"
+                  disabled={availableStock <= 0}
+                  onClick={() => { addToCart(); setTimeout(() => setIsCartOpen(true), 200) }}
+                >
+                  BUY NOW
+                </button>
+              </div>
+            </div>
+
+            {/* Delivery info */}
+            <div className="pd-delivery-info">
+              <div className="pd-delivery-item">
+                <FiTruck size={14} />
+                <span>Free delivery on orders above ₹999</span>
+              </div>
+              <div className="pd-delivery-item">
+                <FiRefreshCw size={14} />
+                <span>Easy 14-day returns & exchanges</span>
+              </div>
+            </div>
+
+            {/* ASK JERRY - inline */}
+            <div className="pd-jerry-section">
+              <button
+                className="pd-jerry-toggle"
+                onClick={() => setIsJerryOpen(!isJerryOpen)}
+              >
+                <FiMessageCircle size={16} />
+                <span>ASK JERRY</span>
+                <span className="pd-jerry-badge">AI</span>
+                <span className="pd-jerry-chevron">{isJerryOpen ? '▲' : '▼'}</span>
+              </button>
+
+              {isJerryOpen && (
+                <div className="pd-jerry-box">
+                  {/* Messages */}
+                  <div className="pd-jerry-msgs">
+                    {jerryMessages.map((msg, i) => (
+                      <div key={i} className={`pd-jerry-msg ${msg.sender}`}>
+                        {msg.sender === 'jerry' && (
+                          <span className="pd-jerry-avatar">J</span>
+                        )}
+                        <div className="pd-jerry-bubble">
+                          {msg.text.split("**").map((part, pi) =>
+                            pi % 2 === 1 ? <strong key={pi}>{part}</strong> : part
+                          )}
                         </div>
-                        <button className="btn-remove" onClick={() => removeFromCart(item.product._id, item.selectedVariant)}>
-                          Remove
-                        </button>
+                      </div>
+                    ))}
+                    {jerryLoading && (
+                      <div className="pd-jerry-msg jerry">
+                        <span className="pd-jerry-avatar">J</span>
+                        <div className="pd-jerry-bubble pd-jerry-typing">
+                          <span></span><span></span><span></span>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={jerryEndRef}></div>
+                  </div>
+
+                  {/* Quick asks */}
+                  <div className="pd-jerry-quick">
+                    {QUICK_ASKS.map(q => (
+                      <button key={q} className="pd-jerry-chip"
+                        disabled={jerryLoading}
+                        onClick={() => handleAskJerry(null, q)}>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Input */}
+                  <form className="pd-jerry-form" onSubmit={handleAskJerry}>
+                    <input
+                      type="text"
+                      placeholder="Type your question..."
+                      value={jerryInput}
+                      onChange={e => setJerryInput(e.target.value)}
+                      className="pd-jerry-input"
+                      disabled={jerryLoading}
+                    />
+                    <button type="submit" className="pd-jerry-send" disabled={jerryLoading || !jerryInput.trim()}>
+                      <FiSend size={14} />
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ── Cart Drawer ── */}
+      <div className={`pd-cart-overlay ${isCartOpen ? 'open' : ''}`} onClick={() => setIsCartOpen(false)}>
+        <div className="pd-cart-drawer" onClick={e => e.stopPropagation()}>
+          <div className="pd-cart-head">
+            <h3 className="pd-cart-title">Your Bag ({totalCartItems})</h3>
+            <button className="pd-icon-btn" onClick={() => setIsCartOpen(false)}><FiX size={20}/></button>
+          </div>
+
+          <div className="pd-cart-body">
+            {cartItems.length === 0 ? (
+              <div className="pd-cart-empty">
+                <FiShoppingBag size={32} />
+                <p>Your bag is empty</p>
+              </div>
+            ) : (
+              cartItems.map(item => {
+                const v = item.selectedVariant && item.product.variants
+                  ? item.product.variants.find(x => x._id === item.selectedVariant)
+                  : null
+                const price = parseFloat((v?.price || item.product.price)?.amount || 0)
+                const img = v?.images?.[0]?.url || item.product.images?.[0]?.url
+                const stock = v ? v.stock : (item.product.stock || 0)
+                const key = item.selectedVariant ? `${item.product._id}-${item.selectedVariant}` : item.product._id
+                return (
+                  <div key={key} className="pd-cart-item">
+                    <img src={img} alt={item.product.title} className="pd-cart-img" />
+                    <div className="pd-cart-item-info">
+                      <p className="pd-cart-item-name">{item.product.title}</p>
+                      {v && <p className="pd-cart-item-variant">
+                        {Object.entries(v.attributes || {}).map(([k, val]) => `${k}: ${val}`).join(' | ')}
+                      </p>}
+                      <p className="pd-cart-item-price">₹{fmt(price)}</p>
+                      <div className="pd-cart-item-foot">
+                        <div className="pd-qty-ctrl compact">
+                          <button className="pd-qty-btn" onClick={() => updateCartQty(item.product._id, item.quantity, -1, stock, item.selectedVariant)}><FiMinus size={11}/></button>
+                          <span className="pd-qty-val">{item.quantity}</span>
+                          <button className="pd-qty-btn" onClick={() => updateCartQty(item.product._id, item.quantity, 1, stock, item.selectedVariant)}><FiPlus size={11}/></button>
+                        </div>
+                        <button className="pd-remove-btn" onClick={() => handleRemoveFromCart({ productId: item.product._id, variantId: item.selectedVariant })}>Remove</button>
                       </div>
                     </div>
                   </div>
@@ -830,100 +603,17 @@ function Productdetails() {
           </div>
 
           {cartItems.length > 0 && (
-            <div className="cart-foot">
-              <div className="cart-total-row">
-                <span className="cart-total-label">Subtotal</span>
-                <span className="cart-total-amount">
-                  {cartCurrencySymbol}{formatPrice(cartTotal)}
-                </span>
+            <div className="pd-cart-foot">
+              <div className="pd-cart-total">
+                <span>Subtotal</span>
+                <span>₹{fmt(cartTotal)}</span>
               </div>
-              <button className="btn-checkout" onClick={triggerCheckout}>
-                Secure Checkout
-              </button>
+              <p className="pd-cart-note">Taxes & shipping calculated at checkout</p>
+              <button className="pd-checkout-btn" onClick={triggerCheckout}>PROCEED TO CHECKOUT</button>
             </div>
           )}
         </div>
       </div>
-
-      {/* ASK JERRY AI floating style assistant trigger */}
-      <button 
-        onClick={() => setIsJerryOpen(!isJerryOpen)}
-        className="ask-jerry-trigger"
-        title="Ask Jerry - AI Style Assistant"
-      >
-        {isJerryOpen ? <FiX size={20} /> : <FiMessageSquare size={20} />}
-      </button>
-
-      {/* ASK JERRY Chat Widget Drawer */}
-      {isJerryOpen && (
-        <div className="ask-jerry-widget">
-          <div className="jerry-header">
-            <span className="jerry-header-title text-[var(--text)]">ASK JERRY • AI Style Assistant</span>
-            <button onClick={() => setIsJerryOpen(false)} className="jerry-close-btn">
-              <FiX size={14} />
-            </button>
-          </div>
-
-          <div className="jerry-messages-area">
-            {jerryMessages.map((msg, idx) => (
-              <div key={idx} className={`jerry-msg ${msg.sender} rounded-none`}>
-                {msg.text.split("**").map((part, i) => (
-                  i % 2 === 1 ? <strong key={i}>{part}</strong> : part
-                ))}
-              </div>
-            ))}
-            {jerryLoading && (
-              <div className="jerry-loading-indicator text-xs font-semibold uppercase">
-                Jerry is styling suggestions...
-              </div>
-            )}
-          </div>
-
-          {/* Style query suggestions chips */}
-          <div className="jerry-chips-container">
-            <button 
-              onClick={(e) => handleAskJerrySubmit(e, "styling ideas for this item?")} 
-              className="jerry-chip"
-              disabled={jerryLoading}
-            >
-              Styling Coordinates
-            </button>
-            <button 
-              onClick={(e) => handleAskJerrySubmit(e, "what materials are used?")} 
-              className="jerry-chip"
-              disabled={jerryLoading}
-            >
-              Material Composition
-            </button>
-            <button 
-              onClick={(e) => handleAskJerrySubmit(e, "what fit is this?")} 
-              className="jerry-chip"
-              disabled={jerryLoading}
-            >
-              Fit & Drape Profile
-            </button>
-          </div>
-
-          {/* Text Input area */}
-          <form onSubmit={(e) => handleAskJerrySubmit(e)} className="jerry-input-area">
-            <input
-              type="text"
-              placeholder="Ask Jerry a custom style question..."
-              value={jerryInput}
-              onChange={(e) => setJerryInput(e.target.value)}
-              className="jerry-input-box text-[var(--text)]"
-              disabled={jerryLoading}
-            />
-            <button 
-              type="submit" 
-              className="jerry-send-btn"
-              disabled={jerryLoading || !jerryInput.trim()}
-            >
-              Send
-            </button>
-          </form>
-        </div>
-      )}
 
     </div>
   )
