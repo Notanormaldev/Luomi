@@ -195,8 +195,12 @@ export default function Home() {
 
           {/* left: Hamburger menu only */}
           <div className="sn-nav-left">
-            <button className="sn-icon-btn" onClick={() => setIsCatOpen(true)} aria-label="Menu">
-              <FiMenu size={20} />
+            <button className="sn-icon-btn sn-menu-btn" onClick={() => setIsCatOpen(true)} aria-label="Menu">
+              <div className="sn-hamburger-icon">
+                <span className="line top"></span>
+                <span className="line mid"></span>
+                <span className="line bot"></span>
+              </div>
             </button>
           </div>
 

@@ -105,6 +105,37 @@
 }
 .sn-icon-btn:hover { background: var(--sn-search-bg); }
 
+/* Leftmost menu button aligns perfectly to left edge */
+.sn-nav-left .sn-menu-btn {
+  padding-left: 0;
+}
+
+/* Custom Snitch-style hamburger icon */
+.sn-hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 22px;
+  height: 12px;
+  cursor: pointer;
+}
+.sn-hamburger-icon .line {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: var(--sn-text);
+  transition: all 0.25s ease;
+}
+.sn-hamburger-icon .line.mid {
+  background-color: #ff5a36; /* orange-red middle bar highlight exactly like Snitch */
+  width: 75%; /* slightly shorter middle bar for premium look */
+}
+
+/* Rightmost cart button aligns perfectly to right edge */
+.sn-nav-right .sn-cart-btn {
+  padding-right: 0;
+}
+
 .sn-cart-btn { position: relative; }
 .sn-cart-badge {
   position: absolute;
