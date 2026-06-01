@@ -71,4 +71,14 @@ export async function resetPasswordApi({email,otp,newPassword}){
      }
 }
 
+export async function logoutApi(){
+     try {
+        const res=await authapi.post('/logout')
+        return res.data
+     } catch (error) {
+        throw error.response?.data || { msg: "Logout failed" }
+     }
+}
+
+
 

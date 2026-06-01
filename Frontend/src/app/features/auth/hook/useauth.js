@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux"
-import { getme, login, register, verifyOtp, becomeSellerApi, forgotPasswordApi, resetPasswordApi } from "../services/auth.api"
+import { getme, login, register, verifyOtp, becomeSellerApi, forgotPasswordApi, resetPasswordApi, logoutApi } from "../services/auth.api"
 import { seterror, setloading, setuser } from "../auth.slice"
 
 export const useauth = () => {
@@ -140,6 +140,22 @@ export const useauth = () => {
       }
     }
 
+    async function handlelogout() {
+      dispatch(setloading(true))
+      dispatch(seterror(null))
+      try {
+        await logoutApi()
+        dispatch(setuser(null))
+        dispatch(setloading(false))
+        return { success: true }
+      } catch (err) {
+        console.log("Logout error:", err)
+        dispatch(seterror(err))
+        dispatch(setloading(false))
+        throw err
+      }
+    }
+
     return {
         user,
         loading,
@@ -151,7 +167,8 @@ export const useauth = () => {
         handleverifyotp,
         handlebecomeseller,
         handleforgotpassword,
-        handleresetpassword
+        handleresetpassword,
+        handlelogout
     }
 }
 
