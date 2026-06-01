@@ -98,10 +98,9 @@ export default function Home() {
     return isNaN(n) ? '0' : n.toLocaleString('en-IN')
   }
 
-  /* pick first product image for a sub-category */
-  const getSubImg = (sub) => {
-    const p = allProducts.find(x => x.subCategory?.toLowerCase() === sub.toLowerCase() && x.images?.length > 0)
-    return p?.images?.[0]?.url || null
+  /* pick first product for a sub-category (returns full product object) */
+  const getSubProduct = (sub) => {
+    return allProducts.find(x => x.subCategory?.toLowerCase() === sub.toLowerCase() && x.images?.length > 0) || null
   }
 
   /* filter */
@@ -305,15 +304,18 @@ export default function Home() {
           {/* 3-panel editorial hero (desktop) */}
           <section className="sn-hero" aria-label="Hero banners">
             {HERO_PANELS.map((panel, i) => {
-              const img = getSubImg(panel.sub)
+              const prod = getSubProduct(panel.sub)
               return (
                 <div
                   key={i}
                   className="sn-hero-panel"
-                  onClick={() => { setActiveTab(CATEGORY_TABS.findIndex(t => t.sub === panel.sub)) }}
-                  style={img ? { backgroundImage: `url(${img})` } : {}}
+                  onClick={() => prod && navigate(`/product/${prod._id}`)}
                 >
-                  {/* dark gradient overlay */}
+                  {/* real img tag so image always renders */}
+                  {prod?.images?.[0]?.url
+                    ? <img src={prod.images[0].url} alt={panel.headline} className="sn-hero-bg-img" />
+                    : <div className="sn-hero-placeholder" />
+                  }
                   <div className="sn-hero-overlay" />
                   <div className="sn-hero-text">
                     <p className="sn-hero-headline">{panel.headline}</p>
@@ -327,14 +329,16 @@ export default function Home() {
           {/* mobile hero carousel */}
           <section className="sn-hero-mobile" aria-label="Mobile hero">
             {HERO_PANELS.map((panel, i) => {
-              const img = getSubImg(panel.sub)
+              const prod = getSubProduct(panel.sub)
               return (
                 <div
                   key={i}
                   className={`sn-hero-slide${heroIdx === i ? ' active' : ''}`}
-                  style={img ? { backgroundImage: `url(${img})` } : {}}
-                  onClick={() => setActiveTab(CATEGORY_TABS.findIndex(t => t.sub === panel.sub))}
+                  onClick={() => prod && navigate(`/product/${prod._id}`)}
                 >
+                  {prod?.images?.[0]?.url && (
+                    <img src={prod.images[0].url} alt={panel.headline} className="sn-hero-bg-img" />
+                  )}
                   <div className="sn-hero-overlay" />
                   <div className="sn-hero-text">
                     <p className="sn-hero-headline">{panel.headline}</p>
@@ -363,17 +367,17 @@ export default function Home() {
             <h2 className="sn-sect-title">FEATURED CATEGORIES</h2>
             <div className="sn-feat-grid">
               {FEATURED_CATS.map(cat => {
-                const img = getSubImg(cat.sub)
+                const prod   = getSubProduct(cat.sub)
                 const tabIdx = CATEGORY_TABS.findIndex(t => t.sub === cat.sub)
                 return (
                   <div
                     key={cat.label}
                     className="sn-feat-card"
-                    onClick={() => { if (tabIdx !== -1) setActiveTab(tabIdx) }}
+                    onClick={() => prod ? navigate(`/product/${prod._id}`) : (tabIdx !== -1 && setActiveTab(tabIdx))}
                   >
                     <div className="sn-feat-card-inner">
-                      {img
-                        ? <img src={img} alt={cat.label} className="sn-feat-img" />
+                      {prod?.images?.[0]?.url
+                        ? <img src={prod.images[0].url} alt={cat.label} className="sn-feat-img" />
                         : <div className="sn-feat-img-ph"><span>{cat.label.slice(0,1)}</span></div>
                       }
                     </div>
@@ -425,45 +429,30 @@ export default function Home() {
           </div>
         ) : (
           <div className="sn-grid">
-            {filteredProducts.map(product => {
-              const colors = [...new Set(
-                (product.variants || [])
-                  .map(v => Object.entries(v.attributes || {}).find(([k]) => k.toLowerCase() === 'color')?.[1])
-                  .filter(Boolean)
-              )]
-              return (
-                <div key={product._id} className="sn-card" onClick={() => navigate(`/product/${product._id}`)}>
-                  <div className="sn-card-img-wrap">
-                    {product.images?.[0]?.url
-                      ? <img src={product.images[0].url} alt={product.title} className="sn-card-img" />
-                      : <div className="sn-card-img-placeholder"><span>LUOMI</span></div>
-                    }
-                    {product.images?.[1]?.url && (
-                      <img src={product.images[1].url} alt={product.title} className="sn-card-img sn-card-img-hover" />
-                    )}
-                    {/* ADD TO BAG hover CTA */}
-                    <button
-                      className="sn-card-atb"
-                      onClick={e => { e.stopPropagation(); addToCart(product) }}
-                    >
-                      ADD TO BAG
-                    </button>
-                    {colors.length > 1 && (
-                      <div className="sn-card-colors">
-                        {colors.slice(0, 4).map((c, ci) => (
-                          <span key={ci} className="sn-card-color-dot" title={c} />
-                        ))}
-                        {colors.length > 4 && <span className="sn-card-color-more">+{colors.length - 4}</span>}
-                      </div>
-                    )}
-                  </div>
-                  <div className="sn-card-body">
-                    <h3 className="sn-card-title">{product.title}</h3>
-                    <span className="sn-card-price">₹{fmt(product.price?.amount)}</span>
-                  </div>
+            {filteredProducts.map(product => (
+              <div key={product._id} className="sn-card" onClick={() => navigate(`/product/${product._id}`)}>
+                <div className="sn-card-img-wrap">
+                  {product.images?.[0]?.url
+                    ? <img src={product.images[0].url} alt={product.title} className="sn-card-img" />
+                    : <div className="sn-card-img-placeholder"><span>LUOMI</span></div>
+                  }
+                  {product.images?.[1]?.url && (
+                    <img src={product.images[1].url} alt={product.title} className="sn-card-img sn-card-img-hover" />
+                  )}
+                  {/* ADD TO BAG hover CTA */}
+                  <button
+                    className="sn-card-atb"
+                    onClick={e => { e.stopPropagation(); addToCart(product) }}
+                  >
+                    ADD TO BAG
+                  </button>
                 </div>
-              )
-            })}
+                <div className="sn-card-body">
+                  <h3 className="sn-card-title">{product.title}</h3>
+                  <span className="sn-card-price">₹{fmt(product.price?.amount)}</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

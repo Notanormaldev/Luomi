@@ -253,27 +253,27 @@
   position: relative;
   cursor: pointer;
   background: var(--sn-skeleton);
-  background-size: cover;
-  background-position: center;
   overflow: hidden;
   transition: flex .35s ease;
 }
 
-.sn-hero-panel::before {
-  content: '';
+/* full-cover background image via <img> tag */
+.sn-hero-bg-img {
   position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,.62) 0%, rgba(0,0,0,.05) 55%, transparent 100%);
-  z-index: 1;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+  display: block;
+  transition: transform .6s ease;
+  z-index: 0;
 }
+.sn-hero-panel:hover .sn-hero-bg-img { transform: scale(1.04); }
 
-/* subtle zoom on hover */
-.sn-hero-panel:hover::after {
-  content: '';
+.sn-hero-placeholder {
   position: absolute; inset: 0;
-  background: inherit;
-  background-size: 107%;
-  background-position: center;
-  transition: background-size .6s ease;
+  background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+}
+[data-theme='dark'] .sn-hero-placeholder {
+  background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
 }
 
 /* right-side border between panels */
@@ -284,7 +284,7 @@
 
 .sn-hero-overlay {
   position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(160deg, transparent 40%, rgba(0,0,0,.55) 100%);
+  background: linear-gradient(to top, rgba(0,0,0,.65) 0%, rgba(0,0,0,.05) 55%, transparent 100%);
 }
 
 .sn-hero-text {
@@ -328,10 +328,17 @@
 }
 .sn-hero-slide {
   position: absolute; inset: 0;
-  background-size: cover; background-position: top center;
   opacity: 0; transition: opacity .5s ease; cursor: pointer;
+  overflow: hidden;
 }
 .sn-hero-slide.active { opacity: 1; }
+/* the img inside mobile slide */
+.sn-hero-slide .sn-hero-bg-img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+  z-index: 0;
+}
 
 .sn-hero-dots {
   position: absolute; bottom: 14px; left: 50%;
