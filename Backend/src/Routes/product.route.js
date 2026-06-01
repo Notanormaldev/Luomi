@@ -32,6 +32,7 @@ const uploadFields = upload.fields([
 const productroute=Router()
 productroute.post('/createproduct',uploadFields,authsellermiddleware,validatecreateproduct,productController.createproduct)
 productroute.get('/getproduct/seller',authsellermiddleware,productController.sellergetproducts)
+productroute.get('/orders/seller',authsellermiddleware,productController.sellerGetOrders)
 productroute.get('/',productController.getallproducts)
 productroute.get('/:id',productController.getoneproduct)
 export default productroute

@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux"
-import { getme, login, register, verifyOtp } from "../services/auth.api"
+import { getme, login, register, verifyOtp, becomeSellerApi, forgotPasswordApi, resetPasswordApi } from "../services/auth.api"
 import { seterror, setloading, setuser } from "../auth.slice"
 
 export const useauth = () => {
@@ -94,6 +94,52 @@ export const useauth = () => {
 
 
 
+    async function handlebecomeseller() {
+      dispatch(setloading(true))
+      dispatch(seterror(null))
+      try {
+        const data = await becomeSellerApi()
+        dispatch(setuser(data.user))
+        dispatch(setloading(false))
+        return { success: true, data }
+      } catch (err) {
+        console.log("Become seller error:", err)
+        dispatch(seterror(err))
+        dispatch(setloading(false))
+        throw err
+      }
+    }
+
+    async function handleforgotpassword({ email }) {
+      dispatch(setloading(true))
+      dispatch(seterror(null))
+      try {
+        const data = await forgotPasswordApi({ email })
+        dispatch(setloading(false))
+        return { success: true, data }
+      } catch (err) {
+        console.log("Forgot password error:", err)
+        dispatch(seterror(err))
+        dispatch(setloading(false))
+        throw err
+      }
+    }
+
+    async function handleresetpassword({ email, otp, newPassword }) {
+      dispatch(setloading(true))
+      dispatch(seterror(null))
+      try {
+        const data = await resetPasswordApi({ email, otp, newPassword })
+        dispatch(setloading(false))
+        return { success: true, data }
+      } catch (err) {
+        console.log("Reset password error:", err)
+        dispatch(seterror(err))
+        dispatch(setloading(false))
+        throw err
+      }
+    }
+
     return {
         user,
         loading,
@@ -102,6 +148,10 @@ export const useauth = () => {
         handlelogin,
         handlegetme,
         handlegoogleauth,
-        handleverifyotp
+        handleverifyotp,
+        handlebecomeseller,
+        handleforgotpassword,
+        handleresetpassword
     }
 }
+

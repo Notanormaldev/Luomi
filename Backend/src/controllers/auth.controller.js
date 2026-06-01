@@ -61,7 +61,7 @@ async function register(req,res){
 
     await usermodel.create({
       email, fullname, password,
-      role: isseller ? "seller" : "buyer",
+      role: "buyer",
       otp,
       otpExpiry,
       isverified: false,
@@ -248,6 +248,100 @@ async function deleteaccount(req,res){
 
 
 
+async function becomeSeller(req, res) {
+    try {
+        const userId = req.user.id;
+        const user = await usermodel.findByIdAndUpdate(userId, { role: 'seller' }, { new: true });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+        
+        // Regenerate token to include updated role in user payload
+        const token = jwt.sign({
+            id: user._id,
+            user: user
+        }, config.JWT, { expiresIn: '7d' });
+        
+        res.cookie('token', token);
+        
+        return res.status(200).json({
+            success: true,
+            msg: "Successfully updated profile to Seller Atelier role",
+            user
+        });
+    } catch (error) {
+        console.error("becomeSeller Error:", error);
+        return res.status(500).json({ success: false, msg: "Failed to update profile to seller" });
+    }
+}
+
+async function forgotPassword(req, res) {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, msg: "Email is required" });
+        }
+
+        const user = await usermodel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "No user found with this email" });
+        }
+
+        const otp = generateOtp();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        user.otp = otp;
+        user.otpExpiry = otpExpiry;
+        await user.save();
+
+        await sendOtpEmail(email, otp);
+
+        return res.status(200).json({
+            success: true,
+            msg: "OTP sent to your email for password reset"
+        });
+    } catch (error) {
+        console.error("forgotPassword Error:", error);
+        return res.status(500).json({ success: false, msg: "Server error during password reset request" });
+    }
+}
+
+async function resetPassword(req, res) {
+    try {
+        const { email, otp, newPassword } = req.body;
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ success: false, msg: "All fields (email, OTP, new password) are required" });
+        }
+
+        const user = await usermodel.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+
+        if (user.otp !== otp) {
+            return res.status(401).json({ success: false, msg: "Invalid OTP" });
+        }
+
+        if (user.otpExpiry < new Date()) {
+            return res.status(401).json({ success: false, msg: "OTP has expired" });
+        }
+
+        // Reset details and trigger schema pre-save password hashing
+        user.password = newPassword;
+        user.otp = null;
+        user.otpExpiry = null;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            msg: "Password updated successfully, please login"
+        });
+    } catch (error) {
+        console.error("resetPassword Error:", error);
+        return res.status(500).json({ success: false, msg: "Server error during password reset" });
+    }
+}
+
 export default {
     register,
     login,
@@ -255,5 +349,8 @@ export default {
     googlecallback,
     verifyotp,
     logout,
-    deleteaccount
+    deleteaccount,
+    becomeSeller,
+    forgotPassword,
+    resetPassword
 }

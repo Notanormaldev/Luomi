@@ -11,6 +11,9 @@ authrouter.post('/register', validatonregister, authController.register)
 authrouter.post('/login', validatonlogin, authController.login)
 authrouter.post('/verify-otp', authController.verifyotp)
 authrouter.get('/get-me', authtokenmiddleware, authController.getme)
+authrouter.post('/become-seller', authtokenmiddleware, authController.becomeSeller)
+authrouter.post('/forgot-password', authController.forgotPassword)
+authrouter.post('/reset-password', authController.resetPassword)
 
 authrouter.get('/google',
     passport.authenticate('google', { scope: ['profile', 'email'] })

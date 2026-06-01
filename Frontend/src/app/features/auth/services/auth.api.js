@@ -44,3 +44,31 @@ export async function getme(){
      }
 }
 
+export async function becomeSellerApi(){
+     try {
+        const res=await authapi.post('/become-seller')
+        return res.data
+     } catch (error) {
+        throw error.response?.data || { msg: "Failed to become seller" }
+     }
+}
+
+export async function forgotPasswordApi({email}){
+     try {
+        const res=await authapi.post('/forgot-password',{email})
+        return res.data
+     } catch (error) {
+        throw error.response?.data || { msg: "Failed to send reset OTP" }
+     }
+}
+
+export async function resetPasswordApi({email,otp,newPassword}){
+     try {
+        const res=await authapi.post('/reset-password',{email,otp,newPassword})
+        return res.data
+     } catch (error) {
+        throw error.response?.data || { msg: "Password reset failed" }
+     }
+}
+
+
