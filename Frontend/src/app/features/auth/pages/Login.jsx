@@ -11,12 +11,82 @@ import './Auth.css'
 
 function Login() {
   const navigate = useNavigate()
-  const { handlelogin, handlegoogleauth, loading } = useauth()
+  const { handlelogin, handlegoogleauth, handleforgotpassword, handleresetpassword, loading } = useauth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotOtp, setForgotOtp] = useState('')
+  const [newForgotPwd, setNewForgotPwd] = useState('')
+  const [forgotStep, setForgotStep] = useState(1) // 1 = enter email, 2 = enter otp + reset password
+  const [forgotError, setForgotError] = useState('')
+  const [forgotSuccess, setForgotSuccess] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+
+  const handleForgotEmailSubmit = async (e) => {
+    e.preventDefault()
+    setForgotError('')
+    setForgotSuccess('')
+    if (!forgotEmail) {
+      setForgotError('Please enter your email.')
+      return
+    }
+    setForgotLoading(true)
+    try {
+      await handleforgotpassword({ email: forgotEmail })
+      setForgotSuccess('OTP sent successfully to your email.')
+      setForgotStep(2)
+    } catch (err) {
+      setForgotError(err.msg || 'Failed to send OTP.')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
+  const handleForgotResetSubmit = async (e) => {
+    e.preventDefault()
+    setForgotError('')
+    setForgotSuccess('')
+    if (!forgotOtp) {
+      setForgotError('Please enter the 6-digit OTP.')
+      return
+    }
+    if (!newForgotPwd) {
+      setForgotError('Please enter your new password.')
+      return
+    }
+    if (newForgotPwd.length < 8) {
+      setForgotError('New password must be at least 8 characters.')
+      return
+    }
+    setForgotLoading(true)
+    try {
+      await handleresetpassword({
+        email: forgotEmail,
+        otp: forgotOtp,
+        newPassword: newForgotPwd
+      })
+      setForgotSuccess('Password reset successfully. You can now log in.')
+      setTimeout(() => {
+        setShowForgotModal(false)
+        setForgotStep(1)
+        setForgotEmail('')
+        setForgotOtp('')
+        setNewForgotPwd('')
+        setForgotSuccess('')
+      }, 3000)
+    } catch (err) {
+      setForgotError(err.msg || 'Failed to reset password.')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
 
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
@@ -317,12 +387,18 @@ function Login() {
 
             {/* Forgot password */}
             <div className="w-full flex justify-end -mt-2 mb-6 footer-animate">
-              <Link 
-                to="/forgot-password" 
-                className="text-xs font-label text-[#888888] hover:text-[#C0C0C0] underline transition-colors"
+              <button 
+                type="button"
+                onClick={() => {
+                  setForgotError('')
+                  setForgotSuccess('')
+                  setForgotStep(1)
+                  setShowForgotModal(true)
+                }}
+                className="text-xs font-label text-[#888888] hover:text-[#C0C0C0] underline transition-colors cursor-pointer"
               >
                 Forgot Password?
-              </Link>
+              </button>
             </div>
 
             {/* CTA Button */}
@@ -377,6 +453,115 @@ function Login() {
           </p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text)] w-full max-w-[420px] p-8 rounded-none relative flex flex-col gap-6 shadow-2xl transition-all duration-300">
+            {/* Close button */}
+            <button 
+              type="button" 
+              onClick={() => setShowForgotModal(false)}
+              className="absolute top-4 right-4 text-[#888888] hover:text-[var(--text)] text-lg cursor-pointer"
+            >
+              &times;
+            </button>
+            
+            <div className="flex flex-col gap-2">
+              <h2 className="font-heading text-2xl font-medium tracking-tight text-[var(--text)]">
+                Reset Password
+              </h2>
+              <p className="text-xs text-[#888888] font-body">
+                {forgotStep === 1 
+                  ? "Enter your email to request a 6-digit OTP code." 
+                  : "Enter the OTP code received and set a new password."}
+              </p>
+            </div>
+
+            {forgotError && (
+              <p className="text-xs text-red-500 font-body uppercase tracking-wider font-semibold">
+                {forgotError}
+              </p>
+            )}
+
+            {forgotSuccess && (
+              <p className="text-xs text-green-500 font-body uppercase tracking-wider font-semibold">
+                {forgotSuccess}
+              </p>
+            )}
+
+            {forgotStep === 1 ? (
+              <form onSubmit={handleForgotEmailSubmit} className="flex flex-col gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-label text-[10px] tracking-[1.5px] uppercase text-[#888888]">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Enter email address..."
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full bg-transparent border-b border-[var(--border)] py-2 text-sm focus:outline-none text-[var(--text)] focus:border-[#C0C0C0] transition-colors"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="cta-button w-full py-3 mt-2 text-center text-xs tracking-widest font-label font-bold uppercase transition-all duration-300 cursor-pointer"
+                >
+                  {forgotLoading ? "SENDING OTP..." : "REQUEST RESET OTP"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleForgotResetSubmit} className="flex flex-col gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-label text-[10px] tracking-[1.5px] uppercase text-[#888888]">
+                    6-Digit OTP
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="000000"
+                    maxLength="6"
+                    value={forgotOtp}
+                    onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-transparent border-b border-[var(--border)] py-2 text-sm focus:outline-none text-[var(--text)] focus:border-[#C0C0C0] transition-colors tracking-widest text-center"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-label text-[10px] tracking-[1.5px] uppercase text-[#888888]">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Create new password..."
+                    value={newForgotPwd}
+                    onChange={(e) => setNewForgotPwd(e.target.value)}
+                    className="w-full bg-transparent border-b border-[var(--border)] py-2 text-sm focus:outline-none text-[var(--text)] focus:border-[#C0C0C0] transition-colors"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="cta-button w-full py-3 mt-2 text-center text-xs tracking-widest font-label font-bold uppercase transition-all duration-300 cursor-pointer"
+                >
+                  {forgotLoading ? "RESETTING PASSWORD..." : "UPDATE PASSWORD"}
+                </button>
+              </form>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(false)}
+              className="text-[10px] font-label text-[#888888] hover:text-[var(--text)] uppercase tracking-wider text-center cursor-pointer transition-colors duration-300"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

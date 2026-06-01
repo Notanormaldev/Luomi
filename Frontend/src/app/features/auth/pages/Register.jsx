@@ -18,7 +18,6 @@ function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isSeller, setIsSeller] = useState(false)
   const [error, setError] = useState('')
 
   // Step 2: OTP verification
@@ -48,7 +47,6 @@ function Register() {
   const cursorRingRef = useRef(null)
   const buttonRef = useRef(null)
   const editorialRef = useRef(null)
-  const sellerToggleRef = useRef(null)
 
   // Resend timer effect
   useEffect(() => {
@@ -131,15 +129,6 @@ function Register() {
       '-=0.5'
     )
 
-    // isSeller toggle fades in last and very subtly (max opacity 0.5)
-    if (sellerToggleRef.current) {
-      entranceTimeline.fromTo(sellerToggleRef.current,
-        { opacity: 0 },
-        { opacity: 0.5, duration: 0.6, ease: 'power2.out' },
-        '-=0.2'
-      )
-    }
-
     // Left editorial column slide-in + blur fade
     gsap.fromTo(editorialRef.current,
       { x: -60, filter: 'blur(10px)', opacity: 0 },
@@ -218,7 +207,7 @@ function Register() {
         email,
         fullname: fullName,
         password,
-        isseller: isSeller
+        isseller: false
       })
       if (res && res.requiresOtp) {
         setOtpEmail(email)
@@ -288,7 +277,7 @@ function Register() {
         email: otpEmail,
         fullname: fullName,
         password,
-        isseller: isSeller
+        isseller: false
       })
       if (res && res.requiresOtp) {
         setResendTimer(30)
@@ -436,19 +425,6 @@ function Register() {
                   </div>
                 </div>
 
-                {/* isSeller Pill Switch Toggle (Bottom Right of the Form Area) */}
-                <div className="w-full flex justify-end mb-4">
-                  <div 
-                    ref={sellerToggleRef}
-                    onClick={() => setIsSeller(!isSeller)}
-                    className={`switch-container ${isSeller ? 'active' : ''}`}
-                  >
-                    <span>Register as Seller</span>
-                    <div className="pill-switch">
-                      <div className="pill-switch-handle" />
-                    </div>
-                  </div>
-                </div>
 
                 {/* CTA Button */}
                 <button
