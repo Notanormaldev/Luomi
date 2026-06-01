@@ -11,5 +11,6 @@ cartRoute.get('/', cartController.getCart);
 cartRoute.post('/add', cartController.addToCart);
 cartRoute.put('/update', cartController.updateCartItem);
 cartRoute.post('/remove', cartController.removeFromCart);
+cartRoute.post('/checkout', cartController.checkout);
 
 export default cartRoute;

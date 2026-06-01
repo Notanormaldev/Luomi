@@ -1,5 +1,6 @@
 import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
+import orderModel from "../models/order.model.js";
 
 // Helper to populate cart items with product details
 async function getPopulatedCart(userId) {
@@ -202,11 +203,101 @@ async function removeFromCart(req, res) {
         console.error("removeFromCart Error:", error);
         return res.status(500).json({ success: false, msg: "Failed to remove item from cart" });
     }
+async function checkout(req, res) {
+    try {
+        const userId = req.user.id;
+        const cart = await cartModel.findOne({ user: userId }).populate('items.product');
+        
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({ success: false, msg: "Atelier bag is empty" });
+        }
+
+        // 1. Verify stock for all items
+        for (const item of cart.items) {
+            const product = item.product;
+            if (!product) {
+                return res.status(404).json({ success: false, msg: "One of the products in your bag is no longer available" });
+            }
+
+            let availableStock = product.stock || 0;
+            if (item.selectedVariant) {
+                const variant = product.variants.id(item.selectedVariant);
+                if (!variant) {
+                    return res.status(404).json({ success: false, msg: `Variant not found for product ${product.title}` });
+                }
+                availableStock = variant.stock || 0;
+            }
+
+            if (item.quantity > availableStock) {
+                return res.status(400).json({ 
+                    success: false, 
+                    msg: `Insufficient stock for "${product.title}". Only ${availableStock} items left.` 
+                });
+            }
+        }
+
+        // 2. Decrement stock for all items
+        for (const item of cart.items) {
+            const product = await productModel.findById(item.product._id);
+            if (item.selectedVariant) {
+                const variant = product.variants.id(item.selectedVariant);
+                variant.stock = Math.max(0, variant.stock - item.quantity);
+            } else {
+                product.stock = Math.max(0, product.stock - item.quantity);
+            }
+            await product.save();
+        }
+
+        // 3. Calculate total price and build order item list
+        let totalAmount = 0;
+        const orderItems = cart.items.map(item => {
+            const variantObj = item.selectedVariant && item.product.variants
+                ? item.product.variants.find(v => v._id.toString() === item.selectedVariant.toString())
+                : null;
+            const priceObj = variantObj?.price || item.product.price;
+            const itemPrice = priceObj?.amount || 0;
+            totalAmount += itemPrice * item.quantity;
+
+            return {
+                product: item.product._id,
+                selectedVariant: item.selectedVariant || null,
+                quantity: item.quantity,
+                price: {
+                    amount: itemPrice,
+                    currency: priceObj?.currency || 'INR'
+                }
+            };
+        });
+
+        // 4. Create the order document
+        const order = await orderModel.create({
+            user: userId,
+            items: orderItems,
+            totalAmount,
+            currency: cart.items[0]?.product.price?.currency || 'INR',
+            status: 'pending'
+        });
+
+        // 5. Clear user cart
+        cart.items = [];
+        await cart.save();
+
+        return res.status(201).json({
+            success: true,
+            msg: "Order placed successfully",
+            order,
+            cart
+        });
+    } catch (error) {
+        console.error("checkout Error:", error);
+        return res.status(500).json({ success: false, msg: "Failed to place order" });
+    }
 }
 
 export default {
     getCart,
     addToCart,
     updateCartItem,
-    removeFromCart
+    removeFromCart,
+    checkout
 };
