@@ -18,5 +18,7 @@ export const validatecreateproduct=[
     body("priceamount").notEmpty().withMessage("price is required")
     .isNumeric().withMessage("price must be a number"),
     body("pricecurrency").optional().isIn(['USD','INR','JPY','GBP','EUR']).withMessage("currency must be one of USD, INR, JPY, GBP, EUR"),
+    body("genderCategory").optional().isIn(['men','women','kids','unisex']).withMessage("genderCategory must be men, women, kids or unisex"),
+    body("subCategory").optional().isIn(['shirt','t-shirt','pants','cargos','polos','plus size','trouser','jeans']).withMessage("subCategory must be shirt, t-shirt, pants, cargos, polos, plus size, trouser or jeans"),
     validatereq
 ]

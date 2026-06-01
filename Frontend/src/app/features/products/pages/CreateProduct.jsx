@@ -30,7 +30,9 @@ function CreateProduct() {
     description: '',
     priceamount: '',
     pricecurrency: 'INR',
-    stock: ''
+    stock: '',
+    genderCategory: 'men',
+    subCategory: 'shirt'
   })
 
   // Primary product images state
@@ -280,6 +282,8 @@ function CreateProduct() {
       formDataToSend.append('priceamount', parseFloat(formData.priceamount))
       formDataToSend.append('pricecurrency', formData.pricecurrency)
       formDataToSend.append('stock', parseInt(formData.stock) || 0)
+      formDataToSend.append('genderCategory', formData.genderCategory)
+      formDataToSend.append('subCategory', formData.subCategory)
 
       // Append all primary images
       images.forEach((file) => {
@@ -473,6 +477,44 @@ function CreateProduct() {
                     disabled={loading}
                     min="0"
                   />
+                </div>
+              </div>
+
+              <div className="price-row mt-4" style={{ marginTop: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Gender Category</label>
+                  <select
+                    name="genderCategory"
+                    className="form-select"
+                    value={formData.genderCategory}
+                    onChange={handleInputChange}
+                    disabled={loading}
+                  >
+                    <option value="men">Men</option>
+                    <option value="women">Women</option>
+                    <option value="kids">Kids</option>
+                    <option value="unisex">Unisex</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Product Type</label>
+                  <select
+                    name="subCategory"
+                    className="form-select"
+                    value={formData.subCategory}
+                    onChange={handleInputChange}
+                    disabled={loading}
+                  >
+                    <option value="shirt">Shirt</option>
+                    <option value="t-shirt">T-Shirt</option>
+                    <option value="pants">Pants</option>
+                    <option value="cargos">Cargos</option>
+                    <option value="polos">Polos</option>
+                    <option value="plus size">Plus Size</option>
+                    <option value="trouser">Trouser</option>
+                    <option value="jeans">Jeans</option>
+                  </select>
                 </div>
               </div>
             </div>

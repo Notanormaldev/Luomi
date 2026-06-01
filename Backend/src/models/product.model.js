@@ -61,6 +61,16 @@ const productSchema = mongoose.Schema({
     }
         }
     ],
+    genderCategory:{
+        type:String,
+        enum:['men','women','kids','unisex'],
+        default:'men'
+    },
+    subCategory:{
+        type:String,
+        enum:['shirt','t-shirt','pants','cargos','polos','plus size','trouser','jeans'],
+        default:'shirt'
+    },
     seller:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"users",

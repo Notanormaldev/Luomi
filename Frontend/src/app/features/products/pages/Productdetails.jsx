@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useproduct } from '../hook/useproduct'
 import { useauth } from '../../auth/hook/useauth'
+import { usecart } from '../../cart/hook/usecart'
 import Logo from '../../auth/components/Logo'
 import { 
   FiShoppingBag, 
@@ -24,6 +25,7 @@ function Productdetails() {
   const navigate = useNavigate()
   const { handlegetoneprodcut } = useproduct()
   const { user } = useauth()
+  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart } = usecart()
 
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'dark')
@@ -45,11 +47,6 @@ function Productdetails() {
     delivery: false,
   })
 
-  // Cart State
-  const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem('luomi-cart')
-    return savedCart ? JSON.parse(savedCart) : []
-  })
   const [isCartOpen, setIsCartOpen] = useState(false)
 
   // Sync theme
@@ -58,10 +55,12 @@ function Productdetails() {
     localStorage.setItem('luomi-theme', theme)
   }, [theme])
 
-  // Sync cart
+  // Sync cart from cloud DB if logged in
   useEffect(() => {
-    localStorage.setItem('luomi-cart', JSON.stringify(cart))
-  }, [cart])
+    if (user) {
+      handleGetCart()
+    }
+  }, [user])
 
   // Toggle Theme
   const toggleTheme = () => {
@@ -115,56 +114,56 @@ function Productdetails() {
   }, [id])
 
   // Cart Operations
-  const addToCart = (productObj, selectedQty = 1, variantObj = null) => {
+  const addToCart = async (productObj, selectedQty = 1, variantObj = null) => {
+    if (!user) {
+      alert("Please log in to add items to your atelier bag.")
+      navigate('/login')
+      return
+    }
     if (!productObj) return
-    const variantId = variantObj?._id || '';
-    const itemKey = variantObj ? `${productObj._id}-${variantId}` : productObj._id;
+    const variantId = variantObj?._id || ''
     
-    setCart(prev => {
-      const existing = prev.find(item => {
-        const currentItemKey = item.selectedVariant 
-          ? `${item.product._id}-${item.selectedVariant._id}` 
-          : item.product._id;
-        return currentItemKey === itemKey;
-      })
-      
-      if (existing) {
-        return prev.map(item => {
-          const currentItemKey = item.selectedVariant 
-            ? `${item.product._id}-${item.selectedVariant._id}` 
-            : item.product._id;
-          return currentItemKey === itemKey
-            ? { ...item, quantity: item.quantity + selectedQty }
-            : item
-        })
-      }
-      return [...prev, { product: productObj, selectedVariant: variantObj, quantity: selectedQty }]
+    // Check available stock
+    const availableStock = variantObj ? variantObj.stock : (productObj.stock || 0)
+
+    const existing = cartItems.find(item => 
+      item.product._id === productObj._id && 
+      (variantId ? item.selectedVariant === variantId : !item.selectedVariant)
+    )
+    const currentQty = existing ? existing.quantity : 0
+
+    if (currentQty + selectedQty > availableStock) {
+      alert(`Cannot add more. Only ${availableStock} items left in stock. (You already have ${currentQty} in cart)`)
+      return
+    }
+
+    const res = await handleAddToCart({ 
+      productId: productObj._id, 
+      quantity: selectedQty, 
+      variantId: variantId || null 
     })
-    setIsCartOpen(true)
+    if (res.success) {
+      setIsCartOpen(true)
+    } else {
+      alert(res.error || "Failed to add to cart")
+    }
   }
 
-  const updateCartQty = (itemKey, delta) => {
-    setCart(prev => {
-      return prev.map(item => {
-        const currentItemKey = item.selectedVariant 
-          ? `${item.product._id}-${item.selectedVariant._id}` 
-          : item.product._id;
-        if (currentItemKey === itemKey) {
-          const newQty = item.quantity + delta
-          return newQty > 0 ? { ...item, quantity: newQty } : null
-        }
-        return item
-      }).filter(Boolean)
-    })
+  const updateCartQty = async (productId, currentQty, delta, availableStock, variantId = null) => {
+    if (delta > 0 && currentQty + 1 > availableStock) {
+      alert(`Cannot add more. Only ${availableStock} items left in stock.`)
+      return
+    }
+    const newQty = currentQty + delta
+    if (newQty <= 0) {
+      await handleRemoveFromCart({ productId, variantId })
+    } else {
+      await handleUpdateCart({ productId, quantity: newQty, variantId })
+    }
   }
 
-  const removeFromCart = (itemKey) => {
-    setCart(prev => prev.filter(item => {
-      const currentItemKey = item.selectedVariant 
-        ? `${item.product._id}-${item.selectedVariant._id}` 
-        : item.product._id;
-      return currentItemKey !== itemKey;
-    }))
+  const removeFromCart = async (productId, variantId = null) => {
+    await handleRemoveFromCart({ productId, variantId })
   }
 
   const getCurrencySymbol = (currency) => {
@@ -196,14 +195,17 @@ function Productdetails() {
   }
 
   // Calculate cart subtotal
-  const totalCartItems = cart.reduce((acc, curr) => acc + curr.quantity, 0)
-  const cartTotal = cart.reduce((acc, curr) => {
-    const priceObj = curr.selectedVariant?.price || curr.product.price
+  const totalCartItems = cartItems.reduce((acc, curr) => acc + curr.quantity, 0)
+  const cartTotal = cartItems.reduce((acc, curr) => {
+    const variantObj = curr.selectedVariant && curr.product.variants
+      ? curr.product.variants.find(v => v._id === curr.selectedVariant)
+      : null
+    const priceObj = variantObj?.price || curr.product.price
     const amt = parseFloat(priceObj?.amount || 0)
     return acc + (isNaN(amt) ? 0 : amt) * curr.quantity
   }, 0)
-  const cartCurrencySymbol = cart.length > 0 
-    ? getCurrencySymbol(cart[0].selectedVariant?.price?.currency || cart[0].product.price?.currency) 
+  const cartCurrencySymbol = cartItems.length > 0 
+    ? getCurrencySymbol(cartItems[0].product.price?.currency) 
     : '₹'
 
   // Calculate price comparison variables (Amazon/Flipkart inspired)
@@ -212,6 +214,22 @@ function Productdetails() {
   const hasDiscount = basePrice > 0 && currentPrice > 0 && basePrice > currentPrice;
   const discountPercent = hasDiscount ? Math.round(((basePrice - currentPrice) / basePrice) * 100) : 0;
   const savingsAmt = hasDiscount ? (basePrice - currentPrice) : 0;
+
+  // Reset quantity when variant changes
+  useEffect(() => {
+    setQuantity(1)
+  }, [selectedVariant])
+
+  const handlePageQtyChange = (delta) => {
+    const availableStock = selectedVariant ? selectedVariant.stock : (product ? (product.stock || 0) : 0)
+    const newQty = quantity + delta
+    if (newQty < 1) return
+    if (newQty > availableStock) {
+      alert(`Only ${availableStock} items left in stock.`)
+      return
+    }
+    setQuantity(newQty)
+  }
 
   return (
     <div className="prod-details-container">
@@ -505,14 +523,14 @@ function Productdetails() {
                   <div className="qty-widget">
                     <button 
                       className="btn-qty-action" 
-                      onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                      onClick={() => handlePageQtyChange(-1)}
                     >
                       <FiMinus size={11} />
                     </button>
                     <span className="qty-display">{quantity}</span>
                     <button 
                       className="btn-qty-action" 
-                      onClick={() => setQuantity(prev => prev + 1)}
+                      onClick={() => handlePageQtyChange(1)}
                     >
                       <FiPlus size={11} />
                     </button>
@@ -596,19 +614,24 @@ function Productdetails() {
           </div>
 
           <div className="cart-items-area">
-            {cart.length === 0 ? (
+            {cartItems.length === 0 ? (
               <div className="cart-empty-state">
                 <FiShoppingBag size={24} />
                 <p className="cart-empty-label">Bag is Empty</p>
               </div>
             ) : (
-              cart.map((item) => {
+              cartItems.map((item) => {
+                const variantObj = item.selectedVariant && item.product.variants
+                  ? item.product.variants.find(v => v._id === item.selectedVariant)
+                  : null
+
+                const priceObj = variantObj?.price || item.product.price
+                const imgUrl = variantObj?.images?.[0]?.url || item.product.images?.[0]?.url
+                const availableStock = variantObj ? variantObj.stock : (item.product.stock || 0)
                 const itemKey = item.selectedVariant 
-                  ? `${item.product._id}-${item.selectedVariant._id}` 
-                  : item.product._id;
-                const priceObj = item.selectedVariant?.price || item.product.price;
-                const imgUrl = item.selectedVariant?.images?.[0]?.url || item.product.images?.[0]?.url;
-                
+                  ? `${item.product._id}-${item.selectedVariant}` 
+                  : item.product._id
+
                 return (
                   <div key={itemKey} className="cart-item">
                     <img 
@@ -619,10 +642,10 @@ function Productdetails() {
                     <div className="cart-item-details">
                       <h4 className="cart-item-name">{item.product.title}</h4>
                       
-                      {item.selectedVariant && (
-                        <div className="cart-item-variant-attrs">
-                          {Object.entries(item.selectedVariant.attributes || {}).map(([key, val], aIdx) => (
-                            <span key={aIdx} className="cart-item-attr-pill">
+                      {variantObj && (
+                        <div className="cart-item-variant-attrs" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '2px 0' }}>
+                          {Object.entries(variantObj.attributes || {}).map(([key, val], aIdx) => (
+                            <span key={aIdx} className="cart-item-attr-pill" style={{ fontSize: '9px', padding: '2px 6px', background: 'var(--badge-bg)', border: '0.5px solid var(--border)', borderRadius: '100px', color: 'var(--text-muted)' }}>
                               {key}: {val}
                             </span>
                           ))}
@@ -636,15 +659,15 @@ function Productdetails() {
                       
                       <div className="cart-item-controls">
                         <div className="qty-row">
-                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(itemKey, -1)}>
+                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, item.quantity, -1, availableStock, item.selectedVariant)}>
                             <FiMinus size={10} />
                           </button>
                           <span className="qty-num">{item.quantity}</span>
-                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(itemKey, 1)}>
+                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, item.quantity, 1, availableStock, item.selectedVariant)}>
                             <FiPlus size={10} />
                           </button>
                         </div>
-                        <button className="btn-remove" onClick={() => removeFromCart(itemKey)}>
+                        <button className="btn-remove" onClick={() => removeFromCart(item.product._id, item.selectedVariant)}>
                           Remove
                         </button>
                       </div>
@@ -655,7 +678,7 @@ function Productdetails() {
             )}
           </div>
 
-          {cart.length > 0 && (
+          {cartItems.length > 0 && (
             <div className="cart-foot">
               <div className="cart-total-row">
                 <span className="cart-total-label">Subtotal</span>

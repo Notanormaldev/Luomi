@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useproduct } from '../hook/useproduct'
 import { useauth } from '../../auth/hook/useauth'
+import { usecart } from '../../cart/hook/usecart'
 import Logo from '../../auth/components/Logo'
 import { 
   FiSearch, 
@@ -21,6 +22,7 @@ function Home() {
   const navigate = useNavigate()
   const { handlegetallprodcuts } = useproduct()
   const { user } = useauth()
+  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart } = usecart()
 
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'dark')
@@ -28,15 +30,13 @@ function Home() {
   // Catalog & UI States
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState('All')
+  const [activeGender, setActiveGender] = useState('All')
+  const [activeSub, setActiveSub] = useState('All')
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [activeImgIndex, setActiveImgIndex] = useState(0)
   
-  // Cart State
-  const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem('luomi-cart')
-    return savedCart ? JSON.parse(savedCart) : []
-  })
+  // Cart overlay state
   const [isCartOpen, setIsCartOpen] = useState(false)
 
   // Sync theme
@@ -45,10 +45,12 @@ function Home() {
     localStorage.setItem('luomi-theme', theme)
   }, [theme])
 
-  // Sync cart
+  // Sync cart from cloud DB if logged in
   useEffect(() => {
-    localStorage.setItem('luomi-cart', JSON.stringify(cart))
-  }, [cart])
+    if (user) {
+      handleGetCart()
+    }
+  }, [user])
 
   // Fetch all products
   useEffect(() => {
@@ -73,35 +75,46 @@ function Home() {
   }
 
   // Cart Operations
-  const addToCart = (product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.product._id === product._id)
-      if (existing) {
-        return prev.map(item => 
-          item.product._id === product._id 
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      }
-      return [...prev, { product, quantity: 1 }]
-    })
-    setIsCartOpen(true)
+  const addToCart = async (product) => {
+    if (!user) {
+      alert("Please log in to add items to your atelier bag.")
+      navigate('/login')
+      return
+    }
+
+    // Live Stock Validation
+    const existing = cartItems.find(item => item.product._id === product._id && !item.selectedVariant)
+    const currentQty = existing ? existing.quantity : 0
+    const availableStock = product.stock || 0
+
+    if (currentQty + 1 > availableStock) {
+      alert(`Cannot add more. Only ${availableStock} items left in stock.`)
+      return
+    }
+
+    const res = await handleAddToCart({ productId: product._id, quantity: 1 })
+    if (res.success) {
+      setIsCartOpen(true)
+    } else {
+      alert(res.error || "Failed to add to cart")
+    }
   }
 
-  const updateCartQty = (productId, delta) => {
-    setCart(prev => {
-      return prev.map(item => {
-        if (item.product._id === productId) {
-          const newQty = item.quantity + delta
-          return newQty > 0 ? { ...item, quantity: newQty } : null
-        }
-        return item
-      }).filter(Boolean)
-    })
+  const updateCartQty = async (productId, currentQty, delta, availableStock) => {
+    if (delta > 0 && currentQty + 1 > availableStock) {
+      alert(`Cannot add more. Only ${availableStock} items left in stock.`)
+      return
+    }
+    const newQty = currentQty + delta
+    if (newQty <= 0) {
+      await handleRemoveFromCart({ productId })
+    } else {
+      await handleUpdateCart({ productId, quantity: newQty })
+    }
   }
 
-  const removeFromCart = (productId) => {
-    setCart(prev => prev.filter(item => item.product._id !== productId))
+  const removeFromCart = async (productId) => {
+    await handleRemoveFromCart({ productId })
   }
 
   const getCurrencySymbol = (currency) => {
@@ -125,32 +138,32 @@ function Home() {
     })
   }
 
-  // Filter products by search and category
+  // Filter products by search, gender category, and subcategory
   const filteredProducts = allProducts.filter(product => {
     const matchesSearch = 
       product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.genderCategory?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.subCategory?.toLowerCase().includes(searchQuery.toLowerCase())
     
-    // Mock category categorization
-    if (activeCategory === 'All') return matchesSearch
-    if (activeCategory === 'Maison Pieces') {
-      return matchesSearch && parseFloat(product.price?.amount || 0) > 500
-    }
-    if (activeCategory === 'Ready-To-Wear') {
-      return matchesSearch && parseFloat(product.price?.amount || 0) <= 500
-    }
-    return matchesSearch
+    const matchesGender = activeGender === 'All' || 
+      (product.genderCategory && product.genderCategory.toLowerCase() === activeGender.toLowerCase())
+      
+    const matchesSub = activeSub === 'All' || 
+      (product.subCategory && product.subCategory.toLowerCase() === activeSub.toLowerCase())
+
+    return matchesSearch && matchesGender && matchesSub
   })
 
   // Calculate cart counts and totals
-  const totalCartItems = cart.reduce((acc, curr) => acc + curr.quantity, 0)
-  const cartTotal = cart.reduce((acc, curr) => {
+  const totalCartItems = cartItems.reduce((acc, curr) => acc + curr.quantity, 0)
+  const cartTotal = cartItems.reduce((acc, curr) => {
     const amt = parseFloat(curr.product.price?.amount || 0)
     return acc + (isNaN(amt) ? 0 : amt) * curr.quantity
   }, 0)
 
   // Use primary currency from first item in cart or fallback
-  const cartCurrencySymbol = cart.length > 0 ? getCurrencySymbol(cart[0].product.price?.currency) : '₹'
+  const cartCurrencySymbol = cartItems.length > 0 ? getCurrencySymbol(cartItems[0].product.price?.currency) : '₹'
 
   const handleSelectProduct = (product) => {
     navigate(`/product/${product._id}`)
@@ -181,8 +194,56 @@ function Home() {
               placeholder="Search catalog silhouettes..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
               className="search-input"
             />
+            {searchQuery && isSearchFocused && (
+              <>
+                <div className="search-overlay-backdrop" onClick={() => setIsSearchFocused(false)} />
+                <div className="search-dropdown-overlay">
+                  <div className="search-dropdown-header">
+                    <span>Matching Silhouettes ({filteredProducts.length})</span>
+                    <button 
+                      onClick={() => {
+                        setSearchQuery('');
+                        setIsSearchFocused(false);
+                      }} 
+                      className="clear-search-btn"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="search-dropdown-results">
+                    {filteredProducts.slice(0, 5).map(prod => (
+                      <div 
+                        key={prod._id} 
+                        className="search-dropdown-item"
+                        onClick={() => {
+                          navigate(`/product/${prod._id}`);
+                          setIsSearchFocused(false);
+                          setSearchQuery('');
+                        }}
+                      >
+                        {prod.images && prod.images.length > 0 ? (
+                          <img src={prod.images[0].url} alt={prod.title} className="search-item-thumb" />
+                        ) : (
+                          <div className="search-item-thumb" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-input)', fontSize: '8px' }}>LUOMI</div>
+                        )}
+                        <div className="search-item-info">
+                          <span className="search-item-title">{prod.title}</span>
+                          <span className="search-item-price">
+                            {getCurrencySymbol(prod.price?.currency)}{formatPrice(prod.price?.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredProducts.length === 0 && (
+                      <div className="search-no-results">No matching silhouettes found.</div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="nav-right">
@@ -237,7 +298,7 @@ function Home() {
               <p className="hero-body">
                 Minimal designs crafted by independent ateliers. Hand-tailored silhouetted lines, structured textures, and monochrome excellence.
               </p>
-              <button className="btn-hero-cta" onClick={() => setActiveCategory('Maison Pieces')}>
+              <button className="btn-hero-cta" onClick={() => setActiveGender('Men')}>
                 Discover Collection
               </button>
             </div>
@@ -247,26 +308,33 @@ function Home() {
           </div>
         </div>
 
-        {/* Filter Categories Row */}
-        <div className="catalog-filters-row">
-          <button 
-            className={`btn-filter ${activeCategory === 'All' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('All')}
-          >
-            All Silhouettes
-          </button>
-          <button 
-            className={`btn-filter ${activeCategory === 'Ready-To-Wear' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('Ready-To-Wear')}
-          >
-            Ready-To-Wear
-          </button>
-          <button 
-            className={`btn-filter ${activeCategory === 'Maison Pieces' ? 'active' : ''}`}
-            onClick={() => setActiveCategory('Maison Pieces')}
-          >
-            Maison Atelier Pieces
-          </button>
+        {/* Snitch-like Premium Gender Filter */}
+        <div className="gender-filter-container">
+          {['All', 'Men', 'Women', 'Kids', 'Unisex'].map(gender => (
+            <button
+              key={gender}
+              className={`gender-filter-btn ${activeGender === gender ? 'active' : ''}`}
+              onClick={() => {
+                setActiveGender(gender)
+                setActiveSub('All')
+              }}
+            >
+              {gender}
+            </button>
+          ))}
+        </div>
+
+        {/* Snitch-like Subcategory Pills */}
+        <div className="subcategory-pills-container">
+          {['All', 'Shirt', 'T-Shirt', 'Pants', 'Cargos', 'Polos', 'Plus Size', 'Trouser', 'Jeans'].map(sub => (
+            <button
+              key={sub}
+              className={`subcategory-pill-btn ${activeSub === sub ? 'active' : ''}`}
+              onClick={() => setActiveSub(sub)}
+            >
+              {sub}
+            </button>
+          ))}
         </div>
 
         {/* Products Grid */}
@@ -346,47 +414,71 @@ function Home() {
           </div>
 
           <div className="cart-items-area">
-            {cart.length === 0 ? (
+            {cartItems.length === 0 ? (
               <div className="cart-empty-state">
                 <FiShoppingBag size={24} />
                 <p className="cart-empty-label">Bag is Empty</p>
               </div>
             ) : (
-              cart.map((item) => (
-                <div key={item.product._id} className="cart-item">
-                  <img 
-                    src={item.product.images?.[0]?.url} 
-                    alt={item.product.title} 
-                    className="cart-item-thumb"
-                  />
-                  <div className="cart-item-details">
-                    <h4 className="cart-item-name">{item.product.title}</h4>
-                    <span className="cart-item-price">
-                      {getCurrencySymbol(item.product.price?.currency)}
-                      {formatPrice(item.product.price?.amount)}
-                    </span>
-                    
-                    <div className="cart-item-controls">
-                      <div className="qty-row">
-                        <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, -1)}>
-                          <FiMinus size={10} />
-                        </button>
-                        <span className="qty-num">{item.quantity}</span>
-                        <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, 1)}>
-                          <FiPlus size={10} />
+              cartItems.map((item) => {
+                const variantObj = item.selectedVariant && item.product.variants
+                  ? item.product.variants.find(v => v._id === item.selectedVariant)
+                  : null
+
+                const priceObj = variantObj?.price || item.product.price
+                const imgUrl = variantObj?.images?.[0]?.url || item.product.images?.[0]?.url
+                const availableStock = variantObj ? variantObj.stock : (item.product.stock || 0)
+                const itemKey = item.selectedVariant 
+                  ? `${item.product._id}-${item.selectedVariant}` 
+                  : item.product._id
+
+                return (
+                  <div key={itemKey} className="cart-item">
+                    <img 
+                      src={imgUrl} 
+                      alt={item.product.title} 
+                      className="cart-item-thumb"
+                    />
+                    <div className="cart-item-details">
+                      <h4 className="cart-item-name">{item.product.title}</h4>
+                      
+                      {variantObj && (
+                        <div className="cart-item-variant-attrs" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '2px 0' }}>
+                          {Object.entries(variantObj.attributes || {}).map(([key, val], aIdx) => (
+                            <span key={aIdx} className="cart-item-attr-pill" style={{ fontSize: '9px', padding: '2px 6px', background: 'var(--badge-bg)', border: '0.5px solid var(--border)', borderRadius: '100px', color: 'var(--text-muted)' }}>
+                              {key}: {val}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <span className="cart-item-price">
+                        {getCurrencySymbol(priceObj?.currency)}
+                        {formatPrice(priceObj?.amount)}
+                      </span>
+                      
+                      <div className="cart-item-controls">
+                        <div className="qty-row">
+                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, item.quantity, -1, availableStock, item.selectedVariant)}>
+                            <FiMinus size={10} />
+                          </button>
+                          <span className="qty-num">{item.quantity}</span>
+                          <button className="btn-qty-ctrl" onClick={() => updateCartQty(item.product._id, item.quantity, 1, availableStock, item.selectedVariant)}>
+                            <FiPlus size={10} />
+                          </button>
+                        </div>
+                        <button className="btn-remove" onClick={() => removeFromCart(item.product._id, item.selectedVariant)}>
+                          Remove
                         </button>
                       </div>
-                      <button className="btn-remove" onClick={() => removeFromCart(item.product._id)}>
-                        Remove
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
 
-          {cart.length > 0 && (
+          {cartItems.length > 0 && (
             <div className="cart-foot">
               <div className="cart-total-row">
                 <span className="cart-total-label">Subtotal</span>

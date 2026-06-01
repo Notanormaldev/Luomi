@@ -5,7 +5,7 @@ import { uploadfile } from "../services/storage.service.js"
 
 async function createproduct(req, res) {
   try {
-    const { title, description, priceamount, pricecurrency ,stock} = req.body;
+    const { title, description, priceamount, pricecurrency, stock, genderCategory, subCategory } = req.body;
     const user = req.user;
 
    
@@ -64,6 +64,8 @@ async function createproduct(req, res) {
       },
       images,
       variants: builtVariants,
+      genderCategory: genderCategory || "men",
+      subCategory: subCategory || "shirt",
       seller: user._id,
     });
 
