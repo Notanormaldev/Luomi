@@ -4,6 +4,7 @@ import gsap from 'gsap'
 import LocomotiveScroll from 'locomotive-scroll'
 import 'locomotive-scroll/dist/locomotive-scroll.css'
 import { FiSun, FiMoon } from 'react-icons/fi'
+import { DiJira } from "react-icons/di";
 import Logo from '../components/Logo'
 import GoogleSignInButton from '../components/GoogleSignInButton'
 import { useauth } from '../hook/useauth'
@@ -11,7 +12,14 @@ import './Auth.css'
 
 function Login() {
   const navigate = useNavigate()
-  const { handlelogin, handlegoogleauth, handleforgotpassword, handleresetpassword, loading } = useauth()
+  const { user, handlelogin, handlegoogleauth, handleforgotpassword, handleresetpassword, loading } = useauth()
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/')
+    }
+  }, [user, loading, navigate])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -281,54 +289,50 @@ function Login() {
           }}
         />
         <div className="editorial-overlay" />
-        <div className="editorial-text-wrap">
-          <p className="auth-editorial-quote">
-            "A study in silent luxury. The architecture of modern attire."
-          </p>
-          <div className="auth-editorial-line" />
-          <span className="auth-editorial-sub">
-            LUOMI EDITORIAL STILLS
+
+        {/* Corner 1: Top Left */}
+        <div className="absolute top-10 left-10 z-10">
+          <span className="font-body text-sm font-bold editorial-corner-text" style={{ letterSpacing: '0.3em' }}>
+            LUOMI
+          </span>
+        </div>
+
+        {/* Corner 2: Top Right */}
+        <div className="absolute top-10 right-10 z-10 text-right">
+          <span className="font-mono text-[10px] uppercase editorial-corner-text" style={{ letterSpacing: '0.25em' }}>
+            ATELIER / SELECTION '26
+          </span>
+        </div>
+
+        {/* Corner 3: Bottom Left */}
+        <div className="absolute bottom-10 left-10 z-10">
+          <span className="font-mono text-[10px] uppercase editorial-corner-text" style={{ letterSpacing: '0.2em' }}>
+            EST. 2026 // STUDIO
           </span>
         </div>
       </div>
 
       {/* Right Column: Spacious Form Column (50% Width) */}
       <div className="form-column">
-        {/* Floating Theme Toggle */}
-        <button 
-          onClick={() => {
-            const next = theme === 'light' ? 'dark' : 'light'
-            localStorage.setItem('luomi-theme', next)
-            setTheme(next)
-            window.dispatchEvent(new Event('theme-changed'))
-          }} 
-          className="theme-toggle-floating"
-          type="button"
-          title="Toggle Theme"
-        >
-          {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
-        </button>
 
         {/* Center Auth Card */}
         <div className="genz-auth-card">
-          {/* Brand header */}
-          <div className="auth-logo-wrap logo-container">
-            <Logo />
-            <div className="auth-technical-divider divider-line" />
+          {/* Logo above text */}
+          <div className="mb-4 flex justify-start w-full auth-logo-container">
+            <div className="logo-scale-wrapper">
+              <Logo />
+            </div>
           </div>
 
           {/* Header */}
-          <h1 className="font-heading text-[32px] mb-6 leading-none tracking-tight flex flex-row flex-wrap justify-start">
-            {headingText.split(" ").map((word, wordIdx) => (
-              <span key={wordIdx} className="flex flex-row mr-2 inline-flex">
-                {word.split("").map((char, charIdx) => (
-                  <span key={charIdx} className="inline-block heading-char origin-bottom">
-                    {char}
-                  </span>
-                ))}
-              </span>
-            ))}
-          </h1>
+          <div className="mb-8 text-left">
+            <h1 className="font-body text-[32px] md:text-[38px] font-medium mb-3 leading-tight tracking-tight text-[var(--dash-title)]">
+              Your next <span className="font-bold">favorite</span> outfit is<br />only one click away.
+            </h1>
+            <p className="text-[var(--dash-subtitle)] text-[15px]">
+              Welcome back! Please enter your details.
+            </p>
+          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="w-full flex flex-col text-left">
@@ -344,7 +348,7 @@ function Login() {
               <label className="auth-label">Email Address</label>
               <input
                 type="email"
-                placeholder="Enter email address..."
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="auth-input"
@@ -356,7 +360,7 @@ function Login() {
               <label className="auth-label">Password</label>
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter password..."
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="auth-input"
@@ -394,9 +398,9 @@ function Login() {
               ref={buttonRef}
               type="submit"
               disabled={loading}
-              className="cta-button"
+              className="cta-button bg-black text-white dark:bg-white dark:text-black hover:opacity-80"
             >
-              {loading ? 'AUTHENTICATING...' : 'ENTER LUOMI'}
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
@@ -433,7 +437,7 @@ function Login() {
           <p className="auth-text-muted footer-animate">
             don't have an account?{' '}
             <Link to="/register" className="auth-link">
-              create_one_
+              create one
             </Link>
           </p>
           <p className="auth-legal-text footer-animate">

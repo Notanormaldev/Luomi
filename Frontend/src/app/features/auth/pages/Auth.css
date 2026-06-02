@@ -177,7 +177,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 60px 48px;
+  padding: 32px 48px;
   overflow-y: auto;
   box-sizing: border-box;
 }
@@ -192,26 +192,35 @@
   }
 }
 
-/* Luxury Atelier Card overlay (dashboard match) */
 .genz-auth-card {
-  background-color: var(--dash-card-bg);
-  backdrop-filter: blur(10px);
-  border: 0.5px solid var(--dash-card-border);
-  border-radius: 2px;
+  background-color: transparent;
+  border: none;
   width: 100%;
-  max-width: 480px;
-  margin: auto;
-  padding: 48px 40px;
+  max-width: 540px;
+  margin: 3vh auto auto !important;
+  padding: 24px 40px;
   box-sizing: border-box;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
-  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.auth-logo-container {
+  margin-top: 0px !important;
+  margin-bottom: 24px !important;
+}
+
+.logo-scale-wrapper {
+  transform: scale(1.35) !important;
+  transform-origin: left !important;
+  display: inline-block !important;
+}
+
+.genz-auth-card form {
+  margin-top: 24px !important;
 }
 
 .genz-auth-card:hover {
-  border-color: var(--dash-title);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.1);
+  /* No hover effect for minimalist card */
 }
 
 /* Brand header */
@@ -250,40 +259,35 @@
 .auth-input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 24px; /* Increased margin for breathing room */
+  gap: 4px;
+  margin-bottom: 16px;
   position: relative;
   width: 100%;
   text-align: left;
 }
 
 .auth-label {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  text-transform: uppercase;
-  color: var(--dash-subtitle);
-  letter-spacing: 1.5px;
+  display: none; /* Hide labels for minimalist look */
 }
 
 .auth-input {
   width: 100%;
-  height: 48px; /* Increased input height */
-  background-color: var(--input-bg);
-  border: 0.5px solid var(--input-border);
-  border-radius: 2px;
-  padding: 12px 16px;
+  height: 48px;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid var(--input-border);
+  border-radius: 0;
+  padding: 12px 0px;
   font-family: 'Inter', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--input-text);
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .auth-input:focus {
-  border-color: var(--dash-title);
-  box-shadow: 0 0 0 1px var(--dash-title);
+  border-bottom-color: var(--dash-title);
 }
 
 .auth-input::placeholder {
@@ -293,31 +297,25 @@
 /* Luxury Atelier CTA Button */
 .cta-button {
   width: 100%;
-  height: 48px; /* Increased button height */
+  height: 52px;
   background-color: var(--dash-btn-bg);
   border: 1px solid var(--dash-btn-border);
   color: var(--dash-btn-text);
-  border-radius: 2px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  border-radius: 50px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   outline: none;
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  margin-top: 8px;
+  transition: all 0.4s ease;
+  margin-top: 16px;
 }
 
 .cta-button:hover:not(:disabled) {
-  background-color: var(--dash-btn-hover-bg);
-  color: var(--dash-btn-hover-text);
-  border-color: var(--dash-title);
+  opacity: 0.9;
 }
 
 .cta-button:active:not(:disabled) {
@@ -337,29 +335,26 @@
 
 .google-button-custom {
   width: 100%;
-  height: 44px;
+  height: 52px;
   background-color: transparent;
-  border: 0.5px solid var(--dash-card-border);
-  border-radius: 2px;
+  border: 1px solid var(--input-border);
+  border-radius: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
   font-weight: 500;
   color: var(--dash-title);
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
   cursor: pointer;
   outline: none;
-  box-sizing: border-box;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s ease;
 }
 
 .google-button-custom:hover:not(:disabled) {
   border-color: var(--dash-title);
-  background-color: var(--dash-card-border);
+  background-color: rgba(0,0,0,0.02);
 }
 
 .google-button-custom:active:not(:disabled) {
@@ -377,7 +372,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 28px 0 20px 0; /* More margin */
+  margin: 16px 0 12px 0; /* More margin */
 }
 
 .social-divider-line {
@@ -557,8 +552,19 @@
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Editorial Corner Text Theme Responsive Colors */
+.editorial-corner-text {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: color 0.4s ease;
+}
+
+[data-theme='light'] .editorial-corner-text {
+  color: #111111 !important;
+  text-shadow: none;
 }

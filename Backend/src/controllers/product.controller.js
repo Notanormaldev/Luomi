@@ -1,6 +1,7 @@
 import productmodel from "../models/product.model.js"
 import { uploadfile } from "../services/storage.service.js"
 import orderModel from "../models/order.model.js"
+import orderDao from "../dao/order.dao.js"
 
 
 
@@ -131,26 +132,7 @@ async function sellerGetOrders(req, res) {
   try {
     const user = req.user;
     
-    const products = await productmodel.find({ seller: user._id });
-    const productIds = products.map(p => p._id);
-
-    const orders = await orderModel.find({ "items.product": { $in: productIds } })
-      .populate('user', 'fullname email contact profilepic')
-      .populate('items.product');
-
-    const sellerOrders = orders.map(order => {
-      const filteredItems = order.items.filter(item => 
-        item.product && item.product.seller.toString() === user._id.toString()
-      );
-      
-      return {
-        _id: order._id,
-        buyer: order.user,
-        items: filteredItems,
-        status: order.status,
-        createdAt: order.createdAt
-      };
-    }).filter(order => order.items.length > 0);
+    const sellerOrders = await orderDao.getOrdersForSeller(user._id);
 
     return res.status(200).json({
       success: true,

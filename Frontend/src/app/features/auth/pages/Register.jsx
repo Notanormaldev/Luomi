@@ -4,6 +4,7 @@ import gsap from 'gsap'
 import LocomotiveScroll from 'locomotive-scroll'
 import 'locomotive-scroll/dist/locomotive-scroll.css'
 import { FiSun, FiMoon } from 'react-icons/fi'
+import { DiJira } from "react-icons/di";
 import Logo from '../components/Logo'
 import GoogleSignInButton from '../components/GoogleSignInButton'
 import { useauth } from '../hook/useauth'
@@ -11,7 +12,14 @@ import './Auth.css'
 
 function Register() {
   const navigate = useNavigate()
-  const { handleregister, handlegoogleauth, handleverifyotp, loading } = useauth()
+  const { user, handleregister, handlegoogleauth, handleverifyotp, loading } = useauth()
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/')
+    }
+  }, [user, loading, navigate])
 
   // Step 1: Registration form
   const [fullName, setFullName] = useState('')
@@ -304,56 +312,54 @@ function Register() {
           }}
         />
         <div className="editorial-overlay" />
-        <div className="editorial-text-wrap">
-          <p className="auth-editorial-quote">
-            "A study in silent luxury. The architecture of modern attire."
-          </p>
-          <div className="auth-editorial-line" />
-          <span className="auth-editorial-sub">
-            LUOMI EDITORIAL STILLS
+        
+        {/* Corner 1: Top Left */}
+        <div className="absolute top-10 left-10 z-10">
+          <span className="font-body text-sm font-bold editorial-corner-text" style={{ letterSpacing: '0.3em' }}>
+            LUOMI
+          </span>
+        </div>
+
+        {/* Corner 2: Top Right */}
+        <div className="absolute top-10 right-10 z-10 text-right">
+          <span className="font-mono text-[10px] uppercase editorial-corner-text" style={{ letterSpacing: '0.25em' }}>
+            ATELIER / SELECTION '26
+          </span>
+        </div>
+
+        {/* Corner 3: Bottom Left */}
+        <div className="absolute bottom-10 left-10 z-10">
+          <span className="font-mono text-[10px] uppercase editorial-corner-text" style={{ letterSpacing: '0.2em' }}>
+            EST. 2026 // STUDIO
           </span>
         </div>
       </div>
 
       {/* Right Column: Spacious Form Column (50% Width) */}
       <div className="form-column">
-        {/* Floating Theme Toggle */}
-        <button 
-          onClick={() => {
-            const next = theme === 'light' ? 'dark' : 'light'
-            localStorage.setItem('luomi-theme', next)
-            setTheme(next)
-            window.dispatchEvent(new Event('theme-changed'))
-          }} 
-          className="theme-toggle-floating"
-          type="button"
-          title="Toggle Theme"
-        >
-          {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
-        </button>
 
         {/* Center Auth Card */}
         <div className="genz-auth-card">
-          {/* Brand header */}
-          <div className="auth-logo-wrap logo-container">
-            <Logo />
-            <div className="auth-technical-divider divider-line" />
+          {/* Logo above text */}
+          <div className="mb-4 flex justify-start w-full auth-logo-container">
+            <div className="logo-scale-wrapper">
+              <Logo />
+            </div>
           </div>
 
-          {/* Center Auth Form */}
-          <div className="w-full flex flex-col justify-center">
-            {/* Header */}
-            <h1 className="font-heading text-[32px] mb-6 leading-none tracking-tight flex flex-row flex-wrap justify-start">
-              {headingText.split(" ").map((word, wordIdx) => (
-                <span key={wordIdx} className="flex flex-row mr-2 inline-flex">
-                  {word.split("").map((char, charIdx) => (
-                    <span key={charIdx} className="inline-block heading-char origin-bottom">
-                      {char}
-                    </span>
-                  ))}
-                </span>
-              ))}
+          {/* Header */}
+          <div className="mb-8 text-left">
+            <h1 className="font-body text-[32px] md:text-[38px] font-medium mb-3 leading-tight tracking-tight text-[var(--dash-title)]">
+              {step === 1 ? (
+                <>Join us to find your next <span className="font-bold">favorite</span> outfit.</>
+              ) : (
+                <>Check your email for the <span className="font-bold">OTP code</span>.</>
+              )}
             </h1>
+            <p className="text-[var(--dash-subtitle)] text-[15px]">
+              {step === 1 ? "Welcome! Please enter your details to register." : "Enter the 6-digit code we sent you."}
+            </p>
+          </div>
 
             {step === 1 ? (
               <>
@@ -371,7 +377,7 @@ function Register() {
                     <label className="auth-label">Full Name</label>
                     <input
                       type="text"
-                      placeholder="Enter full name..."
+                      placeholder="Full Name"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="auth-input"
@@ -383,7 +389,7 @@ function Register() {
                     <label className="auth-label">Email Address</label>
                     <input
                       type="email"
-                      placeholder="Enter email address..."
+                      placeholder="Email Address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="auth-input"
@@ -395,7 +401,7 @@ function Register() {
                     <label className="auth-label">Password</label>
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Create password..."
+                      placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="auth-input"
@@ -417,9 +423,9 @@ function Register() {
                     ref={buttonRef}
                     type="submit"
                     disabled={loading}
-                    className="cta-button"
+                    className="cta-button bg-black text-white dark:bg-white dark:text-black hover:opacity-80"
                   >
-                    {loading ? 'CREATING ACCOUNT...' : 'JOIN LUOMI'}
+                    {loading ? 'Creating...' : 'Register'}
                   </button>
                 </form>
 
@@ -484,9 +490,9 @@ function Register() {
                     ref={buttonRef}
                     type="submit"
                     disabled={loading}
-                    className="cta-button mt-4"
+                    className="cta-button mt-4 bg-black text-white dark:bg-white dark:text-black hover:opacity-80"
                   >
-                    {loading ? 'VERIFYING...' : 'VERIFY OTP'}
+                    {loading ? 'Verifying...' : 'Verify OTP'}
                   </button>
                 </form>
 
@@ -500,34 +506,33 @@ function Register() {
                 <button
                   onClick={handleResendOtp}
                   disabled={resendTimer > 0 || resendLoading}
-                  className="resend-otp-button"
+                  className="resend-otp-button rounded-full py-3"
                 >
                   {resendTimer > 0 ? (
                     <>
                       Resend OTP in <span className="ml-2 font-bold">{resendTimer}s</span>
                     </>
                   ) : (
-                    resendLoading ? 'SENDING OTP...' : 'RESEND OTP'
+                    resendLoading ? 'Sending...' : 'Resend OTP'
                   )}
                 </button>
               </>
             )}
-          </div>
+        </div>
 
-          {/* Bottom Footer links */}
-          <div className="w-full text-center flex flex-col items-center mt-6 pt-2">
-            {step === 1 && (
-              <p className="auth-text-muted">
-                Already have an account?{' '}
-                <Link to="/login" className="auth-link">
-                  Log in
-                </Link>
-              </p>
-            )}
-            <p className="auth-legal-text">
-              © 2026 LUOMI LTD. ALL RIGHTS RESERVED.
+        {/* Bottom Footer links */}
+        <div className="w-full text-center flex flex-col items-center mt-6 pt-2">
+          {step === 1 && (
+            <p className="auth-text-muted">
+              Already have an account?{' '}
+              <Link to="/login" className="auth-link">
+                Log in
+              </Link>
             </p>
-          </div>
+          )}
+          <p className="auth-legal-text">
+            © 2026 LUOMI LTD. ALL RIGHTS RESERVED.
+          </p>
         </div>
       </div>
     </div>

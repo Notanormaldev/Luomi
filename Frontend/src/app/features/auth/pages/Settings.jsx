@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useauth } from '../hook/useauth'
 import Logo from '../components/Logo'
-import { FiArrowLeft, FiUser, FiSliders, FiSun, FiMoon, FiCheck, FiLogOut } from 'react-icons/fi'
+import { FiArrowLeft, FiUser, FiSliders, FiSun, FiMoon, FiCheck, FiLogOut, FiInfo, FiCpu } from 'react-icons/fi'
 import './Settings.css'
 
 function Settings() {
@@ -14,6 +14,7 @@ function Settings() {
   const [becomeSellerError, setBecomeSellerError] = useState('')
   const [becomeSellerSuccess, setBecomeSellerSuccess] = useState('')
   const [upgrading, setUpgrading] = useState(false)
+
 
   // Redirect if not logged in
   useEffect(() => {
@@ -238,6 +239,32 @@ function Settings() {
                   </div>
                 )}
               </div>
+
+              {/* About Section */}
+              <div className="settings-card section-card">
+                <div className="section-title-wrap">
+                  <FiInfo className="section-icon" />
+                  <h2 className="section-title">About Luomi</h2>
+                </div>
+                <p className="section-desc">
+                  Luomi is a premium fashion atelier designed for modern individuals who appreciate minimalistic elegance, luxury textiles, and tailored craftsmanship. Our digital flagship store offers curated collections crafted in collaboration with elite global designers.
+                </p>
+                <div className="about-details-grid">
+                  <div className="about-detail-row">
+                    <span className="about-detail-label">Philosophy</span>
+                    <span className="about-detail-value">Minimalist luxury, zero-waste tailoring.</span>
+                  </div>
+                  <div className="about-detail-row">
+                    <span className="about-detail-label">Version</span>
+                    <span className="about-detail-value">v1.2.4 (Atelier Edition)</span>
+                  </div>
+                  <div className="about-detail-row">
+                    <span className="about-detail-label">Contact</span>
+                    <span className="about-detail-value">atelier@luomi.com</span>
+                  </div>
+                </div>
+              </div>
+
 
             </div>
           </div>
