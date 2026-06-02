@@ -68,7 +68,7 @@ const productSchema = mongoose.Schema({
     },
     subCategory:{
         type:String,
-        enum:['shirt','t-shirt','pants','cargos','polos','plus size','trouser','jeans'],
+        enum:['shirt','t-shirt','pants','cargos','polos','plus size','trouser','jeans','hoodies','shorts','activewear','sweatshirts'],
         default:'shirt'
     },
     seller:{

@@ -114,7 +114,12 @@ class CartDao {
           items: {
             $push: {
               $cond: {
-                if: { $and: [{ $ne: ["$items", null] }, { $ne: ["$items.product", null] }] },
+                if: {
+                  $and: [
+                    { $ne: [{ $ifNull: ["$items", null] }, null] },
+                    { $ne: [{ $ifNull: ["$items.product", null] }, null] }
+                  ]
+                },
                 then: {
                   product: {
                     _id: "$productDetails._id",

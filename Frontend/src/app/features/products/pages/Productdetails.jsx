@@ -25,8 +25,9 @@ import './Productdetails.css'
 function Productdetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { handlegetoneprodcut } = useproduct()
+  const { handlegetoneprodcut, handlegetallprodcuts } = useproduct()
   const { user } = useauth()
+  const allProducts = useSelector(state => state.product.products) || []
   const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
   const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
 
@@ -92,9 +93,11 @@ function Productdetails() {
         if (data && data.success && data.products) {
           const prod = data.products
           setProduct(prod)
-          const imgs = prod.images ? prod.images.map(i => i.url) : []
-          setGalleryImages(imgs)
-          if (imgs.length > 0) setActiveImgUrl(imgs[0])
+          const pImgs = prod.images ? prod.images.map(i => i.url).filter(Boolean) : []
+          const allVImgs = prod.variants ? prod.variants.flatMap(v => v.images ? v.images.map(i => i.url).filter(Boolean) : []) : []
+          const combined = Array.from(new Set([...pImgs, ...allVImgs]))
+          setGalleryImages(combined)
+          if (combined.length > 0) setActiveImgUrl(combined[0])
         } else {
           setError('Product not found')
         }
@@ -105,6 +108,8 @@ function Productdetails() {
       finally { setLoading(false) }
     }
     fetch()
+    handlegetallprodcuts()
+    window.scrollTo(0, 0)
   }, [id])
 
   // Init default attributes from first variant
@@ -129,10 +134,12 @@ function Productdetails() {
     )
     if (match) {
       setSelectedVariant(match)
-      const vImgs = match.images?.map(i => i.url) || []
-      const imgs = vImgs.length > 0 ? vImgs : (product.images?.map(i => i.url) || [])
-      setGalleryImages(imgs)
-      if (imgs.length > 0 && !imgs.includes(activeImgUrl)) setActiveImgUrl(imgs[0])
+      const vImgs = match.images?.map(i => i.url).filter(Boolean) || []
+      if (vImgs.length > 0) {
+        setActiveImgUrl(vImgs[0])
+      }
+    } else {
+      setSelectedVariant(null)
     }
   }, [selectedAttributes, product])
 
@@ -213,6 +220,11 @@ function Productdetails() {
     : (product?.stock ?? 0)
 
   const addToCart = async (navigateAfter = false) => {
+    if (hasVariants && !selectedAttributes['size']) {
+      setToastMsg("Please select a size first")
+      setTimeout(() => setToastMsg(null), 3000)
+      return
+    }
     if (!user) { navigate('/login'); return }
     const cartPayload = { productId: id, quantity }
     if (selectedVariant) cartPayload.variantId = selectedVariant._id
@@ -496,22 +508,23 @@ function Productdetails() {
               <div className="pd-cta-row">
                 <button
                   className="pd-add-bag-btn"
-                  disabled={hasVariants ? !selectedVariant || selectedVariant.stock <= 0 : product?.stock <= 0}
-                  onClick={addToCart}
+                  disabled={hasVariants ? (selectedAttributes['size'] && (!selectedVariant || selectedVariant.stock <= 0)) : product?.stock <= 0}
+                  onClick={() => addToCart(false)}
                 >
                   {hasVariants
-                    ? (!selectedAttributes['size']
-                      ? 'SELECT SIZE'
-                      : (selectedVariant && selectedVariant.stock > 0 ? 'ADD TO BAG' : 'OUT OF STOCK'))
+                    ? (selectedAttributes['size'] && (!selectedVariant || selectedVariant.stock <= 0) ? 'OUT OF STOCK' : 'ADD TO BAG')
                     : (product?.stock > 0 ? 'ADD TO BAG' : 'OUT OF STOCK')
                   }
                 </button>
                 <button
                   className="pd-buy-now-btn"
-                  disabled={hasVariants ? !selectedVariant || selectedVariant.stock <= 0 : product?.stock <= 0}
+                  disabled={hasVariants ? (selectedAttributes['size'] && (!selectedVariant || selectedVariant.stock <= 0)) : product?.stock <= 0}
                   onClick={() => addToCart(true)}
                 >
-                  {hasVariants && !selectedAttributes['size'] ? 'SELECT SIZE' : 'BUY NOW'}
+                  {hasVariants
+                    ? (selectedAttributes['size'] && (!selectedVariant || selectedVariant.stock <= 0) ? 'OUT OF STOCK' : 'BUY NOW')
+                    : (product?.stock > 0 ? 'BUY NOW' : 'OUT OF STOCK')
+                  }
                 </button>
                 <button
                   className={`pd-wishlist-btn ${isWishlisted(id) ? 'active' : ''}`}
@@ -608,6 +621,50 @@ function Productdetails() {
 
           </div>
         </div>
+      )}
+
+      {/* Similar Products Section */}
+      {product && (
+        (() => {
+          const similarProducts = allProducts
+            .filter(p => p._id !== id)
+            .sort((a, b) => {
+              if (a.subCategory === product?.subCategory && b.subCategory !== product?.subCategory) return -1
+              if (b.subCategory === product?.subCategory && a.subCategory !== product?.subCategory) return 1
+              if (a.genderCategory === product?.genderCategory && b.genderCategory !== product?.genderCategory) return -1
+              if (b.genderCategory === product?.genderCategory && a.genderCategory !== product?.genderCategory) return 1
+              return 0
+            })
+            .slice(0, 8);
+
+          if (similarProducts.length === 0) return null;
+
+          return (
+            <div className="pd-similar-section">
+              <h2 className="pd-similar-title">SIMILAR PRODUCTS</h2>
+              <div className="pd-similar-grid">
+                {similarProducts.map(p => (
+                  <div key={p._id} className="pd-similar-card" onClick={() => { window.scrollTo(0, 0); navigate(`/product/${p._id}`) }}>
+                    <div className="pd-similar-card-img-wrap">
+                      {p.images?.[0]?.url ? (
+                        <img src={p.images[0].url} alt={p.title} className="pd-similar-card-img" />
+                      ) : (
+                        <div className="pd-similar-card-img-placeholder"><span>LUOMI</span></div>
+                      )}
+                      {p.images?.[1]?.url && (
+                        <img src={p.images[1].url} alt={p.title} className="pd-similar-card-img pd-similar-card-img-hover" />
+                      )}
+                    </div>
+                    <div className="pd-similar-card-body">
+                      <h3 className="pd-similar-card-title">{p.title}</h3>
+                      <span className="pd-similar-card-price">₹{fmt(p.price?.amount)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()
       )}
 
       {/* Floating Toast Notification */}

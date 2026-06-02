@@ -29,6 +29,10 @@ const CATEGORY_TABS = [
   { label: 'Trousers', value: 'All', sub: 'trouser' },
   { label: 'Cargo Pants', value: 'All', sub: 'cargos' },
   { label: 'Polos', value: 'All', sub: 'polos' },
+  { label: 'Hoodies', value: 'All', sub: 'hoodies' },
+  { label: 'Sweatshirts', value: 'All', sub: 'sweatshirts' },
+  { label: 'Shorts', value: 'All', sub: 'shorts' },
+  { label: 'Activewear', value: 'All', sub: 'activewear' },
   { label: 'Plus-Size', value: 'All', sub: 'plus size' },
 ]
 
@@ -42,11 +46,10 @@ const FEATURED_CATS = [
 ]
 
 const HERO_PANELS = [
-  { sub: 'polos', headline: 'THE POLO ATELIER', sub2: 'CELEB-STYLED KNITS.\nREFINED SPORT AESTHETIC.', img: 'https://images.unsplash.com/photo-1618517351616-38fc975d40db?q=80&w=1200&auto=format&fit=crop' },
-  { sub: 'jeans', headline: 'DENIM ESCAPE', sub2: 'PREMIUM COZY CUTS.\nSTRETCH & STRUCTURE.', img: 'https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=1200&auto=format&fit=crop' },
-  { sub: 'shirt', headline: 'WOMEN\'S SHIRTING & LINENS', sub2: 'EFFORTLESS LUXURY.\nORGANIC FABRICS.', img: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?q=80&w=1200&auto=format&fit=crop' },
-  { sub: 't-shirt', headline: 'GRAPHIC LUXE TEES', sub2: 'STREET CULTURE STYLE.\nHEAVYWEIGHT COTTON.', img: 'https://images.unsplash.com/photo-1554568218-0f1715e72254?q=80&w=1200&auto=format&fit=crop' },
-  { sub: 'cargos', headline: 'UTILITY STREETWEAR', sub2: 'CARGO PANTS REDEFINED.\nSTREET COMFORT.', img: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=1200&auto=format&fit=crop' },
+  { sub: 'polos', headline: 'THE POLO ATELIER', sub2: 'CELEB-STYLED KNITS.\nREFINED SPORT AESTHETIC.', img: '/hero_polo.png' },
+  { sub: 'jeans', headline: 'DENIM ESCAPE', sub2: 'PREMIUM COZY CUTS.\nSTRETCH & STRUCTURE.', img: '/hero_denim.png' },
+  { sub: 'shirt', headline: 'SHIRTING & LINENS', sub2: 'EFFORTLESS LUXURY.\nORGANIC FABRICS.', img: '/hero_linen.png' },
+  { sub: 't-shirt', headline: 'GRAPHIC LUXE TEES', sub2: 'STREET CULTURE STYLE.\nHEAVYWEIGHT COTTON.', img: '/hero_streetwear.png' },
 ]
 
 const TOP_SEARCHES = ['Slim Fit Shirts', 'Black T-Shirts', 'Cargo Pants', 'Relaxed Jeans', 'Polo T-Shirts', 'Linen Shirts']
@@ -69,6 +72,7 @@ export default function Home() {
   const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
 
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
+  const [selectedGender, setSelectedGender] = useState('All')
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState(0)
@@ -157,7 +161,7 @@ export default function Home() {
   /* filter */
   const currentTab = CATEGORY_TABS[activeTab]
   const filteredProducts = allProducts.filter(p => {
-    const mGender = currentTab.value === 'All' || p.genderCategory?.toLowerCase() === currentTab.value.toLowerCase()
+    const mGender = selectedGender === 'All' || p.genderCategory?.toLowerCase() === selectedGender.toLowerCase()
     const mSub = currentTab.sub === 'All' || p.subCategory?.toLowerCase() === currentTab.sub.toLowerCase()
     if (!mGender || !mSub) return false
 
@@ -345,12 +349,23 @@ export default function Home() {
           </div>
         </div>
 
-        {/* mobile tabs */}
-        <div className="sn-mobile-tabs" aria-label="Mobile categories">
+        {/* Gender Bar & Category Bar (Desktop and Mobile) */}
+        <div className="sn-gender-bar">
+          {['All', 'Men', 'Women', 'Kids', 'Unisex'].map(g => (
+            <button 
+              key={g} 
+              className={`sn-gender-btn ${selectedGender === g ? 'active' : ''}`}
+              onClick={() => { setSelectedGender(g); setActiveTab(0); }}
+            >
+              {g === 'All' ? 'ALL ATELIER' : g.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <div className="sn-cat-bar" aria-label="Product categories">
           {CATEGORY_TABS.map((tab, i) => (
             <button
               key={tab.label}
-              className={`sn-cat-tab${activeTab === i ? ' active' : ''}`}
+              className={`sn-cat-btn ${activeTab === i ? 'active' : ''}`}
               onClick={() => setActiveTab(i)}
             >
               {tab.label}
@@ -373,6 +388,18 @@ export default function Home() {
                 ATELIER DASHBOARD
               </button>
             )}
+            <p className="sn-sidebar-section-title">SECTIONS</p>
+            {['All', 'Men', 'Women', 'Kids', 'Unisex'].map(g => (
+              <button 
+                key={g} 
+                className={`sn-cat-sidebar-link ${selectedGender === g ? 'active' : ''}`}
+                onClick={() => { setSelectedGender(g); setActiveTab(0); setIsCatOpen(false); }}
+              >
+                {g === 'All' ? 'ALL ATELIER' : g.toUpperCase()}
+              </button>
+            ))}
+            <div style={{ height: 1, background: 'var(--sn-border)', margin: '10px 0' }} />
+            <p className="sn-sidebar-section-title">CATEGORIES</p>
             {CATEGORY_TABS.map((tab, i) => (
               <button key={tab.label} className="sn-cat-sidebar-link"
                 onClick={() => handleCategorySelectInDrawer(i)}>
