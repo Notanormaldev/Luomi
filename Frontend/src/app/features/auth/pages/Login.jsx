@@ -87,9 +87,8 @@ function Login() {
     }
   }
 
-
   // Theme State
-  const [theme] = useState(localStorage.getItem('luomi-theme') || 'light')
+  const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
 
   // Sync theme
   useEffect(() => {
@@ -101,7 +100,6 @@ function Login() {
   const cursorDotRef = useRef(null)
   const cursorRingRef = useRef(null)
   const buttonRef = useRef(null)
-  const editorialRef = useRef(null)
 
   useEffect(() => {
     // 1. Initialize Locomotive Scroll
@@ -117,14 +115,14 @@ function Login() {
     // 2. Custom Cursor Movement
     const onMouseMove = (e) => {
       const { clientX, clientY } = e
-      
+
       // Instantly position the dot
       gsap.to(cursorDotRef.current, {
         x: clientX,
         y: clientY,
         duration: 0,
       })
-      
+
       // Smoothly lag the ring behind the dot
       gsap.to(cursorRingRef.current, {
         x: clientX,
@@ -138,15 +136,15 @@ function Login() {
 
     // 3. Page Entrance Animations
     const entranceTimeline = gsap.timeline()
-    
+
     // Logo entrance
-    entranceTimeline.fromTo('.logo-container', 
+    entranceTimeline.fromTo('.logo-container',
       { y: -20, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
     )
 
     // Divider line
-    entranceTimeline.fromTo('.divider-line', 
+    entranceTimeline.fromTo('.divider-line',
       { scaleX: 0, opacity: 0 },
       { scaleX: 1, opacity: 1, duration: 0.6, ease: 'power2.inOut' },
       '-=0.4'
@@ -180,8 +178,8 @@ function Login() {
       '-=0.4'
     )
 
-    // Left editorial column slide-in + blur fade
-    gsap.fromTo(editorialRef.current,
+    // Left editorial column slow blur-in fade
+    gsap.fromTo('.editorial-column',
       { x: -60, filter: 'blur(10px)', opacity: 0 },
       { x: 0, filter: 'blur(0px)', opacity: 1, duration: 1.2, ease: 'power4.out' }
     )
@@ -224,7 +222,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    
+
     if (!email) {
       setError('Please enter your email.')
       return
@@ -244,10 +242,10 @@ function Login() {
     try {
       const res = await handlelogin({ email, password })
       console.log(res);
-      
+
       if (res.data.user.role == "buyer" && res.success) {
         navigate('/')
-      }else if(res.data.user.role == "seller" && res.success){
+      } else if (res.data.user.role == "seller" && res.success) {
         navigate('/dashbord/seller')
       }
 
@@ -265,58 +263,64 @@ function Login() {
   const headingText = "Welcome Back"
 
   return (
-    <div data-scroll-container ref={scrollRef} className="w-full min-h-screen flex flex-row overflow-hidden relative">
-
-
+    <div data-scroll-container ref={scrollRef} className="genz-grid-bg genz-auth-body">
       {/* Custom Cursors */}
       <div ref={cursorDotRef} className="custom-cursor-dot" />
       <div ref={cursorRingRef} className="custom-cursor-ring" />
 
-      {/* Left editorial column (55%) */}
-      <div 
-        ref={editorialRef}
-        className="editorial-column w-[55%] h-screen relative hidden md:block overflow-hidden"
-      >
-        {/* Dark/Light overlay and slow parallax image */}
-        <div 
-          className="absolute inset-0 w-full h-full object-cover scale-110"
+      {/* Left Column: Fashion Editorial Column (50% Width) */}
+      <div className="editorial-column relative hidden md:block">
+        <div
+          className="absolute inset-0 w-full h-full object-cover scale-105"
           data-scroll
-          data-scroll-speed="-2"
+          data-scroll-speed="-1.5"
           style={{
             backgroundImage: theme === 'dark' ? "url('/editorial_fashion.png')" : "url('/editorial_fashion_light.png')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         />
-        {/* Theme-aware overlay gradient — subtle in light mode, deeper in dark */}
-        <div className="editorial-overlay absolute inset-0 pointer-events-none" />
-        
-        {/* High-fashion brand Statement Pull Quote */}
-        <div className="absolute inset-x-12 bottom-20 z-10 flex flex-col justify-end text-left select-none">
-          <p className="font-logo text-3xl lg:text-4xl italic auth-editorial-quote leading-relaxed tracking-wider font-light max-w-xl">
+        <div className="editorial-overlay" />
+        <div className="editorial-text-wrap">
+          <p className="auth-editorial-quote">
             "A study in silent luxury. The architecture of modern attire."
           </p>
-          <div className="h-[1px] w-20 auth-editorial-line mt-6" />
-          <span className="font-label text-[11px] font-medium tracking-[2px] uppercase auth-editorial-sub mt-3">
+          <div className="auth-editorial-line" />
+          <span className="auth-editorial-sub">
             LUOMI EDITORIAL STILLS
           </span>
         </div>
       </div>
 
-      {/* Right Form column (45%) */}
-      <div className="form-column w-full md:w-[45%] h-screen flex flex-col justify-between py-12 px-8 sm:px-16 overflow-y-auto z-10 no-scrollbar">
-        {/* Top brand header */}
-        <div className="w-full flex flex-col items-center">
-          <Logo />
-          <div className="divider-line h-[1px] auth-divider-line w-full my-6 origin-center" />
-        </div>
+      {/* Right Column: Spacious Form Column (50% Width) */}
+      <div className="form-column">
+        {/* Floating Theme Toggle */}
+        <button 
+          onClick={() => {
+            const next = theme === 'light' ? 'dark' : 'light'
+            localStorage.setItem('luomi-theme', next)
+            setTheme(next)
+            window.dispatchEvent(new Event('theme-changed'))
+          }} 
+          className="theme-toggle-floating"
+          type="button"
+          title="Toggle Theme"
+        >
+          {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
+        </button>
 
-        {/* Center Auth Form */}
-        <div className="my-auto w-full max-w-[400px] mx-auto flex flex-col justify-center">
+        {/* Center Auth Card */}
+        <div className="genz-auth-card">
+          {/* Brand header */}
+          <div className="auth-logo-wrap logo-container">
+            <Logo />
+            <div className="auth-technical-divider divider-line" />
+          </div>
+
           {/* Header */}
-          <h1 className="font-heading text-[38px] font-medium auth-heading mb-8 leading-none tracking-tight flex flex-row flex-wrap">
+          <h1 className="font-heading text-[32px] mb-6 leading-none tracking-tight flex flex-row flex-wrap justify-start">
             {headingText.split(" ").map((word, wordIdx) => (
-              <span key={wordIdx} className="flex flex-row mr-3">
+              <span key={wordIdx} className="flex flex-row mr-2 inline-flex">
                 {word.split("").map((char, charIdx) => (
                   <span key={charIdx} className="inline-block heading-char origin-bottom">
                     {char}
@@ -330,7 +334,7 @@ function Login() {
           <form onSubmit={handleSubmit} className="w-full flex flex-col text-left">
             {/* Error messaging */}
             {error && (
-              <p className="font-body text-xs text-red-500 mb-4 tracking-wide font-medium uppercase">
+              <p className="font-mono text-xs text-red-500 mb-4 tracking-wide font-bold uppercase">
                 {error}
               </p>
             )}
@@ -345,7 +349,6 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="auth-input"
               />
-              <span className="input-underline" />
             </div>
 
             {/* Field 2: Password */}
@@ -358,13 +361,12 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="auth-input"
               />
-              <span className="input-underline" />
               {/* Minimal text show/hide */}
-              <div className="absolute right-4 top-[38px] flex items-center">
+              <div className="absolute right-4 top-[36px] flex items-center">
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-[11px] font-label font-medium tracking-[1.5px] uppercase text-[#888888] hover:text-[#C0C0C0] transition-colors focus:outline-none cursor-pointer"
+                  className="text-[10px] font-mono font-bold tracking-[1.5px] uppercase text-[var(--dash-subtitle)] hover:text-[var(--dash-title)] transition-colors focus:outline-none cursor-pointer"
                 >
                   {showPassword ? 'HIDE' : 'SHOW'}
                 </button>
@@ -373,7 +375,7 @@ function Login() {
 
             {/* Forgot password */}
             <div className="w-full flex justify-end -mt-2 mb-6 footer-animate">
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   setForgotError('')
@@ -381,9 +383,9 @@ function Login() {
                   setForgotStep(1)
                   setShowForgotModal(true)
                 }}
-                className="text-xs font-label text-[#888888] hover:text-[#C0C0C0] underline transition-colors cursor-pointer"
+                className="text-xs font-mono text-[var(--dash-subtitle)] hover:text-[var(--dash-title)] underline transition-colors cursor-pointer"
               >
-                Forgot Password?
+                forgot_password?
               </button>
             </div>
 
@@ -407,7 +409,7 @@ function Login() {
 
           {/* Google Sign-In Button */}
           <div className="google-signin-container footer-animate">
-            <GoogleSignInButton 
+            <GoogleSignInButton
               onSuccess={async (token) => {
                 try {
                   const res = await handlegoogleauth(token)
@@ -427,15 +429,15 @@ function Login() {
         </div>
 
         {/* Bottom Footer links */}
-        <div className="w-full text-center flex flex-col items-center gap-4 mt-auto">
-          <p className="font-label text-xs auth-text-muted footer-animate">
-            Don't have an account?{' '}
-            <Link to="/register" className="auth-link hover:text-[#C0C0C0] transition-colors">
-              Create one
+        <div className="w-full text-center flex flex-col items-center mt-6 pt-2">
+          <p className="auth-text-muted footer-animate">
+            don't have an account?{' '}
+            <Link to="/register" className="auth-link">
+              create_one_
             </Link>
           </p>
-          <p className="font-legal text-[11px] auth-legal-text tracking-wide footer-animate">
-            © 2026 LUOMI LTD. ALL RIGHTS RESERVED. PRIVACY POLICY & TERMS.
+          <p className="auth-legal-text footer-animate">
+            © 2026 LUOMI LTD. ALL RIGHTS RESERVED.
           </p>
         </div>
       </div>
@@ -443,43 +445,43 @@ function Login() {
       {/* Forgot Password Modal */}
       {showForgotModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text)] w-full max-w-[420px] p-8 rounded-none relative flex flex-col gap-6 shadow-2xl transition-all duration-300">
+          <div className="bg-[var(--dash-card-bg)] border border-[var(--dash-card-border)] text-[var(--dash-text)] w-full max-w-[420px] p-8 rounded-none relative flex flex-col gap-6 shadow-2xl transition-all duration-300">
             {/* Close button */}
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => setShowForgotModal(false)}
-              className="absolute top-4 right-4 text-[#888888] hover:text-[var(--text)] text-lg cursor-pointer"
+              className="absolute top-4 right-4 text-[var(--dash-subtitle)] hover:text-[var(--dash-title)] text-lg cursor-pointer font-bold"
             >
               &times;
             </button>
-            
-            <div className="flex flex-col gap-2">
-              <h2 className="font-heading text-2xl font-medium tracking-tight text-[var(--text)]">
+
+            <div className="flex flex-col gap-2 text-left">
+              <h2 className="font-heading text-2xl font-bold tracking-tight text-[var(--dash-title)]">
                 Reset Password
               </h2>
-              <p className="text-xs text-[#888888] font-body">
-                {forgotStep === 1 
-                  ? "Enter your email to request a 6-digit OTP code." 
+              <p className="text-xs text-[var(--dash-subtitle)] font-body">
+                {forgotStep === 1
+                  ? "Enter your email to request a 6-digit OTP code."
                   : "Enter the OTP code received and set a new password."}
               </p>
             </div>
 
             {forgotError && (
-              <p className="text-xs text-red-500 font-body uppercase tracking-wider font-semibold">
+              <p className="text-xs text-red-500 font-mono uppercase tracking-wider font-semibold text-left">
                 {forgotError}
               </p>
             )}
 
             {forgotSuccess && (
-              <p className="text-xs text-green-500 font-body uppercase tracking-wider font-semibold">
+              <p className="text-xs text-green-500 font-mono uppercase tracking-wider font-semibold text-left">
                 {forgotSuccess}
               </p>
             )}
 
             {forgotStep === 1 ? (
-              <form onSubmit={handleForgotEmailSubmit} className="flex flex-col gap-5">
+              <form onSubmit={handleForgotEmailSubmit} className="flex flex-col gap-5 text-left">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-label text-[10px] tracking-[1.5px] uppercase text-[#888888]">
+                  <label className="auth-label">
                     Email Address
                   </label>
                   <input
@@ -487,22 +489,22 @@ function Login() {
                     placeholder="Enter email address..."
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    className="w-full bg-transparent border-b border-[var(--border)] py-2 text-sm focus:outline-none text-[var(--text)] focus:border-[#C0C0C0] transition-colors"
+                    className="auth-input"
                     required
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="cta-button w-full py-3 mt-2 text-center text-xs tracking-widest font-label font-bold uppercase transition-all duration-300 cursor-pointer"
+                  className="cta-button w-full mt-2"
                 >
-                  {forgotLoading ? "SENDING OTP..." : "REQUEST RESET OTP"}
+                  {forgotLoading ? "SENDING OTP..." : "REQUEST OTP"}
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleForgotResetSubmit} className="flex flex-col gap-5">
+              <form onSubmit={handleForgotResetSubmit} className="flex flex-col gap-5 text-left">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-label text-[10px] tracking-[1.5px] uppercase text-[#888888]">
+                  <label className="auth-label">
                     6-Digit OTP
                   </label>
                   <input
@@ -511,12 +513,12 @@ function Login() {
                     maxLength="6"
                     value={forgotOtp}
                     onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ''))}
-                    className="w-full bg-transparent border-b border-[var(--border)] py-2 text-sm focus:outline-none text-[var(--text)] focus:border-[#C0C0C0] transition-colors tracking-widest text-center"
+                    className="auth-input otp-input"
                     required
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-label text-[10px] tracking-[1.5px] uppercase text-[#888888]">
+                  <label className="auth-label">
                     New Password
                   </label>
                   <input
@@ -524,16 +526,16 @@ function Login() {
                     placeholder="Create new password..."
                     value={newForgotPwd}
                     onChange={(e) => setNewForgotPwd(e.target.value)}
-                    className="w-full bg-transparent border-b border-[var(--border)] py-2 text-sm focus:outline-none text-[var(--text)] focus:border-[#C0C0C0] transition-colors"
+                    className="auth-input"
                     required
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="cta-button w-full py-3 mt-2 text-center text-xs tracking-widest font-label font-bold uppercase transition-all duration-300 cursor-pointer"
+                  className="cta-button w-full mt-2"
                 >
-                  {forgotLoading ? "RESETTING PASSWORD..." : "UPDATE PASSWORD"}
+                  {forgotLoading ? "RESETTING..." : "UPDATE PASSWORD"}
                 </button>
               </form>
             )}
@@ -541,7 +543,7 @@ function Login() {
             <button
               type="button"
               onClick={() => setShowForgotModal(false)}
-              className="text-[10px] font-label text-[#888888] hover:text-[var(--text)] uppercase tracking-wider text-center cursor-pointer transition-colors duration-300"
+              className="text-[10px] font-mono text-[var(--dash-subtitle)] hover:text-[var(--dash-title)] uppercase tracking-wider text-center cursor-pointer transition-colors duration-300"
             >
               Cancel
             </button>

@@ -14,6 +14,15 @@ export async function getCart() {
     }
 }
 
+export async function getCartWithPricingApi() {
+    try {
+        const res = await cartapi.get('/pricing');
+        return res.data;
+    } catch (error) {
+        throw error.response?.data || { msg: "Failed to fetch cart pricing" };
+    }
+}
+
 export async function addToCartApi({ productId, quantity, variantId }) {
     try {
         const res = await cartapi.post('/add', { productId, quantity, variantId });

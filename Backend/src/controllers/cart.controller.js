@@ -11,18 +11,100 @@ async function getPopulatedCart(userId) {
     return cart;
 }
 
+// Helper to retrieve and calculate populated/priced cart data
+async function getCartWithPricingData(userId) {
+    const cart = await getPopulatedCart(userId);
+
+    // Remove items whose product no longer exists
+    const validItems = cart.items.filter(item => item.product);
+
+    let subtotal = 0;
+    const pricedItems = validItems.map(item => {
+        const product = item.product;
+        let unitPrice = 0;
+        let currency = 'INR';
+        let variantData = null;
+
+        if (item.selectedVariant && product.variants) {
+            const variant = product.variants.find(
+                v => v._id.toString() === item.selectedVariant.toString()
+            );
+            if (variant) {
+                unitPrice = variant.price?.amount || product.price?.amount || 0;
+                currency = variant.price?.currency || product.price?.currency || 'INR';
+                variantData = {
+                    _id: variant._id,
+                    attributes: variant.attributes,
+                    images: variant.images,
+                    stock: variant.stock
+                };
+            } else {
+                unitPrice = product.price?.amount || 0;
+                currency = product.price?.currency || 'INR';
+            }
+        } else {
+            unitPrice = product.price?.amount || 0;
+            currency = product.price?.currency || 'INR';
+        }
+
+        const itemTotal = unitPrice * item.quantity;
+        subtotal += itemTotal;
+
+        return {
+            product: {
+                _id: product._id,
+                title: product.title,
+                images: product.images,
+                stock: product.stock,
+                price: product.price,
+                variants: product.variants
+            },
+            selectedVariant: item.selectedVariant,
+            variantData,
+            quantity: item.quantity,
+            unitPrice,
+            currency,
+            itemTotal
+        };
+    });
+
+    return {
+        _id: cart._id,
+        user: cart.user,
+        items: pricedItems,
+        subtotal,
+        currency: pricedItems[0]?.currency || 'INR',
+        total: subtotal
+    };
+}
+
 async function getCart(req, res) {
     try {
         const userId = req.user.id;
-        const cart = await getPopulatedCart(userId);
+        const pricedCart = await getCartWithPricingData(userId);
         return res.status(200).json({
             success: true,
             msg: "Cart fetched successfully",
-            cart
+            cart: pricedCart
         });
     } catch (error) {
         console.error("getCart Error:", error);
         return res.status(500).json({ success: false, msg: "Failed to retrieve cart" });
+    }
+}
+
+async function getCartWithPricing(req, res) {
+    try {
+        const userId = req.user.id;
+        const pricedCart = await getCartWithPricingData(userId);
+        return res.status(200).json({
+            success: true,
+            msg: "Cart with pricing fetched successfully",
+            cart: pricedCart
+        });
+    } catch (error) {
+        console.error("getCartWithPricing Error:", error);
+        return res.status(500).json({ success: false, msg: "Failed to retrieve cart pricing" });
     }
 }
 
@@ -88,12 +170,12 @@ async function addToCart(req, res) {
         }
 
         await cart.save();
-        const populatedCart = await getPopulatedCart(userId);
+        const pricedCart = await getCartWithPricingData(userId);
 
         return res.status(200).json({
             success: true,
             msg: "Product added to cart",
-            cart: populatedCart
+            cart: pricedCart
         });
     } catch (error) {
         console.error("addToCart Error:", error);
@@ -157,11 +239,11 @@ async function updateCartItem(req, res) {
         cart.items[itemIndex].quantity = qty;
         await cart.save();
 
-        const populatedCart = await getPopulatedCart(userId);
+        const pricedCart = await getCartWithPricingData(userId);
         return res.status(200).json({
             success: true,
             msg: "Cart updated successfully",
-            cart: populatedCart
+            cart: pricedCart
         });
     } catch (error) {
         console.error("updateCartItem Error:", error);
@@ -192,12 +274,12 @@ async function removeFromCart(req, res) {
         });
 
         await cart.save();
-        const populatedCart = await getPopulatedCart(userId);
+        const pricedCart = await getCartWithPricingData(userId);
 
         return res.status(200).json({
             success: true,
             msg: "Item removed from cart",
-            cart: populatedCart
+            cart: pricedCart
         });
     } catch (error) {
         console.error("removeFromCart Error:", error);
@@ -299,6 +381,7 @@ async function checkout(req, res) {
 
 export default {
     getCart,
+    getCartWithPricing,
     addToCart,
     updateCartItem,
     removeFromCart,

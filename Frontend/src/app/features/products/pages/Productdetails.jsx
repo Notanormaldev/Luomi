@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { useproduct } from '../hook/useproduct'
 import { useauth } from '../../auth/hook/useauth'
 import { usecart } from '../../cart/hook/usecart'
@@ -15,8 +16,10 @@ import {
   FiSend,
   FiMessageCircle,
   FiRefreshCw,
-  FiTruck
+  FiTruck,
+  FiHeart
 } from 'react-icons/fi'
+import { usewishlist } from '../../wishlist/hook/usewishlist'
 import './Productdetails.css'
 
 function Productdetails() {
@@ -25,13 +28,21 @@ function Productdetails() {
   const { handlegetoneprodcut } = useproduct()
   const { user } = useauth()
   const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
+  const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
+
+  useEffect(() => {
+    if (user) {
+      handleGetCart()
+      handleGetWishlist()
+    }
+  }, [user])
 
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [quantity, setQuantity] = useState(1)
-  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [toastMsg, setToastMsg] = useState(null)
 
   // Jerry
   const [isJerryOpen, setIsJerryOpen] = useState(false)
@@ -136,13 +147,13 @@ function Productdetails() {
   const handleAttributeSelect = (key, val) => {
     setSelectedAttributes(prev => {
       const next = { ...prev, [key]: val }
-      
+
       // If color was changed, check if the previously selected size is available in this new color.
       // If not, clear size selection so they must explicitly choose an available size again.
       if (key.toLowerCase() === 'color' && prev['size']) {
         const sizeVal = prev['size']
-        const isCompatible = product.variants.some(v => 
-          getAttr(v.attributes, 'color') === val && 
+        const isCompatible = product.variants.some(v =>
+          getAttr(v.attributes, 'color') === val &&
           getAttr(v.attributes, 'size') === sizeVal
         )
         if (!isCompatible) {
@@ -194,18 +205,14 @@ function Productdetails() {
   const discountPct = hasDiscount ? Math.round(((basePrice - currentPrice) / basePrice) * 100) : 0
 
   const totalCartItems = cartItems.reduce((a, c) => a + c.quantity, 0)
-  const cartTotal = cartItems.reduce((a, c) => {
-    const v = c.selectedVariant && c.product.variants ? c.product.variants.find(x => x._id === c.selectedVariant) : null
-    const price = parseFloat((v?.price || c.product.price)?.amount || 0)
-    return a + (isNaN(price) ? 0 : price) * c.quantity
-  }, 0)
+  const cartTotal = useSelector(s => s.cart.subtotal) || 0
 
   const hasVariants = product?.variants && product.variants.length > 0
   const availableStock = hasVariants
-    ? (selectedVariant ? selectedVariant.stock : 0)
-    : (product?.stock || 0)
+    ? (selectedVariant ? (selectedVariant.stock ?? 0) : 0)
+    : (product?.stock ?? 0)
 
-  const addToCart = async () => {
+  const addToCart = async (navigateAfter = false) => {
     if (!user) { navigate('/login'); return }
     const cartPayload = { productId: id, quantity }
     if (selectedVariant) cartPayload.variantId = selectedVariant._id
@@ -214,26 +221,22 @@ function Productdetails() {
       return i.product._id === id && !i.selectedVariant
     })
     const currentQty = existing?.quantity || 0
-    if (currentQty + quantity > availableStock) {
+    // Let backend be the final authority for stock — only do a soft check here
+    if (availableStock > 0 && currentQty + quantity > availableStock) {
       alert(`Only ${availableStock} available in stock`)
       return
     }
     const res = await handleAddToCart(cartPayload)
-    if (res.success) setIsCartOpen(true)
-    else alert(res.error || 'Failed to add')
-  }
-
-  const updateCartQty = async (productId, currentQty, delta, stock, variantId = null) => {
-    if (delta > 0 && currentQty + 1 > stock) { alert(`Only ${stock} in stock`); return }
-    const newQty = currentQty + delta
-    if (newQty <= 0) await handleRemoveFromCart({ productId, variantId })
-    else await handleUpdateCart({ productId, quantity: newQty, variantId })
-  }
-
-  const triggerCheckout = async () => {
-    const res = await handleCheckout()
-    if (res.success) { alert('Order placed!'); setIsCartOpen(false) }
-    else alert(res.error || 'Checkout failed')
+    if (res.success) {
+      if (navigateAfter === true) {
+        navigate('/cart')
+      } else {
+        setToastMsg(`"${product.title}" added to your bag`)
+        setTimeout(() => setToastMsg(null), 3000)
+      }
+    } else {
+      alert(res.error || 'Failed to add')
+    }
   }
 
   const handlePageQtyChange = (delta) => {
@@ -293,7 +296,12 @@ function Productdetails() {
             <Link to="/" className="pd-logo-link"><Logo /></Link>
           </div>
           <div className="pd-nav-right">
-            <button className="pd-cart-btn pd-icon-btn" onClick={() => setIsCartOpen(true)}>
+            {user?.role === 'seller' && (
+              <Link to="/dashbord/seller" className="pd-dashboard-link" title="Go to Seller Atelier Dashboard">
+                Atelier
+              </Link>
+            )}
+            <button className="pd-cart-btn pd-icon-btn" onClick={() => navigate('/cart')}>
               <FiShoppingBag size={19} />
               {totalCartItems > 0 && <span className="pd-cart-badge">{totalCartItems}</span>}
             </button>
@@ -311,10 +319,10 @@ function Productdetails() {
         <div className="pd-skeleton-wrap">
           <div className="pd-skeleton-gallery pd-shimmer"></div>
           <div className="pd-skeleton-info">
-            <div className="pd-skeleton-line pd-shimmer" style={{width:'60%',height:'24px'}}></div>
-            <div className="pd-skeleton-line pd-shimmer" style={{width:'40%',height:'18px',marginTop:'10px'}}></div>
-            <div className="pd-skeleton-line pd-shimmer" style={{width:'80%',height:'14px',marginTop:'16px'}}></div>
-            <div className="pd-skeleton-line pd-shimmer" style={{width:'100%',height:'44px',marginTop:'24px'}}></div>
+            <div className="pd-skeleton-line pd-shimmer" style={{ width: '60%', height: '24px' }}></div>
+            <div className="pd-skeleton-line pd-shimmer" style={{ width: '40%', height: '18px', marginTop: '10px' }}></div>
+            <div className="pd-skeleton-line pd-shimmer" style={{ width: '80%', height: '14px', marginTop: '16px' }}></div>
+            <div className="pd-skeleton-line pd-shimmer" style={{ width: '100%', height: '44px', marginTop: '24px' }}></div>
           </div>
         </div>
       ) : error || !product ? (
@@ -419,7 +427,7 @@ function Productdetails() {
                               >
                                 {preview
                                   ? <img src={preview} alt={val} />
-                                  : <span>{val.slice(0,2)}</span>
+                                  : <span>{val.slice(0, 2)}</span>
                                 }
                               </button>
                             )
@@ -462,24 +470,24 @@ function Productdetails() {
               <div className="pd-qty-row">
                 <span className="pd-qty-label">Qty</span>
                 <div className="pd-qty-ctrl">
-                  <button onClick={() => handlePageQtyChange(-1)} className="pd-qty-btn"><FiMinus size={12}/></button>
+                  <button onClick={() => handlePageQtyChange(-1)} className="pd-qty-btn"><FiMinus size={12} /></button>
                   <span className="pd-qty-val">{quantity}</span>
-                  <button onClick={() => handlePageQtyChange(1)} className="pd-qty-btn"><FiPlus size={12}/></button>
+                  <button onClick={() => handlePageQtyChange(1)} className="pd-qty-btn"><FiPlus size={12} /></button>
                 </div>
                 <span className="pd-stock-info">
                   {hasVariants ? (
                     !selectedAttributes['size'] ? (
-                      'Select a size to check stock'
+                      'Select size to check availability'
                     ) : (
                       selectedVariant ? (
                         selectedVariant.stock > 0 ? (
-                          selectedVariant.stock <= 5 ? `⚠ Only ${selectedVariant.stock} left!` : `${selectedVariant.stock} in stock`
+                          selectedVariant.stock <= 10 ? `⚠ Only ${selectedVariant.stock} left!` : ''
                         ) : '❌ Out of stock'
                       ) : '❌ Out of stock'
                     )
                   ) : (
                     product?.stock > 0
-                      ? (product.stock <= 5 ? `⚠ Only ${product.stock} left!` : `${product.stock} in stock`)
+                      ? (product.stock <= 10 ? `⚠ Only ${product.stock} left!` : '')
                       : '❌ Out of stock'
                   )}
                 </span>
@@ -491,19 +499,29 @@ function Productdetails() {
                   disabled={hasVariants ? !selectedVariant || selectedVariant.stock <= 0 : product?.stock <= 0}
                   onClick={addToCart}
                 >
-                  {hasVariants 
-                    ? (!selectedAttributes['size'] 
-                        ? 'SELECT SIZE' 
-                        : (selectedVariant && selectedVariant.stock > 0 ? 'ADD TO BAG' : 'OUT OF STOCK'))
+                  {hasVariants
+                    ? (!selectedAttributes['size']
+                      ? 'SELECT SIZE'
+                      : (selectedVariant && selectedVariant.stock > 0 ? 'ADD TO BAG' : 'OUT OF STOCK'))
                     : (product?.stock > 0 ? 'ADD TO BAG' : 'OUT OF STOCK')
                   }
                 </button>
                 <button
                   className="pd-buy-now-btn"
                   disabled={hasVariants ? !selectedVariant || selectedVariant.stock <= 0 : product?.stock <= 0}
-                  onClick={() => { addToCart(); setTimeout(() => setIsCartOpen(true), 200) }}
+                  onClick={() => addToCart(true)}
                 >
                   {hasVariants && !selectedAttributes['size'] ? 'SELECT SIZE' : 'BUY NOW'}
+                </button>
+                <button
+                  className={`pd-wishlist-btn ${isWishlisted(id) ? 'active' : ''}`}
+                  onClick={() => {
+                    if (!user) { navigate('/login'); return }
+                    handleToggleWishlist({ productId: id })
+                  }}
+                  title="Toggle Wishlist"
+                >
+                  <FiHeart size={18} fill={isWishlisted(id) ? "#ff5a36" : "none"} />
                 </button>
               </div>
             </div>
@@ -592,65 +610,13 @@ function Productdetails() {
         </div>
       )}
 
-      {/* ── Cart Drawer ── */}
-      <div className={`pd-cart-overlay ${isCartOpen ? 'open' : ''}`} onClick={() => setIsCartOpen(false)}>
-        <div className="pd-cart-drawer" onClick={e => e.stopPropagation()}>
-          <div className="pd-cart-head">
-            <h3 className="pd-cart-title">Your Bag ({totalCartItems})</h3>
-            <button className="pd-icon-btn" onClick={() => setIsCartOpen(false)}><FiX size={20}/></button>
-          </div>
-
-          <div className="pd-cart-body">
-            {cartItems.length === 0 ? (
-              <div className="pd-cart-empty">
-                <FiShoppingBag size={32} />
-                <p>Your bag is empty</p>
-              </div>
-            ) : (
-              cartItems.map(item => {
-                const v = item.selectedVariant && item.product.variants
-                  ? item.product.variants.find(x => x._id === item.selectedVariant)
-                  : null
-                const price = parseFloat((v?.price || item.product.price)?.amount || 0)
-                const img = v?.images?.[0]?.url || item.product.images?.[0]?.url
-                const stock = v ? v.stock : (item.product.stock || 0)
-                const key = item.selectedVariant ? `${item.product._id}-${item.selectedVariant}` : item.product._id
-                return (
-                  <div key={key} className="pd-cart-item">
-                    <img src={img} alt={item.product.title} className="pd-cart-img" />
-                    <div className="pd-cart-item-info">
-                      <p className="pd-cart-item-name">{item.product.title}</p>
-                      {v && <p className="pd-cart-item-variant">
-                        {Object.entries(v.attributes || {}).map(([k, val]) => `${k}: ${val}`).join(' | ')}
-                      </p>}
-                      <p className="pd-cart-item-price">₹{fmt(price)}</p>
-                      <div className="pd-cart-item-foot">
-                        <div className="pd-qty-ctrl compact">
-                          <button className="pd-qty-btn" onClick={() => updateCartQty(item.product._id, item.quantity, -1, stock, item.selectedVariant)}><FiMinus size={11}/></button>
-                          <span className="pd-qty-val">{item.quantity}</span>
-                          <button className="pd-qty-btn" onClick={() => updateCartQty(item.product._id, item.quantity, 1, stock, item.selectedVariant)}><FiPlus size={11}/></button>
-                        </div>
-                        <button className="pd-remove-btn" onClick={() => handleRemoveFromCart({ productId: item.product._id, variantId: item.selectedVariant })}>Remove</button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
-
-          {cartItems.length > 0 && (
-            <div className="pd-cart-foot">
-              <div className="pd-cart-total">
-                <span>Subtotal</span>
-                <span>₹{fmt(cartTotal)}</span>
-              </div>
-              <p className="pd-cart-note">Taxes & shipping calculated at checkout</p>
-              <button className="pd-checkout-btn" onClick={triggerCheckout}>PROCEED TO CHECKOUT</button>
-            </div>
-          )}
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="pd-toast animate-slide-up">
+          <FiShoppingBag size={14} className="pd-toast-icon" />
+          <span>{toastMsg}</span>
         </div>
-      </div>
+      )}
 
     </div>
   )

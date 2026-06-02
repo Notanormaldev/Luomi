@@ -8,6 +8,7 @@ const cartRoute = Router();
 cartRoute.use(authtokenmiddleware);
 
 cartRoute.get('/', cartController.getCart);
+cartRoute.get('/pricing', cartController.getCartWithPricing);
 cartRoute.post('/add', cartController.addToCart);
 cartRoute.put('/update', cartController.updateCartItem);
 cartRoute.post('/remove', cartController.removeFromCart);

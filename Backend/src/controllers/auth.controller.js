@@ -187,7 +187,7 @@ async function googlecallback(req,res){
   const profilepic=photos[0].value
   const isverified=emails[0].verified
 
-  const user = await usermodel.findOne({email})
+  let user = await usermodel.findOne({email})
 
   if(!user){
      user = await usermodel.create({

@@ -1,10 +1,10 @@
 import { useDispatch, useSelector } from "react-redux";
 import { getCart, addToCartApi, updateCartApi, removeFromCartApi, checkoutApi } from "../services/cart.api";
-import { setCartItems, setLoading, setError, clearCart } from "../cart.slice";
+import { setCartItems, setSubtotal, setLoading, setError, clearCart } from "../cart.slice";
 
 export const usecart = () => {
     const dispatch = useDispatch();
-    const { items, loading, error } = useSelector((state) => state.cart);
+    const { items, subtotal, loading, error } = useSelector((state) => state.cart);
 
     async function handleGetCart() {
         dispatch(setLoading(true));
@@ -12,8 +12,9 @@ export const usecart = () => {
         try {
             const data = await getCart();
             dispatch(setCartItems(data.cart.items));
+            dispatch(setSubtotal(data.cart.subtotal || 0));
             dispatch(setLoading(false));
-            return { success: true, items: data.cart.items };
+            return { success: true, items: data.cart.items, subtotal: data.cart.subtotal || 0 };
         } catch (err) {
             console.error("usecart: handleGetCart error", err);
             dispatch(setError(err.msg || "Failed to fetch cart"));
@@ -28,8 +29,9 @@ export const usecart = () => {
         try {
             const data = await addToCartApi({ productId, quantity, variantId });
             dispatch(setCartItems(data.cart.items));
+            dispatch(setSubtotal(data.cart.subtotal || 0));
             dispatch(setLoading(false));
-            return { success: true, items: data.cart.items, msg: data.msg };
+            return { success: true, items: data.cart.items, subtotal: data.cart.subtotal || 0, msg: data.msg };
         } catch (err) {
             console.error("usecart: handleAddToCart error", err);
             dispatch(setError(err.msg || "Failed to add to cart"));
@@ -44,8 +46,9 @@ export const usecart = () => {
         try {
             const data = await updateCartApi({ productId, quantity, variantId });
             dispatch(setCartItems(data.cart.items));
+            dispatch(setSubtotal(data.cart.subtotal || 0));
             dispatch(setLoading(false));
-            return { success: true, items: data.cart.items, msg: data.msg };
+            return { success: true, items: data.cart.items, subtotal: data.cart.subtotal || 0, msg: data.msg };
         } catch (err) {
             console.error("usecart: handleUpdateCart error", err);
             dispatch(setError(err.msg || "Failed to update cart"));
@@ -60,8 +63,9 @@ export const usecart = () => {
         try {
             const data = await removeFromCartApi({ productId, variantId });
             dispatch(setCartItems(data.cart.items));
+            dispatch(setSubtotal(data.cart.subtotal || 0));
             dispatch(setLoading(false));
-            return { success: true, items: data.cart.items, msg: data.msg };
+            return { success: true, items: data.cart.items, subtotal: data.cart.subtotal || 0, msg: data.msg };
         } catch (err) {
             console.error("usecart: handleRemoveFromCart error", err);
             dispatch(setError(err.msg || "Failed to remove from cart"));
@@ -92,6 +96,7 @@ export const usecart = () => {
 
     return {
         items,
+        subtotal,
         loading,
         error,
         handleGetCart,

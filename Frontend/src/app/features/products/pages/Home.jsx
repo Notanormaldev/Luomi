@@ -15,34 +15,38 @@ import {
   FiMenu,
   FiChevronRight,
   FiChevronLeft,
+  FiHeart
 } from 'react-icons/fi'
+import { usewishlist } from '../../wishlist/hook/usewishlist'
 import './Home.css'
 
 /* ── Constants ──────────────────────── */
 const CATEGORY_TABS = [
-  { label: 'Discover',    value: 'All', sub: 'All' },
-  { label: 'Shirts',      value: 'All', sub: 'shirt' },
-  { label: 'T-Shirts',    value: 'All', sub: 't-shirt' },
-  { label: 'Jeans',       value: 'All', sub: 'jeans' },
-  { label: 'Trousers',    value: 'All', sub: 'trouser' },
+  { label: 'Discover', value: 'All', sub: 'All' },
+  { label: 'Shirts', value: 'All', sub: 'shirt' },
+  { label: 'T-Shirts', value: 'All', sub: 't-shirt' },
+  { label: 'Jeans', value: 'All', sub: 'jeans' },
+  { label: 'Trousers', value: 'All', sub: 'trouser' },
   { label: 'Cargo Pants', value: 'All', sub: 'cargos' },
-  { label: 'Polos',       value: 'All', sub: 'polos' },
-  { label: 'Plus-Size',   value: 'All', sub: 'plus size' },
+  { label: 'Polos', value: 'All', sub: 'polos' },
+  { label: 'Plus-Size', value: 'All', sub: 'plus size' },
 ]
 
 const FEATURED_CATS = [
-  { label: 'SHIRTS',      sub: 'shirt',     tagline: 'Fresh & Sharp', defaultImg: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=600&auto=format&fit=crop' },
-  { label: 'TROUSERS',    sub: 'trouser',   tagline: 'Clean Silhouette', defaultImg: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=600&auto=format&fit=crop' },
-  { label: 'POLOS',       sub: 'polos',     tagline: 'Everyday Essential', defaultImg: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=600&auto=format&fit=crop' },
-  { label: 'JEANS',       sub: 'jeans',     tagline: 'Effortlessly Cool', defaultImg: 'https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=600&auto=format&fit=crop' },
-  { label: 'CARGOS',      sub: 'cargos',    tagline: 'Street-Ready', defaultImg: 'https://images.unsplash.com/photo-1517423568366-8b83523034fd?q=80&w=600&auto=format&fit=crop' },
-  { label: 'T-SHIRTS',    sub: 't-shirt',   tagline: 'Always On Trend', defaultImg: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop' },
+  { label: 'SHIRTS', sub: 'shirt', tagline: 'Fresh & Sharp', defaultImg: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=600&auto=format&fit=crop' },
+  { label: 'TROUSERS', sub: 'trouser', tagline: 'Clean Silhouette', defaultImg: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=600&auto=format&fit=crop' },
+  { label: 'POLOS', sub: 'polos', tagline: 'Everyday Essential', defaultImg: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=600&auto=format&fit=crop' },
+  { label: 'JEANS', sub: 'jeans', tagline: 'Effortlessly Cool', defaultImg: 'https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=600&auto=format&fit=crop' },
+  { label: 'CARGOS', sub: 'cargos', tagline: 'Street-Ready', defaultImg: 'https://images.unsplash.com/photo-1517423568366-8b83523034fd?q=80&w=600&auto=format&fit=crop' },
+  { label: 'T-SHIRTS', sub: 't-shirt', tagline: 'Always On Trend', defaultImg: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop' },
 ]
 
 const HERO_PANELS = [
-  { sub: 'shirt',   headline: 'LINEN EDIT',    sub2: 'SOFT ON SKIN.\nSHARP ON STYLE.', defaultImg: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=1000&auto=format&fit=crop' },
-  { sub: 'jeans',   headline: 'DENIM DROP',    sub2: 'CLASSIC CUTS.\nMODERN FITS.', defaultImg: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=1000&auto=format&fit=crop' },
-  { sub: 't-shirt', headline: 'STREET SELECTS',sub2: 'KEEP IT SIMPLE.\nWEAR IT BOLD.', defaultImg: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=1000&auto=format&fit=crop' },
+  { sub: 'polos', headline: 'THE POLO ATELIER', sub2: 'CELEB-STYLED KNITS.\nREFINED SPORT AESTHETIC.', img: 'https://images.unsplash.com/photo-1618517351616-38fc975d40db?q=80&w=1200&auto=format&fit=crop' },
+  { sub: 'jeans', headline: 'DENIM ESCAPE', sub2: 'PREMIUM COZY CUTS.\nSTRETCH & STRUCTURE.', img: 'https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=1200&auto=format&fit=crop' },
+  { sub: 'shirt', headline: 'WOMEN\'S SHIRTING & LINENS', sub2: 'EFFORTLESS LUXURY.\nORGANIC FABRICS.', img: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?q=80&w=1200&auto=format&fit=crop' },
+  { sub: 't-shirt', headline: 'GRAPHIC LUXE TEES', sub2: 'STREET CULTURE STYLE.\nHEAVYWEIGHT COTTON.', img: 'https://images.unsplash.com/photo-1554568218-0f1715e72254?q=80&w=1200&auto=format&fit=crop' },
+  { sub: 'cargos', headline: 'UTILITY STREETWEAR', sub2: 'CARGO PANTS REDEFINED.\nSTREET COMFORT.', img: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=1200&auto=format&fit=crop' },
 ]
 
 const TOP_SEARCHES = ['Slim Fit Shirts', 'Black T-Shirts', 'Cargo Pants', 'Relaxed Jeans', 'Polo T-Shirts', 'Linen Shirts']
@@ -58,20 +62,21 @@ const PLACEHOLDERS = [
 
 /* ── Component ──────────────────────── */
 export default function Home() {
-  const navigate   = useNavigate()
+  const navigate = useNavigate()
   const { handlegetallprodcuts } = useproduct()
-  const { user }   = useauth()
+  const { user } = useauth()
   const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
+  const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
 
-  const [theme,           setTheme]           = useState(localStorage.getItem('luomi-theme') || 'light')
-  const [loading,         setLoading]         = useState(true)
-  const [searchQuery,     setSearchQuery]     = useState('')
-  const [activeTab,       setActiveTab]       = useState(0)
+  const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeTab, setActiveTab] = useState(0)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [isCartOpen,      setIsCartOpen]      = useState(false)
-  const [isCatOpen,       setIsCatOpen]       = useState(false)
-  const [heroIdx,         setHeroIdx]         = useState(0)
-  const [placeholderIdx,  setPlaceholderIdx]  = useState(0)
+  const [toastMsg, setToastMsg] = useState(null)
+  const [isCatOpen, setIsCatOpen] = useState(false)
+  const [heroIdx, setHeroIdx] = useState(0)
+  const [placeholderIdx, setPlaceholderIdx] = useState(0)
 
   const searchRef = useRef(null)
 
@@ -94,13 +99,18 @@ export default function Home() {
     return () => window.removeEventListener('theme-changed', sync)
   }, [])
 
-  useEffect(() => { if (user) handleGetCart() }, [user])
+  useEffect(() => {
+    if (user) {
+      handleGetCart()
+      handleGetWishlist()
+    }
+  }, [user])
 
   useEffect(() => {
     const go = async () => {
       setLoading(true)
       try { await handlegetallprodcuts() }
-      catch {}
+      catch { }
       finally { setLoading(false) }
     }
     go()
@@ -122,17 +132,15 @@ export default function Home() {
 
   /* Click handler to find product, navigate or fallback to tab filter */
   const handleHeroClick = (sub) => {
-    const prod = getSubProduct(sub)
-    if (prod) {
-      navigate(`/product/${prod._id}`)
-    } else {
-      const tabIdx = CATEGORY_TABS.findIndex(t => t.sub.toLowerCase() === sub.toLowerCase())
-      if (tabIdx !== -1) {
-        setActiveTab(tabIdx)
-        setTimeout(() => {
-          document.querySelector('.sn-main')?.scrollIntoView({ behavior: 'smooth' })
-        }, 100)
-      }
+    const tabIdx = CATEGORY_TABS.findIndex(t => t.sub.toLowerCase() === sub.toLowerCase())
+    if (tabIdx !== -1) {
+      setActiveTab(tabIdx)
+      setTimeout(() => {
+        const el = document.querySelector('.sn-main')
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
     }
   }
 
@@ -147,10 +155,10 @@ export default function Home() {
   }
 
   /* filter */
-  const currentTab      = CATEGORY_TABS[activeTab]
+  const currentTab = CATEGORY_TABS[activeTab]
   const filteredProducts = allProducts.filter(p => {
     const mGender = currentTab.value === 'All' || p.genderCategory?.toLowerCase() === currentTab.value.toLowerCase()
-    const mSub    = currentTab.sub   === 'All' || p.subCategory?.toLowerCase() === currentTab.sub.toLowerCase()
+    const mSub = currentTab.sub === 'All' || p.subCategory?.toLowerCase() === currentTab.sub.toLowerCase()
     if (!mGender || !mSub) return false
 
     if (!searchQuery) return true
@@ -160,61 +168,54 @@ export default function Home() {
       const title = (p.title || "").toLowerCase()
       const sub = (p.subCategory || "").toLowerCase()
       const desc = (p.description || "").toLowerCase()
-      
-      return title.includes(term) || 
-             sub.includes(term) || 
-             desc.includes(term) ||
-             (term.endsWith('s') && (title.includes(term.slice(0, -1)) || sub.includes(term.slice(0, -1)) || desc.includes(term.slice(0, -1)))) ||
-             (!term.endsWith('s') && (title.includes(term + 's') || sub.includes(term + 's') || desc.includes(term + 's')))
+
+      return title.includes(term) ||
+        sub.includes(term) ||
+        desc.includes(term) ||
+        (term.endsWith('s') && (title.includes(term.slice(0, -1)) || sub.includes(term.slice(0, -1)) || desc.includes(term.slice(0, -1)))) ||
+        (!term.endsWith('s') && (title.includes(term + 's') || sub.includes(term + 's') || desc.includes(term + 's')))
     })
   })
 
   const searchResults = searchQuery
     ? allProducts.filter(p => {
-        const queryTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean)
-        return queryTerms.every(term => {
-          const title = (p.title || "").toLowerCase()
-          const sub = (p.subCategory || "").toLowerCase()
-          const desc = (p.description || "").toLowerCase()
-          
-          return title.includes(term) || 
-                 sub.includes(term) || 
-                 desc.includes(term) ||
-                 (term.endsWith('s') && (title.includes(term.slice(0, -1)) || sub.includes(term.slice(0, -1)) || desc.includes(term.slice(0, -1)))) ||
-                 (!term.endsWith('s') && (title.includes(term + 's') || sub.includes(term + 's') || desc.includes(term + 's')))
-        })
-      }).slice(0, 8)
+      const queryTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean)
+      return queryTerms.every(term => {
+        const title = (p.title || "").toLowerCase()
+        const sub = (p.subCategory || "").toLowerCase()
+        const desc = (p.description || "").toLowerCase()
+
+        return title.includes(term) ||
+          sub.includes(term) ||
+          desc.includes(term) ||
+          (term.endsWith('s') && (title.includes(term.slice(0, -1)) || sub.includes(term.slice(0, -1)) || desc.includes(term.slice(0, -1)))) ||
+          (!term.endsWith('s') && (title.includes(term + 's') || sub.includes(term + 's') || desc.includes(term + 's')))
+      })
+    }).slice(0, 8)
     : []
 
   /* cart helpers */
   const totalItems = cartItems.reduce((a, c) => a + c.quantity, 0)
-  const cartTotal  = cartItems.reduce((a, c) => {
-    const v     = c.selectedVariant && c.product.variants ? c.product.variants.find(x => x._id === c.selectedVariant) : null
-    const price = parseFloat((v?.price || c.product.price)?.amount || 0)
-    return a + (isNaN(price) ? 0 : price) * c.quantity
-  }, 0)
+  const cartTotal = useSelector(s => s.cart.subtotal) || 0
 
   const addToCart = async (product) => {
     if (!user) { navigate('/login'); return }
-    const existing    = cartItems.find(i => i.product._id === product._id && !i.selectedVariant)
-    const currentQty  = existing?.quantity || 0
-    if (currentQty + 1 > (product.stock || 0)) { alert(`Only ${product.stock || 0} in stock`); return }
+    // Products with variants need size/color selection — redirect to detail page
+    if (product.variants && product.variants.length > 0) {
+      navigate(`/product/${product._id}`)
+      return
+    }
+    const existing = cartItems.find(i => i.product._id === product._id && !i.selectedVariant)
+    const currentQty = existing?.quantity || 0
+    const stock = product.stock ?? 0
+    if (stock > 0 && currentQty + 1 > stock) { alert(`Only ${stock} in stock`); return }
     const res = await handleAddToCart({ productId: product._id, quantity: 1 })
-    if (res.success) setIsCartOpen(true)
-    else alert(res.error || 'Failed')
-  }
-
-  const updateQty = async (productId, currentQty, delta, stock) => {
-    if (delta > 0 && currentQty + 1 > stock) { alert(`Only ${stock} in stock`); return }
-    const nq = currentQty + delta
-    if (nq <= 0) await handleRemoveFromCart({ productId })
-    else         await handleUpdateCart({ productId, quantity: nq })
-  }
-
-  const checkout = async () => {
-    const res = await handleCheckout()
-    if (res.success) { alert('Order placed!'); setIsCartOpen(false) }
-    else alert(res.error || 'Checkout failed')
+    if (res.success) {
+      setToastMsg(`"${product.title}" added to your bag`)
+      setTimeout(() => setToastMsg(null), 3000)
+    } else {
+      alert(res.error || 'Failed')
+    }
   }
 
   /* hero auto‑advance on mobile */
@@ -268,7 +269,7 @@ export default function Home() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
-                onBlur={()  => setTimeout(() => setIsSearchFocused(false), 180)}
+                onBlur={() => setTimeout(() => setIsSearchFocused(false), 180)}
               />
               {searchQuery && (
                 <button className="sn-search-clear" onClick={() => setSearchQuery('')}>
@@ -318,14 +319,26 @@ export default function Home() {
               )}
             </div>
 
+            {/* seller dashboard link */}
+            {user?.role === 'seller' && (
+              <Link to="/dashbord/seller" className="sn-dashboard-link" title="Go to Seller Atelier Dashboard">
+                Atelier
+              </Link>
+            )}
+
             {/* user */}
             {user
               ? <Link to="/settings" className="sn-icon-btn" title={user.fullname}><FiUser size={19} /></Link>
-              : <Link to="/login"    className="sn-icon-btn"><FiUser size={19} /></Link>
+              : <Link to="/login" className="sn-icon-btn"><FiUser size={19} /></Link>
             }
 
+            {/* wishlist */}
+            <Link to="/wishlist" className="sn-icon-btn" title="Wishlist">
+              <FiHeart size={19} />
+            </Link>
+
             {/* cart */}
-            <button className="sn-icon-btn sn-cart-btn" onClick={() => setIsCartOpen(true)}>
+            <button className="sn-icon-btn sn-cart-btn" onClick={() => navigate('/cart')}>
               <FiShoppingBag size={19} />
               {totalItems > 0 && <span className="sn-cart-badge">{totalItems}</span>}
             </button>
@@ -354,6 +367,12 @@ export default function Home() {
             <span className="sn-cat-sidebar-label">CATEGORIES</span>
           </div>
           <div className="sn-cat-sidebar-body">
+            {user?.role === 'seller' && (
+              <button className="sn-cat-sidebar-link" style={{ color: '#ff5a36', fontWeight: 'bold' }}
+                onClick={() => { navigate('/dashbord/seller'); setIsCatOpen(false); }}>
+                ATELIER DASHBOARD
+              </button>
+            )}
             {CATEGORY_TABS.map((tab, i) => (
               <button key={tab.label} className="sn-cat-sidebar-link"
                 onClick={() => handleCategorySelectInDrawer(i)}>
@@ -370,7 +389,6 @@ export default function Home() {
           {/* Responsive sliding Hero Carousel (Snitch & Souled Store style) */}
           <section className="sn-hero-carousel" aria-label="Hero carousel">
             {HERO_PANELS.map((panel, i) => {
-              const prod = getSubProduct(panel.sub)
               const isActive = heroIdx === i
               return (
                 <div
@@ -378,10 +396,10 @@ export default function Home() {
                   className={`sn-hero-slide ${isActive ? 'active' : ''}`}
                   onClick={() => handleHeroClick(panel.sub)}
                 >
-                  <img 
-                    src={prod?.images?.[0]?.url || panel.defaultImg} 
-                    alt={panel.headline} 
-                    className="sn-hero-slide-img" 
+                  <img
+                    src={panel.img}
+                    alt={panel.headline}
+                    className="sn-hero-slide-img"
                   />
                   <div className="sn-hero-slide-overlay" />
                   <div className="sn-hero-slide-content">
@@ -393,14 +411,14 @@ export default function Home() {
                 </div>
               )
             })}
-            
+
             {/* Dots */}
             <div className="sn-hero-carousel-dots">
               {HERO_PANELS.map((_, i) => (
-                <button 
-                  key={i} 
-                  className={`sn-hero-carousel-dot ${heroIdx === i ? 'active' : ''}`} 
-                  onClick={(e) => { e.stopPropagation(); setHeroIdx(i); }} 
+                <button
+                  key={i}
+                  className={`sn-hero-carousel-dot ${heroIdx === i ? 'active' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); setHeroIdx(i); }}
                   aria-label={`Go to slide ${i + 1}`}
                 />
               ))}
@@ -420,7 +438,6 @@ export default function Home() {
             <h2 className="sn-sect-title">FEATURED CATEGORIES</h2>
             <div className="sn-feat-grid">
               {FEATURED_CATS.map(cat => {
-                const prod   = getSubProduct(cat.sub)
                 return (
                   <div
                     key={cat.label}
@@ -428,10 +445,10 @@ export default function Home() {
                     onClick={() => handleHeroClick(cat.sub)}
                   >
                     <div className="sn-feat-card-inner">
-                      <img 
-                        src={prod?.images?.[0]?.url || cat.defaultImg} 
-                        alt={cat.label} 
-                        className="sn-feat-img" 
+                      <img
+                        src={cat.defaultImg}
+                        alt={cat.label}
+                        className="sn-feat-img"
                       />
                     </div>
                     <div className="sn-feat-label">
@@ -492,6 +509,18 @@ export default function Home() {
                   {product.images?.[1]?.url && (
                     <img src={product.images[1].url} alt={product.title} className="sn-card-img sn-card-img-hover" />
                   )}
+                  {/* wishlist heart */}
+                  <button
+                    className={`sn-card-heart ${isWishlisted(product._id) ? 'active' : ''}`}
+                    onClick={e => {
+                      e.stopPropagation()
+                      if (!user) { navigate('/login'); return }
+                      handleToggleWishlist({ productId: product._id })
+                    }}
+                    title="Add to Wishlist"
+                  >
+                    <FiHeart size={14} fill={isWishlisted(product._id) ? "#ff5a36" : "none"} />
+                  </button>
                   {/* ADD TO BAG hover CTA */}
                   <button
                     className="sn-card-atb"
@@ -509,61 +538,13 @@ export default function Home() {
           </div>
         )}
       </div>
-
-      {/* ════════════════ CART DRAWER ════════════════ */}
-      <div className={`sn-cart-overlay${isCartOpen ? ' open' : ''}`} onClick={() => setIsCartOpen(false)}>
-        <div className="sn-cart-drawer" onClick={e => e.stopPropagation()}>
-          <div className="sn-cart-head">
-            <h3 className="sn-cart-title">Your Bag ({totalItems})</h3>
-            <button className="sn-icon-btn" onClick={() => setIsCartOpen(false)}><FiX size={20} /></button>
-          </div>
-
-          <div className="sn-cart-body">
-            {cartItems.length === 0 ? (
-              <div className="sn-cart-empty">
-                <FiShoppingBag size={32} />
-                <p>Your bag is empty</p>
-                <button className="sn-cart-empty-cta" onClick={() => setIsCartOpen(false)}>Continue Shopping</button>
-              </div>
-            ) : cartItems.map(item => {
-              const v     = item.selectedVariant && item.product.variants ? item.product.variants.find(x => x._id === item.selectedVariant) : null
-              const price = parseFloat((v?.price || item.product.price)?.amount || 0)
-              const img   = v?.images?.[0]?.url || item.product.images?.[0]?.url
-              const stock = v ? v.stock : (item.product.stock || 0)
-              const key   = item.selectedVariant ? `${item.product._id}-${item.selectedVariant}` : item.product._id
-              return (
-                <div key={key} className="sn-cart-item">
-                  {img && <img src={img} alt={item.product.title} className="sn-cart-item-img" />}
-                  <div className="sn-cart-item-info">
-                    <p className="sn-cart-item-name">{item.product.title}</p>
-                    {v && <p className="sn-cart-item-variant">{Object.entries(v.attributes || {}).map(([k, val]) => `${k}: ${val}`).join(' | ')}</p>}
-                    <p className="sn-cart-item-price">₹{fmt(price)}</p>
-                    <div className="sn-cart-item-controls">
-                      <div className="sn-qty-row">
-                        <button className="sn-qty-btn" onClick={() => updateQty(item.product._id, item.quantity, -1, stock)}><FiMinus size={12} /></button>
-                        <span className="sn-qty-num">{item.quantity}</span>
-                        <button className="sn-qty-btn" onClick={() => updateQty(item.product._id, item.quantity, 1,  stock)}><FiPlus  size={12} /></button>
-                      </div>
-                      <button className="sn-remove-btn" onClick={() => handleRemoveFromCart({ productId: item.product._id, variantId: item.selectedVariant })}>Remove</button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {cartItems.length > 0 && (
-            <div className="sn-cart-foot">
-              <div className="sn-cart-total-row">
-                <span>Subtotal</span>
-                <span>₹{fmt(cartTotal)}</span>
-              </div>
-              <p className="sn-cart-note">Taxes and shipping calculated at checkout</p>
-              <button className="sn-checkout-btn" onClick={checkout}>PROCEED TO CHECKOUT</button>
-            </div>
-          )}
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="sn-toast animate-slide-up">
+          <FiShoppingBag size={14} className="sn-toast-icon" />
+          <span>{toastMsg}</span>
         </div>
-      </div>
+      )}
 
     </div>
   )

@@ -22,7 +22,7 @@ function Logo() {
         </svg>
         <DiJira size={30} className="logo-icon" />
       </div>
-      
+
       {/* Text "LUOMI" */}
       <span className="logo-text">
         LUOMI

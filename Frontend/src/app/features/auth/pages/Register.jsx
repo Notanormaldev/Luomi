@@ -28,7 +28,7 @@ function Register() {
   const [resendLoading, setResendLoading] = useState(false)
 
   // Theme State
-  const [theme] = useState(localStorage.getItem('luomi-theme') || 'light')
+  const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
 
   // Sync theme
   useEffect(() => {
@@ -40,7 +40,6 @@ function Register() {
   const cursorDotRef = useRef(null)
   const cursorRingRef = useRef(null)
   const buttonRef = useRef(null)
-  const editorialRef = useRef(null)
 
   // Resend timer effect
   useEffect(() => {
@@ -67,14 +66,14 @@ function Register() {
     // 2. Custom Cursor Movement
     const onMouseMove = (e) => {
       const { clientX, clientY } = e
-      
+
       // Instantly position the dot
       gsap.to(cursorDotRef.current, {
         x: clientX,
         y: clientY,
         duration: 0,
       })
-      
+
       // Smoothly lag the ring behind the dot
       gsap.to(cursorRingRef.current, {
         x: clientX,
@@ -88,15 +87,15 @@ function Register() {
 
     // 3. Page Entrance Animations
     const entranceTimeline = gsap.timeline()
-    
+
     // Logo entrance
-    entranceTimeline.fromTo('.logo-container', 
+    entranceTimeline.fromTo('.logo-container',
       { y: -20, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
     )
 
     // Divider line
-    entranceTimeline.fromTo('.divider-line', 
+    entranceTimeline.fromTo('.divider-line',
       { scaleX: 0, opacity: 0 },
       { scaleX: 1, opacity: 1, duration: 0.6, ease: 'power2.inOut' },
       '-=0.4'
@@ -123,8 +122,8 @@ function Register() {
       '-=0.5'
     )
 
-    // Left editorial column slide-in + blur fade
-    gsap.fromTo(editorialRef.current,
+    // Left editorial column slow blur-in fade
+    gsap.fromTo('.editorial-column',
       { x: -60, filter: 'blur(10px)', opacity: 0 },
       { x: 0, filter: 'blur(0px)', opacity: 1, duration: 1.2, ease: 'power4.out' }
     )
@@ -134,7 +133,7 @@ function Register() {
       window.removeEventListener('mousemove', onMouseMove)
       if (scroll) scroll.destroy()
     }
-  }, [])
+  }, [step]) // Re-run entrance when step changes to animate new form inputs
 
   // 4. CTA Button Hover Setup (only for custom cursor scaling)
   useEffect(() => {
@@ -162,12 +161,12 @@ function Register() {
         button.removeEventListener('mouseleave', handleMouseLeave)
       }
     }
-  }, [])
+  }, [step, loading]) // Re-bind on state/step changes when button renders
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    
+
     // Client-side validations
     if (!fullName) {
       setError('Full Name is required.')
@@ -208,9 +207,6 @@ function Register() {
         setStep(2)
         setResendTimer(30)
       }
-
-
-      
     } catch (err) {
       if (err.errors && Array.isArray(err.errors)) {
         setError(err.errors[0].msg)
@@ -240,9 +236,9 @@ function Register() {
         email: otpEmail,
         otp
       })
-        if (res.user.role == "buyer" && res.success) {
+      if (res.user.role == "buyer" && res.success) {
         navigate('/')
-      }else if(res.user.role == "seller" && res.success){
+      } else if (res.user.role == "seller" && res.success) {
         navigate('/dashbord/seller')
       }
     } catch (err) {
@@ -290,244 +286,248 @@ function Register() {
   const headingText = step === 1 ? "Create Account" : "Verify Email"
 
   return (
-    <div data-scroll-container ref={scrollRef} className="w-full min-h-screen flex flex-row overflow-hidden relative">
-
-
+    <div data-scroll-container ref={scrollRef} className="genz-grid-bg genz-auth-body">
       {/* Custom Cursors */}
       <div ref={cursorDotRef} className="custom-cursor-dot" />
       <div ref={cursorRingRef} className="custom-cursor-ring" />
 
-      {/* Left editorial column (55%) */}
-      <div 
-        ref={editorialRef}
-        className="editorial-column w-[55%] h-screen relative hidden md:block overflow-hidden"
-      >
-        {/* Dark/Light overlay and slow parallax image */}
-        <div 
-          className="absolute inset-0 w-full h-full object-cover scale-110"
+      {/* Left Column: Fashion Editorial Column (50% Width) */}
+      <div className="editorial-column relative hidden md:block">
+        <div
+          className="absolute inset-0 w-full h-full object-cover scale-105"
           data-scroll
-          data-scroll-speed="-2"
+          data-scroll-speed="-1.5"
           style={{
             backgroundImage: theme === 'dark' ? "url('/editorial_fashion.png')" : "url('/editorial_fashion_light.png')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         />
-        {/* Theme-aware overlay gradient — subtle in light mode, deeper in dark */}
-        <div className="editorial-overlay absolute inset-0 pointer-events-none" />
-        
-        {/* High-fashion brand Statement Pull Quote */}
-        <div className="absolute inset-x-12 bottom-20 z-10 flex flex-col justify-end text-left select-none">
-          <p className="font-logo text-3xl lg:text-4xl italic auth-editorial-quote leading-relaxed tracking-wider font-light max-w-xl">
+        <div className="editorial-overlay" />
+        <div className="editorial-text-wrap">
+          <p className="auth-editorial-quote">
             "A study in silent luxury. The architecture of modern attire."
           </p>
-          <div className="h-[1px] w-20 auth-editorial-line mt-6" />
-          <span className="font-label text-[11px] font-medium tracking-[2px] uppercase auth-editorial-sub mt-3">
+          <div className="auth-editorial-line" />
+          <span className="auth-editorial-sub">
             LUOMI EDITORIAL STILLS
           </span>
         </div>
       </div>
 
-      {/* Right Form column (45%) */}
-      <div className="form-column w-full md:w-[45%] h-screen flex flex-col justify-between py-8 px-8 sm:px-16 overflow-y-auto z-10 no-scrollbar">
-        {/* Top brand header */}
-        <div className="w-full flex flex-col items-center shrink-0">
-          <Logo />
-          <div className="divider-line h-[1px] auth-divider-line w-full mt-4 mb-2 origin-center" />
-        </div>
+      {/* Right Column: Spacious Form Column (50% Width) */}
+      <div className="form-column">
+        {/* Floating Theme Toggle */}
+        <button 
+          onClick={() => {
+            const next = theme === 'light' ? 'dark' : 'light'
+            localStorage.setItem('luomi-theme', next)
+            setTheme(next)
+            window.dispatchEvent(new Event('theme-changed'))
+          }} 
+          className="theme-toggle-floating"
+          type="button"
+          title="Toggle Theme"
+        >
+          {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
+        </button>
 
-        {/* Center Auth Form */}
-        <div className="flex-1 w-full max-w-[400px] mx-auto flex flex-col justify-center">
-          {/* Header */}
-          <h1 className="font-heading text-[34px] sm:text-[38px] font-medium auth-heading mb-5 leading-none tracking-tight flex flex-row flex-wrap">
-            {headingText.split(" ").map((word, wordIdx) => (
-              <span key={wordIdx} className="flex flex-row mr-3">
-                {word.split("").map((char, charIdx) => (
-                  <span key={charIdx} className="inline-block heading-char origin-bottom">
-                    {char}
-                  </span>
-                ))}
-              </span>
-            ))}
-          </h1>
+        {/* Center Auth Card */}
+        <div className="genz-auth-card">
+          {/* Brand header */}
+          <div className="auth-logo-wrap logo-container">
+            <Logo />
+            <div className="auth-technical-divider divider-line" />
+          </div>
 
-          {step === 1 ? (
-            <>
-              {/* STEP 1: Registration Form */}
-              <form onSubmit={handleRegisterSubmit} className="w-full flex flex-col text-left">
-                {/* Error messaging */}
-                {error && (
-                  <p className="font-body text-xs text-red-500 mb-4 tracking-wide font-medium uppercase">
-                    {error}
-                  </p>
-                )}
+          {/* Center Auth Form */}
+          <div className="w-full flex flex-col justify-center">
+            {/* Header */}
+            <h1 className="font-heading text-[32px] mb-6 leading-none tracking-tight flex flex-row flex-wrap justify-start">
+              {headingText.split(" ").map((word, wordIdx) => (
+                <span key={wordIdx} className="flex flex-row mr-2 inline-flex">
+                  {word.split("").map((char, charIdx) => (
+                    <span key={charIdx} className="inline-block heading-char origin-bottom">
+                      {char}
+                    </span>
+                  ))}
+                </span>
+              ))}
+            </h1>
 
-                {/* Field 1: Full Name */}
-                <div className="auth-input-wrapper flex flex-col">
-                  <label className="auth-label">Full Name</label>
-                  <input
-                    type="text"
-                    placeholder="Enter full name..."
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="auth-input"
-                  />
-                  <span className="input-underline" />
-                </div>
+            {step === 1 ? (
+              <>
+                {/* STEP 1: Registration Form */}
+                <form onSubmit={handleRegisterSubmit} className="w-full flex flex-col text-left">
+                  {/* Error messaging */}
+                  {error && (
+                    <p className="font-mono text-xs text-red-500 mb-4 tracking-wide font-bold uppercase">
+                      {error}
+                    </p>
+                  )}
 
-                {/* Field 2: Email Address */}
-                <div className="auth-input-wrapper flex flex-col">
-                  <label className="auth-label">Email Address</label>
-                  <input
-                    type="email"
-                    placeholder="Enter email address..."
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="auth-input"
-                  />
-                  <span className="input-underline" />
-                </div>
-
-                {/* Field 3: Password */}
-                <div className="auth-input-wrapper flex flex-col relative">
-                  <label className="auth-label">Password</label>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Create password..."
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="auth-input"
-                  />
-                  <span className="input-underline" />
-                  {/* Minimal text show/hide */}
-                  <div className="absolute right-4 top-[38px] flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-[11px] font-label font-medium tracking-[1.5px] uppercase text-[#888888] hover:text-[#C0C0C0] transition-colors focus:outline-none cursor-pointer"
-                    >
-                      {showPassword ? 'HIDE' : 'SHOW'}
-                    </button>
+                  {/* Field 1: Full Name */}
+                  <div className="auth-input-wrapper flex flex-col">
+                    <label className="auth-label">Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="Enter full name..."
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="auth-input"
+                    />
                   </div>
+
+                  {/* Field 2: Email Address */}
+                  <div className="auth-input-wrapper flex flex-col">
+                    <label className="auth-label">Email Address</label>
+                    <input
+                      type="email"
+                      placeholder="Enter email address..."
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="auth-input"
+                    />
+                  </div>
+
+                  {/* Field 3: Password */}
+                  <div className="auth-input-wrapper flex flex-col relative">
+                    <label className="auth-label">Password</label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Create password..."
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="auth-input"
+                    />
+                    {/* Minimal text show/hide */}
+                    <div className="absolute right-4 top-[36px] flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="text-[10px] font-mono font-bold tracking-[1.5px] uppercase text-[var(--dash-subtitle)] hover:text-[var(--dash-title)] transition-colors focus:outline-none cursor-pointer"
+                      >
+                        {showPassword ? 'HIDE' : 'SHOW'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CTA Button */}
+                  <button
+                    ref={buttonRef}
+                    type="submit"
+                    disabled={loading}
+                    className="cta-button"
+                  >
+                    {loading ? 'CREATING ACCOUNT...' : 'JOIN LUOMI'}
+                  </button>
+                </form>
+
+                {/* Google Sign Up Divider */}
+                <div className="social-divider">
+                  <div className="social-divider-line" />
+                  <span className="social-divider-text">or</span>
+                  <div className="social-divider-line" />
                 </div>
 
-
-                {/* CTA Button */}
-                <button
-                  ref={buttonRef}
-                  type="submit"
-                  disabled={loading}
-                  className="cta-button"
-                >
-                  {loading ? 'CREATING ACCOUNT...' : 'JOIN LUOMI'}
-                </button>
-              </form>
-
-              {/* Google Sign Up Divider */}
-              <div className="social-divider">
-                <div className="social-divider-line" />
-                <span className="social-divider-text">or</span>
-                <div className="social-divider-line" />
-              </div>
-
-              {/* Google Register Button */}
-              <div className="google-signin-container">
-                <GoogleSignInButton 
-                  onSuccess={async (token) => {
-                    try {
-                      const res = await handlegoogleauth(token)
-                      if (res && res.success) {
-                        navigate('/')
+                {/* Google Register Button */}
+                <div className="google-signin-container">
+                  <GoogleSignInButton
+                    onSuccess={async (token) => {
+                      try {
+                        const res = await handlegoogleauth(token)
+                        if (res && res.success) {
+                          navigate('/')
+                        }
+                      } catch (err) {
+                        console.error('Google auth failed:', err)
                       }
-                    } catch (err) {
-                      console.error('Google auth failed:', err)
-                    }
-                  }}
-                  onError={() => {
-                    setError('Google sign-up failed. Please try again.')
-                  }}
-                  mode="signup"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              {/* STEP 2: OTP Verification */}
-              <form onSubmit={handleOtpSubmit} className="w-full flex flex-col text-left">
-                {/* Error messaging */}
-                {error && (
-                  <p className="font-body text-xs text-red-500 mb-4 tracking-wide font-medium uppercase">
-                    {error}
-                  </p>
-                )}
-
-                {/* OTP sent message */}
-                <p className="font-body text-sm auth-text-otp-desc mb-6 tracking-wide">
-                  OTP sent to: <span className="font-semibold">{otpEmail}</span>
-                </p>
-
-                {/* OTP Input */}
-                <div className="auth-input-wrapper flex flex-col">
-                  <label className="auth-label">Enter OTP</label>
-                  <input
-                    type="text"
-                    placeholder="000000"
-                    maxLength="6"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    className="auth-input otp-input text-center tracking-widest text-2xl"
+                    }}
+                    onError={() => {
+                      setError('Google sign-up failed. Please try again.')
+                    }}
+                    mode="signup"
                   />
-                  <span className="input-underline" />
+                </div>
+              </>
+            ) : (
+              <>
+                {/* STEP 2: OTP Verification */}
+                <form onSubmit={handleOtpSubmit} className="w-full flex flex-col text-left">
+                  {/* Error messaging */}
+                  {error && (
+                    <p className="font-mono text-xs text-red-500 mb-4 tracking-wide font-bold uppercase">
+                      {error}
+                    </p>
+                  )}
+
+                  {/* OTP sent message */}
+                  <p className="font-body text-sm text-[var(--dash-subtitle)] mb-6 tracking-wide text-left">
+                    OTP sent to: <span className="font-bold text-[var(--dash-title)]">{otpEmail}</span>
+                  </p>
+
+                  {/* OTP Input */}
+                  <div className="auth-input-wrapper flex flex-col">
+                    <label className="auth-label">Enter OTP</label>
+                    <input
+                      type="text"
+                      placeholder="000000"
+                      maxLength="6"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      className="auth-input otp-input"
+                    />
+                  </div>
+
+                  {/* Verify Button */}
+                  <button
+                    ref={buttonRef}
+                    type="submit"
+                    disabled={loading}
+                    className="cta-button mt-4"
+                  >
+                    {loading ? 'VERIFYING...' : 'VERIFY OTP'}
+                  </button>
+                </form>
+
+                {/* Resend OTP Section */}
+                <div className="social-divider mt-6">
+                  <div className="social-divider-line" />
+                  <span className="social-divider-text">resend</span>
+                  <div className="social-divider-line" />
                 </div>
 
-                {/* Verify Button */}
                 <button
-                  ref={buttonRef}
-                  type="submit"
-                  disabled={loading}
-                  className="cta-button mt-4"
+                  onClick={handleResendOtp}
+                  disabled={resendTimer > 0 || resendLoading}
+                  className="resend-otp-button"
                 >
-                  {loading ? 'VERIFYING...' : 'VERIFY OTP'}
+                  {resendTimer > 0 ? (
+                    <>
+                      Resend OTP in <span className="ml-2 font-bold">{resendTimer}s</span>
+                    </>
+                  ) : (
+                    resendLoading ? 'SENDING OTP...' : 'RESEND OTP'
+                  )}
                 </button>
-              </form>
+              </>
+            )}
+          </div>
 
-              {/* Resend OTP Section */}
-              <div className="social-divider mt-6">
-                <div className="social-divider-line" />
-                <span className="social-divider-text">resend</span>
-                <div className="social-divider-line" />
-              </div>
-
-              <button
-                onClick={handleResendOtp}
-                disabled={resendTimer > 0 || resendLoading}
-                className="resend-otp-button"
-              >
-                {resendTimer > 0 ? (
-                  <>
-                    Resend OTP in <span className="ml-1 font-semibold">{resendTimer}s</span>
-                  </>
-                ) : (
-                  resendLoading ? 'SENDING OTP...' : 'RESEND OTP'
-                )}
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Bottom Footer links — with proper breathing room */}
-        <div className="w-full text-center flex flex-col items-center gap-3 pt-6 shrink-0">
-          {step === 1 && (
-            <p className="font-label text-xs auth-text-muted">
-              Already have an account?{' '}
-              <Link to="/login" className="auth-link hover:text-[#C0C0C0] transition-colors">
-                Log in
-              </Link>
+          {/* Bottom Footer links */}
+          <div className="w-full text-center flex flex-col items-center mt-6 pt-2">
+            {step === 1 && (
+              <p className="auth-text-muted">
+                Already have an account?{' '}
+                <Link to="/login" className="auth-link">
+                  Log in
+                </Link>
+              </p>
+            )}
+            <p className="auth-legal-text">
+              © 2026 LUOMI LTD. ALL RIGHTS RESERVED.
             </p>
-          )}
-          <p className="font-legal text-[11px] auth-legal-text tracking-wide">
-            © 2026 LUOMI LTD. ALL RIGHTS RESERVED.
-          </p>
+          </div>
         </div>
       </div>
     </div>
@@ -535,4 +535,3 @@ function Register() {
 }
 
 export default Register
-
