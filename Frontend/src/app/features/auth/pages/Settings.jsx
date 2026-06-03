@@ -108,6 +108,18 @@ function Settings() {
     e.preventDefault()
     setSettingsError('')
     setSettingsSuccess('')
+
+    // Validate pincode
+    if (pincode && !/^\d{6}$/.test(pincode.trim())) {
+      setSettingsError('Pincode must be exactly 6 digits.')
+      return
+    }
+    // Validate phone
+    if (contact && !/^\d{10}$/.test(contact.trim())) {
+      setSettingsError('Phone number must be exactly 10 digits.')
+      return
+    }
+
     setSavingSettings(true)
     try {
       const res = await handleupdatesettings({ address, city, pincode, contact })
@@ -277,26 +289,28 @@ function Settings() {
                       />
                     </div>
                     <div className="form-group-settings">
-                      <label className="form-label-settings">Pincode</label>
-                      <input 
-                        type="text" 
-                        value={pincode} 
-                        onChange={(e) => setPincode(e.target.value)} 
-                        placeholder="Pincode" 
-                        className="settings-input-field"
-                        required
-                      />
-                    </div>
+                    <label className="form-label-settings">Pincode (6 digits)</label>
+                    <input 
+                      type="text" 
+                      value={pincode} 
+                      onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))} 
+                      placeholder="6-digit Pincode" 
+                      className="settings-input-field"
+                      required
+                      maxLength={6}
+                    />
+                  </div>
                   </div>
                   <div className="form-group-settings" style={{ marginTop: '1rem' }}>
-                    <label className="form-label-settings">Phone / Contact Number</label>
+                    <label className="form-label-settings">Phone / Contact Number (10 digits)</label>
                     <input 
                       type="text" 
                       value={contact} 
-                      onChange={(e) => setContact(e.target.value)} 
-                      placeholder="Contact number" 
+                      onChange={(e) => setContact(e.target.value.replace(/\D/g, '').slice(0, 10))} 
+                      placeholder="10-digit Phone Number" 
                       className="settings-input-field"
                       required
+                      maxLength={10}
                     />
                   </div>
                   {settingsError && <p className="error-message text-red-500 text-xs font-semibold mt-3">{settingsError}</p>}

@@ -945,3 +945,49 @@
   text-decoration: underline;
 }
 
+/* Saved Address Block */
+.ct-saved-address-block {
+  background: var(--ct-hover-bg);
+  border: 1px solid var(--ct-border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ct-saved-address-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--ct-text-muted);
+}
+
+.ct-saved-address-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ct-text);
+}
+
+.ct-change-address-btn {
+  background: none;
+  border: 1px solid var(--ct-border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ct-text-muted);
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.ct-change-address-btn:hover {
+  border-color: var(--ct-text);
+  color: var(--ct-text);
+}

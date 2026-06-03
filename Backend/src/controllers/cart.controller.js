@@ -63,7 +63,7 @@ async function addToCart(req, res) {
         // Live Stock Management Validation
         let availableStock = product.stock || 0;
         if (variantId) {
-            const variant = product.variants.id(variantId) || product.variants.find(v => v._id.toString() === variantId.toString());
+            const variant = product.variants.id(variantId) || product.variants.find(v => v._id && v._id.toString() === variantId.toString());
             if (!variant) {
                 return res.status(404).json({ success: false, msg: "Variant not found" });
             }
@@ -142,7 +142,7 @@ async function updateCartItem(req, res) {
         // Live Stock Management Validation
         let availableStock = product.stock || 0;
         if (variantId) {
-            const variant = product.variants.id(variantId) || product.variants.find(v => v._id.toString() === variantId.toString());
+            const variant = product.variants.id(variantId) || product.variants.find(v => v._id && v._id.toString() === variantId.toString());
             if (!variant) {
                 return res.status(404).json({ success: false, msg: "Variant not found" });
             }
@@ -261,7 +261,7 @@ async function checkout(req, res) {
 
             let availableStock = product.stock || 0;
             if (item.selectedVariant) {
-                const variant = product.variants.id(item.selectedVariant) || product.variants.find(v => v._id.toString() === item.selectedVariant.toString());
+                const variant = product.variants.id(item.selectedVariant) || product.variants.find(v => v._id && v._id.toString() === item.selectedVariant.toString());
                 if (!variant) {
                     return res.status(404).json({ success: false, msg: `Variant not found for product ${product.title}` });
                 }
@@ -282,7 +282,7 @@ async function checkout(req, res) {
         
         for (const item of cart.items) {
             const variantObj = item.selectedVariant && item.product.variants
-                ? item.product.variants.find(v => v._id.toString() === item.selectedVariant.toString())
+                ? item.product.variants.find(v => v._id && v._id.toString() === item.selectedVariant.toString())
                 : null;
             const priceObj = variantObj?.price || item.product.price;
             const itemPrice = priceObj?.amount || 0;

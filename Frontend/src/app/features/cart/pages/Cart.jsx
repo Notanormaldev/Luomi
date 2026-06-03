@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useauth } from '../../auth/hook/useauth'
+import { updateSettingsApi } from '../../auth/services/auth.api'
 import { usecart } from '../../cart/hook/usecart'
 import { getCartWithPricingApi } from '../../cart/services/cart.api'
 import Logo from '../../auth/components/Logo'
@@ -50,7 +51,11 @@ export default function Cart() {
   const [paymentMethod, setPaymentMethod] = useState('COD')
   const [checkoutError, setCheckoutError] = useState('')
 
-  // Prefill checkout details
+  // Check if user already has complete saved address
+  const hasSavedAddress = !!(user?.address?.trim() && user?.city?.trim() && user?.pincode?.trim() && user?.contact?.trim())
+  const [useExistingAddress, setUseExistingAddress] = useState(true)
+
+  // Prefill checkout details from saved profile
   useEffect(() => {
     if (user) {
       setAddress(user.address || '')
@@ -158,16 +163,41 @@ export default function Cart() {
 
   // Handle Checkout
   const triggerCheckout = async () => {
-    if (!address.trim() || !city.trim() || !pincode.trim() || !contact.trim()) {
+    const activeAddress = (hasSavedAddress && useExistingAddress) ? user.address : address
+    const activeCity = (hasSavedAddress && useExistingAddress) ? user.city : city
+    const activePincode = (hasSavedAddress && useExistingAddress) ? user.pincode : pincode
+    const activeContact = (hasSavedAddress && useExistingAddress) ? user.contact : contact
+
+    if (!activeAddress?.trim() || !activeCity?.trim() || !activePincode?.trim() || !activeContact?.trim()) {
       setCheckoutError('Please provide complete shipping details.')
+      return
+    }
+    // Validate pincode: 6 digits
+    if (!/^\d{6}$/.test(activePincode.trim())) {
+      setCheckoutError('Pincode must be exactly 6 digits.')
+      return
+    }
+    // Validate phone: 10 digits
+    if (!/^\d{10}$/.test(activeContact.trim())) {
+      setCheckoutError('Phone number must be exactly 10 digits.')
       return
     }
     setCheckoutError('')
     setUpdating(true)
 
     const payload = {
-      shippingAddress: { address, city, pincode, contact },
+      shippingAddress: { address: activeAddress, city: activeCity, pincode: activePincode, contact: activeContact },
       paymentMethod
+    }
+
+    // Auto-save address to profile if using a new address
+    if (!(hasSavedAddress && useExistingAddress)) {
+      try {
+        await updateSettingsApi({ address: activeAddress, city: activeCity, pincode: activePincode, contact: activeContact })
+      } catch (e) {
+        // Non-blocking: address save failure should not block checkout
+        console.warn('Could not auto-save address to profile:', e)
+      }
     }
 
     try {
@@ -536,79 +566,108 @@ export default function Cart() {
                 {showCheckoutForm ? (
                   <div className="ct-checkout-panel mt-6 pt-6 border-t border-[var(--border)]">
                     <h4 className="font-heading text-xs uppercase tracking-wider mb-4 text-left font-bold">Shipping & Payment</h4>
-                    
-                    <div className="flex flex-col gap-3 text-left">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Address</label>
-                        <input 
-                          type="text" 
-                          value={address} 
-                          onChange={e => setAddress(e.target.value)} 
-                          placeholder="Delivery Address" 
-                          className="ct-checkout-input"
-                        />
-                      </div>
-                      
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">City</label>
-                          <input 
-                            type="text" 
-                            value={city} 
-                            onChange={e => setCity(e.target.value)} 
-                            placeholder="City" 
-                            className="ct-checkout-input"
-                          />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Pincode</label>
-                          <input 
-                            type="text" 
-                            value={pincode} 
-                            onChange={e => setPincode(e.target.value)} 
-                            placeholder="Pincode" 
-                            className="ct-checkout-input"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Phone Number</label>
-                        <input 
-                          type="text" 
-                          value={contact} 
-                          onChange={e => setContact(e.target.value)} 
-                          placeholder="Contact Number" 
-                          className="ct-checkout-input"
-                        />
-                      </div>
 
-                      <div className="flex flex-col gap-1 mt-2">
-                        <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Payment Mode</label>
-                        <div className="flex gap-4 mt-1">
-                          <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
-                            <input 
-                              type="radio" 
-                              name="paymentMethod" 
-                              value="COD" 
-                              checked={paymentMethod === 'COD'}
-                              onChange={() => setPaymentMethod('COD')}
-                              className="accent-white"
-                            />
-                            <span>COD</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
-                            <input 
-                              type="radio" 
-                              name="paymentMethod" 
-                              value="Razorpay" 
-                              checked={paymentMethod === 'Razorpay'}
-                              onChange={() => setPaymentMethod('Razorpay')}
-                              className="accent-white"
-                            />
-                            <span>Online (Razorpay)</span>
-                          </label>
+                    {/* Saved address block OR new address form */}
+                    {hasSavedAddress && useExistingAddress ? (
+                      <div className="ct-saved-address-block">
+                        <div className="ct-saved-address-label">Delivering to saved address:</div>
+                        <div className="ct-saved-address-info">
+                          <span>{user.address}, {user.city} — {user.pincode}</span>
+                          <span style={{ opacity: 0.6 }}>📞 {user.contact}</span>
                         </div>
+                        <button
+                          type="button"
+                          className="ct-change-address-btn"
+                          onClick={() => setUseExistingAddress(false)}
+                        >
+                          Use different address
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3 text-left">
+                        {hasSavedAddress && (
+                          <button
+                            type="button"
+                            className="ct-change-address-btn"
+                            style={{ marginBottom: '0.5rem', alignSelf: 'flex-start' }}
+                            onClick={() => setUseExistingAddress(true)}
+                          >
+                            ← Use saved address
+                          </button>
+                        )}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Address</label>
+                          <input
+                            type="text"
+                            value={address}
+                            onChange={e => setAddress(e.target.value)}
+                            placeholder="Delivery Address"
+                            className="ct-checkout-input"
+                          />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">City</label>
+                            <input
+                              type="text"
+                              value={city}
+                              onChange={e => setCity(e.target.value)}
+                              placeholder="City"
+                              className="ct-checkout-input"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Pincode (6 digits)</label>
+                            <input
+                              type="text"
+                              value={pincode}
+                              onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                              placeholder="6-digit Pincode"
+                              className="ct-checkout-input"
+                              maxLength={6}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Phone Number (10 digits)</label>
+                          <input
+                            type="text"
+                            value={contact}
+                            onChange={e => setContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                            placeholder="10-digit Phone Number"
+                            className="ct-checkout-input"
+                            maxLength={10}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Payment Mode — always visible */}
+                    <div className="flex flex-col gap-1 mt-4">
+                      <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Payment Mode</label>
+                      <div className="flex gap-4 mt-1">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="COD"
+                            checked={paymentMethod === 'COD'}
+                            onChange={() => setPaymentMethod('COD')}
+                            className="accent-white"
+                          />
+                          <span>COD</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="Razorpay"
+                            checked={paymentMethod === 'Razorpay'}
+                            onChange={() => setPaymentMethod('Razorpay')}
+                            className="accent-white"
+                          />
+                          <span>Online (Razorpay)</span>
+                        </label>
                       </div>
                     </div>
 

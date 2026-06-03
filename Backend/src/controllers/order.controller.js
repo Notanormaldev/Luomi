@@ -126,7 +126,7 @@ async function markOutForDelivery(req, res) {
             if (!product) continue;
 
             if (item.selectedVariant) {
-                const variant = product.variants.id(item.selectedVariant) || product.variants.find(v => v._id.toString() === item.selectedVariant.toString());
+                const variant = product.variants.id(item.selectedVariant) || product.variants.find(v => v._id && v._id.toString() === item.selectedVariant.toString());
                 if (variant) {
                     variant.stock = Math.max(0, variant.stock - item.quantity);
                 }
