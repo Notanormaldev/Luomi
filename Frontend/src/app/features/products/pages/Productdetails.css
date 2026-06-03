@@ -1182,46 +1182,66 @@
   animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Similar Products Section */
+/* Similar Products Section - Editorial Luxury Redesign */
 .pd-similar-section {
-  max-width: 1100px;
-  margin: 60px auto 0;
-  padding: 50px 24px 80px;
+  max-width: 1150px;
+  margin: 80px auto 0;
+  padding: 60px 24px 100px;
   border-top: 1px solid var(--pd-border);
 }
 
 .pd-similar-title {
   text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: .16em;
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: .25em;
   color: var(--pd-text);
-  margin-bottom: 32px;
+  margin-bottom: 48px;
   text-transform: uppercase;
+  position: relative;
+}
+
+.pd-similar-title::after {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 1px;
+  background-color: var(--pd-text);
+  opacity: 0.3;
 }
 
 .pd-similar-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  gap: 30px;
 }
 
 .pd-similar-card {
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: rgba(120, 120, 120, 0.01);
+  border: 1px solid transparent;
+  padding: 10px;
+  border-radius: 2px;
 }
 
 .pd-similar-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-8px);
+  border-color: var(--pd-border);
+  background-color: var(--pd-search-bg);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
 }
 
 .pd-similar-card-img-wrap {
   position: relative;
   aspect-ratio: 3/4;
-  border-radius: 6px;
+  border-radius: 2px;
   overflow: hidden;
   background: var(--pd-skeleton);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pd-similar-card-img {
@@ -1229,22 +1249,23 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: opacity .3s, transform .45s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity .3s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pd-similar-card-img-hover {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transition: opacity .35s ease;
+  transition: opacity .4s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pd-similar-card:hover .pd-similar-card-img:not(.pd-similar-card-img-hover) {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 
 .pd-similar-card:hover .pd-similar-card-img-hover {
   opacity: 1;
+  transform: scale(1.05);
 }
 
 .pd-similar-card-img-placeholder {
@@ -1254,35 +1275,90 @@
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  letter-spacing: .15em;
+  letter-spacing: .2em;
   font-weight: 700;
   color: var(--pd-text-subtle);
+  background: var(--pd-search-bg);
 }
 
 .pd-similar-card-body {
-  padding: 12px 2px 4px;
+  padding: 16px 4px 4px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
 .pd-similar-card-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--pd-text);
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
-  transition: color 0.15s ease;
-}
-
-.pd-similar-card:hover .pd-similar-card-title {
-  color: var(--pd-text-muted);
+  margin-right: 12px;
+  flex: 1;
+  letter-spacing: -0.1px;
 }
 
 .pd-similar-card-price {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--pd-text);
+  letter-spacing: -0.2px;
+}
+
+/* Redesign some overall parts for luxury details */
+.pd-add-bag-btn {
+  background: #111111 !important;
+  color: #FFFFFF !important;
+  border-radius: 2px !important;
+  text-transform: uppercase;
+  letter-spacing: 2px !important;
+  font-weight: 600 !important;
+}
+
+[data-theme='dark'] .pd-add-bag-btn {
+  background: #FFFFFF !important;
+  color: #111111 !important;
+}
+
+.pd-buy-now-btn {
+  border-radius: 2px !important;
+  text-transform: uppercase;
+  letter-spacing: 2px !important;
+  font-weight: 600 !important;
+}
+
+.pd-wishlist-btn {
+  border-radius: 2px !important;
+}
+
+.pd-qty-ctrl {
+  border-radius: 2px !important;
+}
+
+.pd-qty-val {
+  border-left: 1px solid var(--pd-border) !important;
+  border-right: 1px solid var(--pd-border) !important;
+}
+
+.pd-size-btn {
+  border-radius: 2px !important;
+  text-transform: uppercase;
+}
+
+.pd-jerry-section {
+  border-radius: 2px !important;
+  background-color: var(--pd-search-bg) !important;
+  border: 1px solid var(--pd-border) !important;
+}
+
+.pd-delivery-info {
+  border-radius: 2px !important;
+  background-color: var(--pd-search-bg) !important;
+  border: 1px solid var(--pd-border) !important;
 }
 
 @media (max-width: 860px) {

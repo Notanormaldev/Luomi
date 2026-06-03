@@ -1,0 +1,337 @@
+/* Order Success - Luxury Atelier Receipt styling */
+
+:root {
+  --os-bg: #050505;
+  --os-card-bg: #0F0F11;
+  --os-text: #E5E5E5;
+  --os-border: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='light'] {
+  --os-bg: #FAFAFA;
+  --os-card-bg: #FFFFFF;
+  --os-text: #111111;
+  --os-border: #E5E5E5;
+}
+
+.os-root {
+  min-height: 100vh;
+  background-color: var(--os-bg);
+  color: var(--os-text);
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
+  padding-bottom: 80px;
+}
+
+/* Navbar */
+.os-navbar {
+  border-bottom: 1px solid var(--os-border);
+  background-color: var(--os-card-bg);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.os-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.os-icon-btn {
+  background: none;
+  border: none;
+  color: var(--os-text);
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+  margin-right: 1rem;
+}
+
+.os-icon-btn:hover {
+  background-color: rgba(120, 120, 120, 0.05);
+}
+
+.os-logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+/* Container */
+.os-container {
+  max-width: 800px;
+  margin: 3rem auto 0;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+}
+
+/* Header Card */
+.os-header-card {
+  text-align: center;
+  margin-bottom: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.os-success-icon-wrap {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background-color: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.os-success-icon {
+  color: #10B981;
+}
+
+.os-title {
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.os-subtitle {
+  font-size: 13px;
+  color: #888888;
+  max-width: 460px;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.os-id-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 0.4rem 1.2rem;
+  border: 1px solid var(--os-border);
+  background-color: rgba(120, 120, 120, 0.03);
+}
+
+/* Receipt Grid */
+.os-receipt-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .os-receipt-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.os-receipt-card {
+  background-color: var(--os-card-bg);
+  border: 1px solid var(--os-border);
+  padding: 2rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.os-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-bottom: 1px solid var(--os-border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.os-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.os-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.os-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.os-item-name {
+  font-weight: 500;
+}
+
+/* Pricing details */
+.os-pricing-breakdown {
+  border-top: 1px solid var(--os-border);
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.os-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #888888;
+}
+
+.os-price-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Meta Card columns */
+.os-meta-card {
+  height: max-content;
+}
+
+.os-meta-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.os-meta-item:last-child {
+  margin-bottom: 0;
+}
+
+.os-meta-icon {
+  color: #888888;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.os-meta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.os-meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888888;
+}
+
+.os-meta-value {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.os-status-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  background-color: rgba(120, 120, 120, 0.08);
+  border: 1px solid var(--os-border);
+  width: max-content;
+  margin-top: 0.2rem;
+}
+
+.os-status-badge.os-status-processing {
+  border-color: #3B82F6;
+  color: #3B82F6;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.os-status-badge.os-status-delivered {
+  border-color: #10B981;
+  color: #10B981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.os-status-badge.os-status-out_for_delivery {
+  border-color: #F59E0B;
+  color: #F59E0B;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+/* CTA buttons */
+.os-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.75rem;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  border: 1px solid var(--os-border);
+}
+
+.os-btn-primary {
+  background-color: var(--os-text);
+  color: var(--os-bg);
+  border-color: var(--os-text);
+}
+
+.os-btn-primary:hover {
+  background-color: transparent;
+  color: var(--os-text);
+}
+
+.os-btn-secondary {
+  background: none;
+  color: var(--os-text);
+}
+
+.os-btn-secondary:hover {
+  background-color: rgba(120, 120, 120, 0.03);
+  border-color: var(--os-text);
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Print Overrides */
+@media print {
+  .os-navbar, .os-actions {
+    display: none !important;
+  }
+  .os-root {
+    background-color: #FFF !important;
+    color: #000 !important;
+    padding-bottom: 0 !important;
+  }
+  .os-container {
+    margin-top: 0 !important;
+  }
+  .os-receipt-card {
+    border: 1px solid #CCC !important;
+    box-shadow: none !important;
+  }
+}

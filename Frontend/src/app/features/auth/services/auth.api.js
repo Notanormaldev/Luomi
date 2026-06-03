@@ -80,5 +80,23 @@ export async function logoutApi(){
      }
 }
 
+export async function becomeDeliveryApi({ city, pincode }){
+     try {
+        const res=await authapi.post('/become-delivery', { city, pincode })
+        return res.data
+     } catch (error) {
+        throw error.response?.data || { msg: "Failed to become delivery partner" }
+     }
+}
+
+export async function updateSettingsApi(settings){
+     try {
+        const res=await authapi.put('/update-settings', settings)
+        return res.data
+     } catch (error) {
+        throw error.response?.data || { msg: "Failed to update settings" }
+     }
+}
+
 
 

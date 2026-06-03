@@ -2,6 +2,10 @@ import cartModel from "../models/cart.model.js";
 import productModel from "../models/product.model.js";
 import orderModel from "../models/order.model.js";
 import cartDao from "../dao/cart.dao.js";
+import Razorpay from 'razorpay';
+import config from '../config/config.js';
+import usermodel from "../models/user.model.js";
+import { sendEmail } from "../services/mailer.service.js";
 
 
 
@@ -215,16 +219,29 @@ async function removeFromCart(req, res) {
 }
 
 async function checkout(req, res) {
-
     try {
         const userId = req.user.id;
+        const { shippingAddress, paymentMethod } = req.body;
+
+        if (!shippingAddress || !shippingAddress.address || !shippingAddress.city || !shippingAddress.contact || !shippingAddress.pincode) {
+            return res.status(400).json({ success: false, msg: "Complete shipping address (address, city, contact, pincode) is required" });
+        }
+
+        if (!paymentMethod || !['COD', 'Razorpay'].includes(paymentMethod)) {
+            return res.status(400).json({ success: false, msg: "Invalid or missing payment method" });
+        }
+
+        const userObj = await usermodel.findById(userId);
+        if (!userObj) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+
         const cart = await cartModel.findOne({ user: userId }).populate('items.product');
-        
         if (!cart || cart.items.length === 0) {
             return res.status(400).json({ success: false, msg: "Atelier bag is empty" });
         }
 
-        // 1. Verify stock for all items
+        // 1. Verify stock for all items (but do NOT decrement yet)
         for (const item of cart.items) {
             const product = item.product;
             if (!product) {
@@ -248,21 +265,11 @@ async function checkout(req, res) {
             }
         }
 
-        // 2. Decrement stock for all items
-        for (const item of cart.items) {
-            const product = await productModel.findById(item.product._id);
-            if (item.selectedVariant) {
-                const variant = product.variants.id(item.selectedVariant);
-                variant.stock = Math.max(0, variant.stock - item.quantity);
-            } else {
-                product.stock = Math.max(0, product.stock - item.quantity);
-            }
-            await product.save();
-        }
-
-        // 3. Calculate total price and build order item list
+        // 2. Calculate total price and build order item list
         let totalAmount = 0;
-        const orderItems = cart.items.map(item => {
+        const orderItems = [];
+        
+        for (const item of cart.items) {
             const variantObj = item.selectedVariant && item.product.variants
                 ? item.product.variants.find(v => v._id.toString() === item.selectedVariant.toString())
                 : null;
@@ -270,7 +277,7 @@ async function checkout(req, res) {
             const itemPrice = priceObj?.amount || 0;
             totalAmount += itemPrice * item.quantity;
 
-            return {
+            orderItems.push({
                 product: item.product._id,
                 selectedVariant: item.selectedVariant || null,
                 quantity: item.quantity,
@@ -278,28 +285,121 @@ async function checkout(req, res) {
                     amount: itemPrice,
                     currency: priceObj?.currency || 'INR'
                 }
-            };
-        });
+            });
+        }
 
-        // 4. Create the order document
-        const order = await orderModel.create({
+        // 3. Create initial order document
+        const orderData = {
             user: userId,
             items: orderItems,
             totalAmount,
-            currency: cart.items[0]?.product.price?.currency || 'INR',
-            status: 'pending'
-        });
+            currency: 'INR',
+            shippingAddress,
+            paymentMethod,
+            paymentStatus: 'pending'
+        };
 
-        // 5. Clear user cart
-        cart.items = [];
-        await cart.save();
+        if (paymentMethod === 'COD') {
+            orderData.status = 'processing';
+            const order = await orderModel.create(orderData);
 
-        return res.status(201).json({
-            success: true,
-            msg: "Order placed successfully",
-            order,
-            cart
-        });
+            // Clear user cart
+            cart.items = [];
+            await cart.save();
+
+            // Populate order items product details for email template
+            const populatedOrder = await orderModel.findById(order._id).populate('items.product');
+
+            // Send Confirmation Email
+            try {
+                const itemsHtml = populatedOrder.items.map(item => `
+                    <div style="border-bottom: 1px solid #E5E5E5; padding: 10px 0; display: flex; justify-content: space-between;">
+                        <div>
+                            <p style="margin: 0; font-weight: bold; color: #111111;">${item.product.title}</p>
+                            <p style="margin: 2px 0 0 0; font-size: 12px; color: #666666;">Quantity: ${item.quantity}</p>
+                        </div>
+                        <span style="font-weight: bold; color: #111111;">₹${(item.price.amount * item.quantity).toLocaleString('en-IN')}</span>
+                    </div>
+                `).join('');
+
+                const emailHtml = `
+                    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #E5E5E5; color: #111111; background-color: #FAFAFA;">
+                        <h2 style="text-align: center; border-bottom: 2px solid #111111; padding-bottom: 15px; text-transform: uppercase; letter-spacing: 2px;">Luomi Atelier</h2>
+                        <h3>Thank you for your order, ${userObj.fullname}!</h3>
+                        <p>Your Cash on Delivery order has been successfully placed and is being prepared by our designers.</p>
+                        <p style="font-size: 12px; color: #666666; text-transform: uppercase; letter-spacing: 1px;">Order ID: #${order._id.toString().toUpperCase()}</p>
+                        
+                        <div style="margin: 20px 0;">
+                            <h4 style="border-bottom: 1px solid #111111; padding-bottom: 5px; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;">Order Summary</h4>
+                            ${itemsHtml}
+                            <div style="padding: 15px 0; text-align: right;">
+                                <span style="font-size: 14px; color: #666666;">Total Amount (COD): </span>
+                                <span style="font-size: 18px; font-weight: bold; color: #111111;">₹${totalAmount.toLocaleString('en-IN')}</span>
+                            </div>
+                        </div>
+                        
+                        <div style="background-color: #F1F1F1; padding: 15px; border-radius: 2px; margin-top: 20px;">
+                            <h4 style="margin-top: 0; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; color: #666666;">Shipping Address</h4>
+                            <p style="margin: 0; font-size: 13px; line-height: 1.5;">
+                                ${shippingAddress.address}<br/>
+                                ${shippingAddress.city} - ${shippingAddress.pincode}<br/>
+                                Contact: ${shippingAddress.contact}
+                            </p>
+                        </div>
+                        <p style="text-align: center; color: #888888; font-size: 12px; margin-top: 30px;">© ${new Date().getFullYear()} Luomi Atelier. All rights reserved.</p>
+                    </div>
+                `;
+
+                await sendEmail({
+                    to: userObj.email,
+                    subject: "Your Luomi Atelier Order Confirmed - COD",
+                    html: emailHtml,
+                    text: `Thank you for your order, ${userObj.fullname}! Your order ID is #${order._id.toString().toUpperCase()} for a total of ₹${totalAmount.toLocaleString('en-IN')}.`
+                });
+            } catch (mailError) {
+                console.error("Failed to send COD success email:", mailError);
+            }
+
+            return res.status(201).json({
+                success: true,
+                msg: "Cash on Delivery order placed successfully",
+                order
+            });
+
+        } else if (paymentMethod === 'Razorpay') {
+            orderData.status = 'pending';
+            const order = await orderModel.create(orderData);
+
+            // Initialize Razorpay SDK
+            const razorpayInstance = new Razorpay({
+                key_id: config.RAZORPAY_KEY_ID,
+                key_secret: config.RAZORPAY_KEY_SECRET
+            });
+
+            // Create Razorpay Order
+            const rzpOrder = await razorpayInstance.orders.create({
+                amount: Math.round(totalAmount * 100), // in paise
+                currency: 'INR',
+                receipt: order._id.toString()
+            });
+
+            // Save Razorpay order ID to document
+            order.razorpayOrderId = rzpOrder.id;
+            await order.save();
+
+            // Clear user cart
+            cart.items = [];
+            await cart.save();
+
+            return res.status(201).json({
+                success: true,
+                msg: "Razorpay checkout order created",
+                order,
+                razorpayOrder: rzpOrder,
+                key: config.RAZORPAY_KEY_ID
+            });
+        }
+
     } catch (error) {
         console.error("checkout Error:", error);
         return res.status(500).json({ success: false, msg: "Failed to place order" });

@@ -38,8 +38,20 @@ const userSchema = mongoose.Schema({
     otpExpiry: { type: Date },
     role:{
         type:String,
-        enum:["buyer","seller"],
+        enum:["buyer","seller","delivery"],
         default:"buyer"
+    },
+    address:{
+        type:String,
+        default:""
+    },
+    city:{
+        type:String,
+        default:""
+    },
+    pincode:{
+        type:String,
+        default:""
     }
 })
 

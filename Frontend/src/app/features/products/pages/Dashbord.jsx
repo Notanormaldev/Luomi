@@ -62,6 +62,22 @@ function Dashbord() {
     fetchSellerOrders()
   }, [])
 
+  const handleMarkOutForDelivery = async (orderId) => {
+    try {
+      const res = await axios.post(`/api/order/seller/out-for-delivery/${orderId}`, {}, { withCredentials: true })
+      if (res.data.success) {
+        alert('Order marked as Out for Delivery! Customer will receive email details.')
+        const orderRes = await axios.get('/api/product/orders/seller', { withCredentials: true })
+        if (orderRes.data.success) {
+          setOrders(orderRes.data.orders)
+        }
+      }
+    } catch (err) {
+      console.error('Failed to mark order out for delivery:', err)
+      alert(err.response?.data?.msg || 'Failed to dispatch order.')
+    }
+  }
+
   const products = useSelector(state => state.product.sellerproducts) || []
 
   const getCurrencySymbol = (currency) => {
@@ -345,9 +361,36 @@ function Dashbord() {
                           
                           {itemIdx === 0 ? (
                             <td rowSpan={order.items.length}>
-                              <span className={`status-badge-inline status-${order.status}`}>
-                                {order.status}
-                              </span>
+                              <div className="flex flex-col gap-2 items-start">
+                                <span className={`status-badge-inline status-${order.status}`}>
+                                  {order.status}
+                                </span>
+                                {order.status === 'processing' && (
+                                  <button
+                                    onClick={() => handleMarkOutForDelivery(order._id)}
+                                    className="btn-out-for-delivery text-[9px] uppercase tracking-wider font-bold"
+                                    style={{
+                                      padding: '4px 8px',
+                                      border: '1px solid var(--dash-border, rgba(255,255,255,0.1))',
+                                      backgroundColor: 'transparent',
+                                      color: 'var(--dash-text, #FFF)',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s',
+                                      marginTop: '4px'
+                                    }}
+                                    onMouseEnter={e => {
+                                      e.target.style.backgroundColor = 'var(--dash-text, #FFF)';
+                                      e.target.style.color = '#000';
+                                    }}
+                                    onMouseLeave={e => {
+                                      e.target.style.backgroundColor = 'transparent';
+                                      e.target.style.color = 'var(--dash-text, #FFF)';
+                                    }}
+                                  >
+                                    Out for Delivery
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           ) : null}
                           

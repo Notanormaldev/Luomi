@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux"
-import { getme, login, register, verifyOtp, becomeSellerApi, forgotPasswordApi, resetPasswordApi, logoutApi } from "../services/auth.api"
+import { getme, login, register, verifyOtp, becomeSellerApi, becomeDeliveryApi, updateSettingsApi, forgotPasswordApi, resetPasswordApi, logoutApi } from "../services/auth.api"
 import { seterror, setloading, setuser } from "../auth.slice"
 
 export const useauth = () => {
@@ -110,6 +110,38 @@ export const useauth = () => {
       }
     }
 
+    async function handlebecomedelivery({ city, pincode }) {
+      dispatch(setloading(true))
+      dispatch(seterror(null))
+      try {
+        const data = await becomeDeliveryApi({ city, pincode })
+        dispatch(setuser(data.user))
+        dispatch(setloading(false))
+        return { success: true, data }
+      } catch (err) {
+        console.log("Become delivery error:", err)
+        dispatch(seterror(err))
+        dispatch(setloading(false))
+        throw err
+      }
+    }
+
+    async function handleupdatesettings(settings) {
+      dispatch(setloading(true))
+      dispatch(seterror(null))
+      try {
+        const data = await updateSettingsApi(settings)
+        dispatch(setuser(data.user))
+        dispatch(setloading(false))
+        return { success: true, data }
+      } catch (err) {
+        console.log("Update settings error:", err)
+        dispatch(seterror(err))
+        dispatch(setloading(false))
+        throw err
+      }
+    }
+
     async function handleforgotpassword({ email }) {
       dispatch(setloading(true))
       dispatch(seterror(null))
@@ -166,6 +198,8 @@ export const useauth = () => {
         handlegoogleauth,
         handleverifyotp,
         handlebecomeseller,
+        handlebecomedelivery,
+        handleupdatesettings,
         handleforgotpassword,
         handleresetpassword,
         handlelogout

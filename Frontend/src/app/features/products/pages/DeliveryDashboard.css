@@ -1,0 +1,574 @@
+/* Delivery Partner Dashboard - Premium Atelier Styling */
+
+:root {
+  --dd-bg: #050505;
+  --dd-card-bg: #0F0F11;
+  --dd-text: #E5E5E5;
+  --dd-border: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='light'] {
+  --dd-bg: #FAFAFA;
+  --dd-card-bg: #FFFFFF;
+  --dd-text: #111111;
+  --dd-border: #E5E5E5;
+}
+
+.dd-root {
+  min-height: 100vh;
+  background-color: var(--dd-bg);
+  color: var(--dd-text);
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
+  padding-bottom: 80px;
+}
+
+.dd-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header */
+.dd-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--dd-border);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .dd-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+}
+
+.dd-title-group {
+  text-align: left;
+}
+
+.dd-title {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.dd-subtitle {
+  font-size: 13px;
+  color: #888888;
+}
+
+.dd-profile-minimal {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .dd-profile-minimal {
+    text-align: left;
+  }
+}
+
+.dd-partner-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.dd-partner-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #888888;
+  text-transform: uppercase;
+}
+
+/* Metrics Dashboard Banner */
+.dd-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 640px) {
+  .dd-metrics {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.dd-metric-card {
+  background-color: var(--dd-card-bg);
+  border: 1px solid var(--dd-border);
+  padding: 1.5rem 2rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.dd-metric-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #888888;
+}
+
+.dd-metric-value {
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--dd-text);
+  margin: 0.5rem 0 0.25rem;
+}
+
+.dd-metric-trend {
+  font-size: 11px;
+  color: #888888;
+}
+
+/* Section Header */
+.dd-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--dd-border);
+  padding-bottom: 0.75rem;
+}
+
+.dd-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+/* Order Grid */
+.dd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2rem;
+}
+
+@media (max-width: 640px) {
+  .dd-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dd-order-card {
+  background-color: var(--dd-card-bg);
+  border: 1px solid var(--dd-border);
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.dd-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--dd-border);
+}
+
+.dd-card-id {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.dd-card-payment-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid var(--dd-border);
+}
+
+.dd-card-payment-badge.COD {
+  border-color: #F59E0B;
+  color: #F59E0B;
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.dd-card-payment-badge.Razorpay {
+  border-color: #10B981;
+  color: #10B981;
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.dd-card-body {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dd-card-products {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dd-product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.dd-product-title {
+  font-weight: 500;
+  color: var(--dd-text);
+}
+
+.dd-product-qty {
+  color: #888888;
+  font-size: 12px;
+}
+
+.dd-shipping-details {
+  border-top: 1px dashed var(--dd-border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dd-detail-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.dd-detail-icon {
+  color: #888888;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.dd-detail-text {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #888888;
+}
+
+.dd-card-footer {
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--dd-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(120, 120, 120, 0.01);
+}
+
+.dd-amount-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.dd-amount-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888888;
+}
+
+.dd-amount-value {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.dd-confirm-btn {
+  background-color: var(--dd-text);
+  color: var(--dd-bg);
+  border: 1px solid var(--dd-text);
+  padding: 0.6rem 1.2rem;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dd-confirm-btn:hover {
+  background-color: transparent;
+  color: var(--dd-text);
+}
+
+/* Empty/Loading states */
+.dd-loading-screen {
+  min-height: 100vh;
+  background-color: var(--dd-bg);
+  color: var(--dd-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.dd-spinner {
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--dd-border);
+  border-top-color: var(--dd-text);
+  border-radius: 50%;
+  animation: dd-spin 0.8s linear infinite;
+}
+
+.dd-loading-text {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.7;
+}
+
+.dd-status-text {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #888888;
+  padding: 4rem 0;
+}
+
+.dd-empty-box {
+  background-color: var(--dd-card-bg);
+  border: 1px dashed var(--dd-border);
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dd-empty-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.dd-empty-desc {
+  font-size: 12px;
+  color: #888888;
+}
+
+@keyframes dd-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modal Overlay */
+.dd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.dd-modal {
+  background-color: var(--dd-card-bg);
+  border: 1px solid var(--dd-border);
+  max-width: 500px;
+  width: 100%;
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  text-align: left;
+}
+
+.dd-modal-title {
+  font-size: 20px;
+  font-weight: 300;
+  margin-bottom: 0.5rem;
+}
+
+.dd-modal-subtitle {
+  font-size: 12.5px;
+  color: #888888;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.dd-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dd-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dd-form-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #888888;
+}
+
+.dd-input-field {
+  width: 100%;
+  background-color: rgba(120, 120, 120, 0.02);
+  border: 1px solid var(--dd-border);
+  color: var(--dd-text);
+  padding: 0.8rem 1rem;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.dd-input-field:focus {
+  outline: none;
+  border-color: var(--dd-text);
+}
+
+.dd-input-help {
+  font-size: 10px;
+  color: #666666;
+  margin-top: 0.15rem;
+}
+
+/* File Upload Trigger Design */
+.dd-file-upload-box {
+  position: relative;
+  border: 1px dashed var(--dd-border);
+  background-color: rgba(120, 120, 120, 0.02);
+  padding: 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dd-file-upload-box:hover {
+  border-color: var(--dd-text);
+  background-color: rgba(120, 120, 120, 0.04);
+}
+
+.dd-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+}
+
+.dd-upload-icon {
+  color: #888888;
+}
+
+.dd-upload-text {
+  font-size: 11px;
+  color: #888888;
+  font-weight: 500;
+}
+
+/* Checkboxes */
+.dd-form-group-checkbox {
+  border: 1px dashed rgba(245, 158, 11, 0.25);
+  background-color: rgba(245, 158, 11, 0.02);
+  padding: 1rem;
+}
+
+.dd-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.dd-checkbox-input {
+  margin-top: 0.2rem;
+  accent-color: var(--dd-text);
+  cursor: pointer;
+}
+
+.dd-checkbox-text {
+  font-size: 12px;
+  color: #888888;
+  line-height: 1.5;
+}
+
+/* Errors */
+.dd-error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #EF4444;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+/* Actions */
+.dd-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.dd-modal-btn {
+  padding: 0.85rem;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dd-btn-cancel {
+  background: none;
+  border: 1px solid var(--dd-border);
+  color: var(--dd-text);
+}
+
+.dd-btn-cancel:hover {
+  background-color: rgba(120, 120, 120, 0.02);
+  border-color: var(--dd-text);
+}
+
+.dd-btn-confirm {
+  background-color: var(--dd-text);
+  color: var(--dd-bg);
+  border: 1px solid var(--dd-text);
+}
+
+.dd-btn-confirm:hover {
+  background-color: transparent;
+  color: var(--dd-text);
+}
+
+.dd-btn-confirm:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Animation */
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

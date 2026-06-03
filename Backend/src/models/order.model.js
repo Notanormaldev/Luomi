@@ -37,8 +37,49 @@ const orderSchema = new mongoose.Schema({
       },
       status: {
         type: String,
-        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+        enum: ['pending', 'processing', 'out_for_delivery', 'delivered', 'cancelled'],
         default: 'pending'
+      },
+      shippingAddress: {
+        address: { type: String, required: true },
+        city: { type: String, required: true },
+        contact: { type: String, required: true },
+        pincode: { type: String, required: true }
+      },
+      paymentMethod: {
+        type: String,
+        enum: ['COD', 'Razorpay'],
+        default: 'COD'
+      },
+      paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'failed'],
+        default: 'pending'
+      },
+      razorpayOrderId: {
+        type: String,
+        default: null
+      },
+      razorpayPaymentId: {
+        type: String,
+        default: null
+      },
+      razorpaySignature: {
+        type: String,
+        default: null
+      },
+      deliveryPhoto: {
+        type: String,
+        default: null
+      },
+      deliveryConfirmedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'users',
+        default: null
+      },
+      deliveryConfirmedAt: {
+        type: Date,
+        default: null
       }
 }, { timestamps: true });
 

@@ -13,6 +13,8 @@ const requireenvs=[
     "REDIS_PORT",
     "REDIS_PASSWORD",
     "IMAGEKIT_PRIVATE_KEY",
+    "RAZORPAY_KEY_ID",
+    "RAZORPAY_KEY_SECRET",
     "NODE_ENVIRONMENT"
 ]
 requireenvs.forEach((key)=>{
@@ -36,6 +38,8 @@ requireenvs.forEach((key)=>{
     REDIS_PORT:process.env.REDIS_PORT,
     REDIS_PASSWORD:process.env.REDIS_PASSWORD,
     IMAGEKIT_PRIVATE_KEY:process.env.IMAGEKIT_PRIVATE_KEY,
+    RAZORPAY_KEY_ID:process.env.RAZORPAY_KEY_ID,
+    RAZORPAY_KEY_SECRET:process.env.RAZORPAY_KEY_SECRET,
     NODE_ENVIRONMENT:process.env.NODE_ENVIRONMENT
 }
 

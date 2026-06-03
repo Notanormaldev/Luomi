@@ -10,6 +10,8 @@ import Sellerproductdetails from './features/products/pages/Sellerproductdetails
 import Settings from './features/auth/pages/Settings'
 import Cart from './features/cart/pages/Cart'
 import Wishlist from './features/wishlist/pages/Wishlist'
+import OrderSuccess from './features/cart/pages/OrderSuccess'
+import DeliveryDashboard from './features/products/pages/DeliveryDashboard'
 
 
 export  const router = createBrowserRouter([
@@ -68,6 +70,15 @@ export  const router = createBrowserRouter([
       },{
        path:'/wishlist',
        element:<Wishlist/>
-      }
+      },{
+        path:'/order-success',
+        element:<OrderSuccess/>
+       },{
+        path:'/dashboard/delivery',
+        element:<Protected role='delivery'><DeliveryDashboard/></Protected>
+       },{
+        path:'/dashbord/delivery',
+        element:<Protected role='delivery'><DeliveryDashboard/></Protected>
+       }
 
 ])

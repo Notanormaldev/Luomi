@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getCart, addToCartApi, updateCartApi, removeFromCartApi, checkoutApi } from "../services/cart.api";
+import { getCart, addToCartApi, updateCartApi, removeFromCartApi, checkoutApi, verifyPaymentApi } from "../services/cart.api";
 import { setCartItems, setSubtotal, setLoading, setError, clearCart } from "../cart.slice";
 
 export const usecart = () => {
@@ -78,17 +78,32 @@ export const usecart = () => {
         dispatch(clearCart());
     }
 
-    async function handleCheckout() {
+    async function handleCheckout(payload) {
         dispatch(setLoading(true));
         dispatch(setError(null));
         try {
-            const data = await checkoutApi();
+            const data = await checkoutApi(payload);
             dispatch(clearCart());
             dispatch(setLoading(false));
-            return { success: true, order: data.order, msg: data.msg };
+            return { success: true, order: data.order, razorpayOrder: data.razorpayOrder, key: data.key, msg: data.msg };
         } catch (err) {
             console.error("usecart: handleCheckout error", err);
             dispatch(setError(err.msg || "Checkout failed"));
+            dispatch(setLoading(false));
+            return { success: false, error: err.msg };
+        }
+    }
+
+    async function handleVerifyPayment({ razorpay_payment_id, razorpay_order_id, razorpay_signature }) {
+        dispatch(setLoading(true));
+        dispatch(setError(null));
+        try {
+            const data = await verifyPaymentApi({ razorpay_payment_id, razorpay_order_id, razorpay_signature });
+            dispatch(setLoading(false));
+            return { success: true, order: data.order, msg: data.msg };
+        } catch (err) {
+            console.error("usecart: handleVerifyPayment error", err);
+            dispatch(setError(err.msg || "Payment verification failed"));
             dispatch(setLoading(false));
             return { success: false, error: err.msg };
         }
@@ -104,6 +119,7 @@ export const usecart = () => {
         handleUpdateCart,
         handleRemoveFromCart,
         handleClearCart,
-        handleCheckout
+        handleCheckout,
+        handleVerifyPayment
     };
 };

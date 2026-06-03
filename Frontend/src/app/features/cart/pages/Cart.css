@@ -915,3 +915,33 @@
     font-size: 18px;
   }
 }
+
+/* Checkout Details panel */
+.ct-checkout-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ct-checkout-input {
+  width: 100%;
+  background-color: var(--ct-hover-bg);
+  border: 1px solid var(--ct-border);
+  color: var(--ct-text);
+  border-radius: 20px;
+  padding: 0.75rem 1rem;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.ct-checkout-input:focus {
+  border-color: var(--ct-border-focus);
+}
+
+.btn-cancel-checkout:hover {
+  text-decoration: underline;
+}
+

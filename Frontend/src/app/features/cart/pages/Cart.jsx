@@ -32,6 +32,7 @@ export default function Cart() {
     handleUpdateCart,
     handleRemoveFromCart,
     handleCheckout,
+    handleVerifyPayment,
     loading: cartActionLoading
   } = usecart()
 
@@ -39,6 +40,25 @@ export default function Cart() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState(null)
+
+  // Checkout state
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false)
+  const [address, setAddress] = useState('')
+  const [city, setCity] = useState('')
+  const [pincode, setPincode] = useState('')
+  const [contact, setContact] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('COD')
+  const [checkoutError, setCheckoutError] = useState('')
+
+  // Prefill checkout details
+  useEffect(() => {
+    if (user) {
+      setAddress(user.address || '')
+      setCity(user.city || '')
+      setPincode(user.pincode || '')
+      setContact(user.contact || '')
+    }
+  }, [user])
 
   // Voucher state
   const [voucherCode, setVoucherCode] = useState('')
@@ -126,17 +146,91 @@ export default function Cart() {
     }
   }
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script')
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+      script.onload = () => resolve(true)
+      script.onerror = () => resolve(false)
+      document.body.appendChild(script)
+    })
+  }
+
   // Handle Checkout
   const triggerCheckout = async () => {
+    if (!address.trim() || !city.trim() || !pincode.trim() || !contact.trim()) {
+      setCheckoutError('Please provide complete shipping details.')
+      return
+    }
+    setCheckoutError('')
     setUpdating(true)
+
+    const payload = {
+      shippingAddress: { address, city, pincode, contact },
+      paymentMethod
+    }
+
     try {
-      const res = await handleCheckout()
-      if (res.success) {
-        alert('Order placed successfully!')
-        navigate('/')
-      } else {
-        alert(res.error || 'Checkout failed')
+      if (paymentMethod === 'COD') {
+        const res = await handleCheckout(payload)
+        if (res.success) {
+          navigate('/order-success', { state: { order: res.order } })
+        } else {
+          setCheckoutError(res.error || 'Checkout failed')
+        }
+      } else if (paymentMethod === 'Razorpay') {
+        const scriptLoaded = await loadRazorpayScript()
+        if (!scriptLoaded) {
+          alert('Failed to load Razorpay Payment Gateway. Please try again.')
+          setUpdating(false)
+          return
+        }
+
+        const res = await handleCheckout(payload)
+        if (res.success && res.razorpayOrder) {
+          const options = {
+            key: res.key || 'rzp_test_Sx8VfpZ6kmmU5H',
+            amount: res.razorpayOrder.amount,
+            currency: res.razorpayOrder.currency,
+            name: 'Luomi Atelier',
+            description: 'Payment for luxury fashion apparel',
+            order_id: res.razorpayOrder.id,
+            handler: async function (response) {
+              setUpdating(true)
+              try {
+                const verifyRes = await handleVerifyPayment({
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+                if (verifyRes.success) {
+                  navigate('/order-success', { state: { order: verifyRes.order } })
+                } else {
+                  setCheckoutError(verifyRes.error || 'Payment verification failed.')
+                }
+              } catch (err) {
+                setCheckoutError('Payment verification failed.')
+              } finally {
+                setUpdating(false)
+              }
+            },
+            prefill: {
+              name: user.fullname,
+              email: user.email,
+              contact: contact
+            },
+            theme: {
+              color: '#111111'
+            }
+          }
+          const rzp = new window.Razorpay(options)
+          rzp.open()
+        } else {
+          setCheckoutError(res.error || 'Failed to initialize payment order.')
+        }
       }
+    } catch (err) {
+      setCheckoutError(err.message || 'Checkout execution failed.')
     } finally {
       setUpdating(false)
     }
@@ -439,14 +533,116 @@ export default function Cart() {
                   </span>
                 </div>
 
-                {/* Checkout button */}
-                <button
-                  className="ct-checkout-now-btn"
-                  onClick={triggerCheckout}
-                  disabled={updating || cartActionLoading}
-                >
-                  {updating ? 'PROCESSING...' : 'Checkout Now'}
-                </button>
+                {showCheckoutForm ? (
+                  <div className="ct-checkout-panel mt-6 pt-6 border-t border-[var(--border)]">
+                    <h4 className="font-heading text-xs uppercase tracking-wider mb-4 text-left font-bold">Shipping & Payment</h4>
+                    
+                    <div className="flex flex-col gap-3 text-left">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Address</label>
+                        <input 
+                          type="text" 
+                          value={address} 
+                          onChange={e => setAddress(e.target.value)} 
+                          placeholder="Delivery Address" 
+                          className="ct-checkout-input"
+                        />
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">City</label>
+                          <input 
+                            type="text" 
+                            value={city} 
+                            onChange={e => setCity(e.target.value)} 
+                            placeholder="City" 
+                            className="ct-checkout-input"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Pincode</label>
+                          <input 
+                            type="text" 
+                            value={pincode} 
+                            onChange={e => setPincode(e.target.value)} 
+                            placeholder="Pincode" 
+                            className="ct-checkout-input"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Phone Number</label>
+                        <input 
+                          type="text" 
+                          value={contact} 
+                          onChange={e => setContact(e.target.value)} 
+                          placeholder="Contact Number" 
+                          className="ct-checkout-input"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1 mt-2">
+                        <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Payment Mode</label>
+                        <div className="flex gap-4 mt-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              value="COD" 
+                              checked={paymentMethod === 'COD'}
+                              onChange={() => setPaymentMethod('COD')}
+                              className="accent-white"
+                            />
+                            <span>COD</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
+                            <input 
+                              type="radio" 
+                              name="paymentMethod" 
+                              value="Razorpay" 
+                              checked={paymentMethod === 'Razorpay'}
+                              onChange={() => setPaymentMethod('Razorpay')}
+                              className="accent-white"
+                            />
+                            <span>Online (Razorpay)</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {checkoutError && <p className="text-red-500 text-xs font-semibold mt-3 text-left">{checkoutError}</p>}
+
+                    <div className="flex flex-col gap-2 mt-4">
+                      <button
+                        className="ct-checkout-now-btn"
+                        onClick={triggerCheckout}
+                        disabled={updating || cartActionLoading}
+                        style={{ marginTop: '0.5rem' }}
+                      >
+                        {updating ? 'CONFIRMING ORDER...' : 'Confirm & Place Order'}
+                      </button>
+                      <button
+                        className="btn-cancel-checkout text-xs uppercase tracking-widest text-[#888888] hover:text-white transition-colors mt-2"
+                        onClick={() => setShowCheckoutForm(false)}
+                        disabled={updating}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
+                      >
+                        Cancel Checkout
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Checkout button */
+                  <button
+                    className="ct-checkout-now-btn"
+                    onClick={() => setShowCheckoutForm(true)}
+                    disabled={updating || cartActionLoading}
+                  >
+                    {updating ? 'PROCESSING...' : 'Checkout Now'}
+                  </button>
+                )}
               </div>
             </div>
 

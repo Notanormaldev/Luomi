@@ -50,12 +50,25 @@ export async function removeFromCartApi({ productId, variantId }) {
     }
 }
 
-export async function checkoutApi() {
+export async function checkoutApi(payload) {
     try {
-        const res = await cartapi.post('/checkout');
+        const res = await cartapi.post('/checkout', payload);
         return res.data;
     } catch (error) {
         throw error.response?.data || { msg: "Checkout failed" };
+    }
+}
+
+export async function verifyPaymentApi({ razorpay_payment_id, razorpay_order_id, razorpay_signature }) {
+    try {
+        const res = await axios.post('/api/order/verify-payment', {
+            razorpay_payment_id,
+            razorpay_order_id,
+            razorpay_signature
+        }, { withCredentials: true });
+        return res.data;
+    } catch (error) {
+        throw error.response?.data || { msg: "Payment verification failed" };
     }
 }
 

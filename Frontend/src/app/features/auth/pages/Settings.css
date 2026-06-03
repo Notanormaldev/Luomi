@@ -569,3 +569,54 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(18px);
 }
+
+/* Shipping Details Form Inputs & Accordions */
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.form-group-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.form-label-settings {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.settings-input-field {
+  width: 100%;
+  background-color: rgba(120, 120, 120, 0.02);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.9rem 1.1rem;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.settings-input-field:focus {
+  outline: none;
+  border-color: var(--text);
+  background-color: rgba(120, 120, 120, 0.05);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.delivery-status-active, .seller-status-active {
+  text-align: left;
+}
+

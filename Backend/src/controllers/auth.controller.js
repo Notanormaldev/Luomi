@@ -342,6 +342,73 @@ async function resetPassword(req, res) {
     }
 }
 
+async function becomeDelivery(req, res) {
+    try {
+        const userId = req.user.id;
+        const { city, pincode } = req.body;
+        if (!city || !pincode) {
+            return res.status(400).json({ success: false, msg: "City and pincode are required to register as a Delivery Partner" });
+        }
+        const user = await usermodel.findByIdAndUpdate(userId, { role: 'delivery', city, pincode }, { new: true });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+        
+        // Regenerate token to include updated role in user payload
+        const token = jwt.sign({
+            id: user._id,
+            user: user
+        }, config.JWT, { expiresIn: '7d' });
+        
+        res.cookie('token', token);
+        
+        return res.status(200).json({
+            success: true,
+            msg: "Successfully updated profile to Delivery Partner role",
+            user
+        });
+    } catch (error) {
+        console.error("becomeDelivery Error:", error);
+        return res.status(500).json({ success: false, msg: "Failed to update profile to delivery partner" });
+    }
+}
+
+async function updateSettings(req, res) {
+    try {
+        const userId = req.user.id;
+        const { fullname, contact, address, city, pincode } = req.body;
+        
+        const updateFields = {};
+        if (fullname !== undefined) updateFields.fullname = fullname;
+        if (contact !== undefined) updateFields.contact = contact;
+        if (address !== undefined) updateFields.address = address;
+        if (city !== undefined) updateFields.city = city;
+        if (pincode !== undefined) updateFields.pincode = pincode;
+        
+        const user = await usermodel.findByIdAndUpdate(userId, updateFields, { new: true });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+        
+        // Regenerate token to include updated fields
+        const token = jwt.sign({
+            id: user._id,
+            user: user
+        }, config.JWT, { expiresIn: '7d' });
+        
+        res.cookie('token', token);
+        
+        return res.status(200).json({
+            success: true,
+            msg: "Settings updated successfully",
+            user
+        });
+    } catch (error) {
+        console.error("updateSettings Error:", error);
+        return res.status(500).json({ success: false, msg: "Failed to update settings" });
+    }
+}
+
 export default {
     register,
     login,
@@ -351,6 +418,8 @@ export default {
     logout,
     deleteaccount,
     becomeSeller,
+    becomeDelivery,
+    updateSettings,
     forgotPassword,
     resetPassword
 }
