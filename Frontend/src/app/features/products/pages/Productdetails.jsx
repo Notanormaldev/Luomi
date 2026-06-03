@@ -226,11 +226,11 @@ function Productdetails() {
       return
     }
     if (!user) { navigate('/login'); return }
-    const cartPayload = { productId: id, quantity }
+    const cartPayload = { productId: product._id, quantity }
     if (selectedVariant) cartPayload.variantId = selectedVariant._id
     const existing = cartItems.find(i => {
-      if (selectedVariant) return i.product._id === id && i.selectedVariant === selectedVariant._id
-      return i.product._id === id && !i.selectedVariant
+      if (selectedVariant) return i.product._id === product._id && i.selectedVariant === selectedVariant._id
+      return i.product._id === product._id && !i.selectedVariant
     })
     const currentQty = existing?.quantity || 0
     // Let backend be the final authority for stock — only do a soft check here

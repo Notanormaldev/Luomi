@@ -251,6 +251,13 @@ async function deleteaccount(req,res){
 async function becomeSeller(req, res) {
     try {
         const userId = req.user.id;
+        const currentUser = await usermodel.findById(userId);
+        if (!currentUser) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+        if (currentUser.role === 'delivery') {
+            return res.status(400).json({ success: false, msg: "A Delivery Partner cannot become a Seller. A user can only hold one active partner role." });
+        }
         const user = await usermodel.findByIdAndUpdate(userId, { role: 'seller' }, { new: true });
         if (!user) {
             return res.status(404).json({ success: false, msg: "User not found" });
@@ -348,6 +355,13 @@ async function becomeDelivery(req, res) {
         const { city, pincode } = req.body;
         if (!city || !pincode) {
             return res.status(400).json({ success: false, msg: "City and pincode are required to register as a Delivery Partner" });
+        }
+        const currentUser = await usermodel.findById(userId);
+        if (!currentUser) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+        if (currentUser.role === 'seller') {
+            return res.status(400).json({ success: false, msg: "A Seller cannot become a Delivery Partner. A user can only hold one active partner role." });
         }
         const user = await usermodel.findByIdAndUpdate(userId, { role: 'delivery', city, pincode }, { new: true });
         if (!user) {

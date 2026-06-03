@@ -2,6 +2,7 @@ import productmodel from "../models/product.model.js"
 import { uploadfile } from "../services/storage.service.js"
 import orderModel from "../models/order.model.js"
 import orderDao from "../dao/order.dao.js"
+import usermodel from "../models/user.model.js"
 
 
 
@@ -9,6 +10,19 @@ async function createproduct(req, res) {
   try {
     const { title, description, priceamount, pricecurrency, stock, genderCategory, subCategory } = req.body;
     const user = req.user;
+
+    // Load full user details to check for address/contact info
+    const fullUser = await usermodel.findById(user._id || user.id);
+    if (!fullUser) {
+        return res.status(404).json({ success: false, msg: "Seller user record not found" });
+    }
+    if (!fullUser.address || !fullUser.city || !fullUser.contact || !fullUser.pincode) {
+        return res.status(400).json({
+            success: false,
+            msg: "Product creation blocked. You must provide complete contact details and address information (address, city, contact, pincode) in Settings before listing products."
+        });
+    }
+
 
    
     let variants = [];

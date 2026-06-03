@@ -92,9 +92,15 @@
 /* Metrics Dashboard Banner */
 .dd-metrics {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
   margin-bottom: 3rem;
+}
+
+@media (max-width: 900px) {
+  .dd-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -223,6 +229,12 @@
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
+}
+
+.dd-product-item-rich {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
 }
 
 .dd-product-title {

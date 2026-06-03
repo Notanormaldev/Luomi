@@ -51,7 +51,13 @@ async function addToCart(req, res) {
         const qty = parseInt(quantity) || 1;
         const product = await productModel.findById(productId);
         if (!product) {
+            console.log("addToCart: Product not found in database for ID:", productId);
             return res.status(404).json({ success: false, msg: "Product not found" });
+        }
+
+        // Restrict seller self-purchasing
+        if (product.seller && product.seller.toString() === userId) {
+            return res.status(400).json({ success: false, msg: "You cannot add your own product to the bag." });
         }
 
         // Live Stock Management Validation
@@ -241,11 +247,16 @@ async function checkout(req, res) {
             return res.status(400).json({ success: false, msg: "Atelier bag is empty" });
         }
 
-        // 1. Verify stock for all items (but do NOT decrement yet)
+        // 1. Verify stock and self-purchase for all items (but do NOT decrement yet)
         for (const item of cart.items) {
             const product = item.product;
             if (!product) {
                 return res.status(404).json({ success: false, msg: "One of the products in your bag is no longer available" });
+            }
+
+            // Restrict seller self-purchasing
+            if (product.seller && product.seller.toString() === userId) {
+                return res.status(400).json({ success: false, msg: `Purchase blocked: You cannot buy your own product (${product.title}).` });
             }
 
             let availableStock = product.stock || 0;

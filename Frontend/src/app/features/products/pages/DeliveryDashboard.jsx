@@ -11,6 +11,7 @@ export default function DeliveryDashboard() {
   const { user, loading } = useauth()
   
   const [orders, setOrders] = useState([])
+  const [warehouseAddress, setWarehouseAddress] = useState('')
   const [ordersLoading, setOrdersLoading] = useState(true)
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
   
@@ -40,6 +41,7 @@ export default function DeliveryDashboard() {
       const res = await axios.get('/api/order/delivery/pending', { withCredentials: true })
       if (res.data.success) {
         setOrders(res.data.orders)
+        setWarehouseAddress(res.data.warehouseAddress || '')
       }
     } catch (err) {
       console.error('Failed to fetch delivery orders:', err)
@@ -174,6 +176,16 @@ export default function DeliveryDashboard() {
           </div>
 
           <div className="dd-metric-card">
+            <span className="dd-metric-label">Pickup Warehouse Hub</span>
+            <div className="flex items-baseline justify-between mt-2">
+              <span className="dd-metric-value text-xs text-[#eeeeee] font-medium leading-tight" style={{ minHeight: '38px', display: 'flex', alignItems: 'center' }}>
+                {warehouseAddress || 'Luomi Regional Hub'}
+              </span>
+            </div>
+            <span className="dd-metric-trend">Pick up packages here</span>
+          </div>
+
+          <div className="dd-metric-card">
             <span className="dd-metric-label">Pending Shipments</span>
             <div className="flex items-baseline justify-between mt-2">
               <span className="dd-metric-value">{ordersLoading ? '...' : orders.length}</span>
@@ -214,25 +226,38 @@ export default function DeliveryDashboard() {
                     </div>
 
                     <div className="dd-card-body">
-                      {/* Products list */}
+                      {/* Products list with rich details */}
                       <div className="dd-card-products">
                         {order.items.map((item, idx) => (
-                          <div key={idx} className="dd-product-item">
-                            <span className="dd-product-title">{item.product?.title || 'Luxury Silhouette'}</span>
-                            <span className="dd-product-qty">× {item.quantity}</span>
+                          <div key={idx} className="dd-product-item-rich flex gap-3 mb-3 pb-3 border-b border-[rgba(255,255,255,0.05)]">
+                            {item.product?.images?.[0]?.url ? (
+                              <img src={item.product.images[0].url} alt={item.product.title} className="w-12 h-16 object-cover rounded bg-[rgba(255,255,255,0.02)]" />
+                            ) : (
+                              <div className="w-12 h-16 bg-[#222] rounded flex items-center justify-center text-[8px] text-[#666]">LUOMI</div>
+                            )}
+                            <div className="flex-1 flex flex-col justify-between" style={{ minHeight: '64px' }}>
+                              <div>
+                                <span className="dd-product-title block font-semibold text-sm leading-tight text-white">{item.product?.title || 'Luxury apparel'}</span>
+                                <p className="text-xs text-[#888888] line-clamp-1 mt-1">{item.product?.description || 'No description available'}</p>
+                              </div>
+                              <span className="text-[10px] text-[#aaaaaa]">Qty: {item.quantity} | ID: <span className="font-mono text-white select-all">{item.product?._id}</span></span>
+                            </div>
                           </div>
                         ))}
                       </div>
 
                       {/* Buyer Shipping Details */}
                       <div className="dd-shipping-details">
+                        <div className="dd-detail-row font-semibold mb-1 text-sm text-white">
+                          <span>Customer: {order.user?.fullname || 'Buyer'}</span>
+                        </div>
                         <div className="dd-detail-row">
                           <FiMapPin size={13} className="dd-detail-icon" />
                           <span className="dd-detail-text">
                             {order.shippingAddress?.address}, {order.shippingAddress?.city} - {order.shippingAddress?.pincode}
                           </span>
                         </div>
-                        <div className="dd-detail-row">
+                        <div className="dd-detail-row font-normal">
                           <FiPhone size={13} className="dd-detail-icon" />
                           <span className="dd-detail-text">{order.shippingAddress?.contact}</span>
                         </div>
