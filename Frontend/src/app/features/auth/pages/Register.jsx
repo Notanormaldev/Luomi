@@ -17,7 +17,13 @@ function Register() {
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
-      navigate('/')
+      if (user.role === 'delivery') {
+        navigate('/dashbord/delivery')
+      } else if (user.role === 'seller') {
+        navigate('/dashbord/seller')
+      } else {
+        navigate('/')
+      }
     }
   }, [user, loading, navigate])
 
@@ -244,10 +250,12 @@ function Register() {
         email: otpEmail,
         otp
       })
-      if (res.user.role == "buyer" && res.success) {
+      if (res.user.role === "buyer" && res.success) {
         navigate('/')
-      } else if (res.user.role == "seller" && res.success) {
+      } else if (res.user.role === "seller" && res.success) {
         navigate('/dashbord/seller')
+      } else if (res.user.role === "delivery" && res.success) {
+        navigate('/dashbord/delivery')
       }
     } catch (err) {
       if (err.msg === 'OTP expired') {

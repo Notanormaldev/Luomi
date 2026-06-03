@@ -114,9 +114,9 @@ function Settings() {
       setSettingsError('Pincode must be exactly 6 digits.')
       return
     }
-    // Validate phone
-    if (contact && !/^\d{10}$/.test(contact.trim())) {
-      setSettingsError('Phone number must be exactly 10 digits.')
+    // Validate phone: 10-digit Indian mobile number
+    if (contact && !/^[6-9]\d{9}$/.test(contact.trim())) {
+      setSettingsError('Please enter a valid 10-digit Indian phone number (starting with 6, 7, 8, or 9).')
       return
     }
 

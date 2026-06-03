@@ -954,6 +954,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  text-align: left;
 }
 
 .ct-saved-address-label {
@@ -973,21 +974,193 @@
   color: var(--ct-text);
 }
 
-.ct-change-address-btn {
-  background: none;
-  border: 1px solid var(--ct-border);
-  border-radius: 20px;
-  padding: 5px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ct-text-muted);
-  cursor: pointer;
-  align-self: flex-start;
-  transition: all 0.2s ease;
+/* ─── CHECKOUT MODAL OVERLAY ─── */
+.ct-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: ct-fade-in 0.3s ease;
+}
+
+.ct-modal {
+  background-color: var(--ct-card-bg, #FFFFFF);
+  border: 1px solid var(--ct-border, #E2E8F0);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  padding: 30px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 45px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.ct-modal-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ct-text, #1A202C);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.ct-modal-subtitle {
+  font-size: 13px;
+  color: var(--ct-text-muted, #718096);
+  margin: 0;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.ct-saved-address-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ct-text, #1A202C);
+  margin: 0;
+  text-align: left;
+}
+
+.ct-saved-address-phone {
+  font-size: 13px;
+  color: var(--ct-text-muted, #718096);
+  margin: 0;
+  text-align: left;
+}
+
+.ct-address-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.ct-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.ct-form-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ct-text-muted, #718096);
+  letter-spacing: 0.8px;
+}
+
+.ct-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ct-payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 4px;
 }
 
-.ct-change-address-btn:hover {
-  border-color: var(--ct-text);
-  color: var(--ct-text);
+.ct-payment-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 12px 14px;
+  background-color: var(--ct-hover-bg, #F7FAFC);
+  border: 1px solid var(--ct-border, #E2E8F0);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.ct-payment-option:hover {
+  border-color: var(--ct-border-focus, #1A202C);
+}
+
+.ct-payment-option input[type="radio"] {
+  accent-color: var(--ct-text, #1A202C);
+}
+
+.ct-checkout-error-text {
+  font-size: 12px;
+  color: #E53E3E;
+  font-weight: 600;
+  margin: 0;
+  text-align: left;
+}
+
+.ct-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.ct-modal-btn {
+  flex: 1;
+  padding: 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ct-btn-cancel {
+  background-color: transparent;
+  border: 1px solid var(--ct-border, #E2E8F0);
+  color: var(--ct-text-muted, #718096);
+}
+
+.ct-btn-cancel:hover:not(:disabled) {
+  border-color: var(--ct-text, #1A202C);
+  color: var(--ct-text, #1A202C);
+}
+
+.ct-btn-confirm {
+  background-color: var(--ct-text, #1A202C);
+  border: 1px solid var(--ct-text, #1A202C);
+  color: var(--ct-card-bg, #FFFFFF);
+}
+
+.ct-btn-confirm:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--ct-text, #1A202C);
+}
+
+.ct-modal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes ct-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ct-slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: ct-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

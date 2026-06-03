@@ -105,10 +105,14 @@ export default function Home() {
 
   useEffect(() => {
     if (user) {
+      if (user.role === 'delivery') {
+        navigate('/dashbord/delivery')
+        return
+      }
       handleGetCart()
       handleGetWishlist()
     }
-  }, [user])
+  }, [user, navigate])
 
   useEffect(() => {
     const go = async () => {

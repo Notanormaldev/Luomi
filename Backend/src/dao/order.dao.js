@@ -53,7 +53,9 @@ class OrderDao {
             }
           },
           status: { $first: "$status" },
-          createdAt: { $first: "$createdAt" }
+          createdAt: { $first: "$createdAt" },
+          paymentMethod: { $first: "$paymentMethod" },
+          shippingAddress: { $first: "$shippingAddress" }
         }
       },
       { $sort: { createdAt: -1 } }

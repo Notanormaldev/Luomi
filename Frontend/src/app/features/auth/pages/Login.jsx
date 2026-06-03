@@ -17,7 +17,13 @@ function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
-      navigate('/')
+      if (user.role === 'delivery') {
+        navigate('/dashbord/delivery')
+      } else if (user.role === 'seller') {
+        navigate('/dashbord/seller')
+      } else {
+        navigate('/')
+      }
     }
   }, [user, loading, navigate])
 
@@ -251,10 +257,12 @@ function Login() {
       const res = await handlelogin({ email, password })
       console.log(res);
 
-      if (res.data.user.role == "buyer" && res.success) {
+      if (res.data.user.role === "buyer" && res.success) {
         navigate('/')
-      } else if (res.data.user.role == "seller" && res.success) {
+      } else if (res.data.user.role === "seller" && res.success) {
         navigate('/dashbord/seller')
+      } else if (res.data.user.role === "delivery" && res.success) {
+        navigate('/dashbord/delivery')
       }
 
     } catch (err) {

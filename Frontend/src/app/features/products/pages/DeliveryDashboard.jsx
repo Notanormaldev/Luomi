@@ -78,16 +78,19 @@ export default function DeliveryDashboard() {
     setFormError('')
 
     if (!verifyProductId.trim()) {
-      setFormError('Please enter a product ID from this order.')
+      setFormError('Please enter a Product ID or the last 6 characters of it.')
       return
     }
 
-    // Validate product ID exists in selected order
-    const isIdInOrder = selectedOrder.items.some(
-      item => item.product?._id === verifyProductId.trim()
-    )
+    // Validate product ID / partial ID exists in selected order
+    const inputLower = verifyProductId.trim().toLowerCase()
+    const isIdInOrder = selectedOrder.items.some(item => {
+      if (!item.product?._id) return false
+      const itemProdId = item.product._id.toString().toLowerCase()
+      return itemProdId === inputLower || itemProdId.endsWith(inputLower)
+    })
     if (!isIdInOrder) {
-      setFormError('Validation failed: Product ID does not belong to this order.')
+      setFormError('Validation failed: Entered ID or code does not match any product in this order.')
       return
     }
 
@@ -228,28 +231,37 @@ export default function DeliveryDashboard() {
                     <div className="dd-card-body">
                       {/* Products list with rich details */}
                       <div className="dd-card-products">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="dd-product-item-rich flex gap-3 mb-3 pb-3 border-b border-[rgba(255,255,255,0.05)]">
-                            {item.product?.images?.[0]?.url ? (
-                              <img src={item.product.images[0].url} alt={item.product.title} className="w-12 h-16 object-cover rounded bg-[rgba(255,255,255,0.02)]" />
-                            ) : (
-                              <div className="w-12 h-16 bg-[#222] rounded flex items-center justify-center text-[8px] text-[#666]">LUOMI</div>
-                            )}
-                            <div className="flex-1 flex flex-col justify-between" style={{ minHeight: '64px' }}>
-                              <div>
-                                <span className="dd-product-title block font-semibold text-sm leading-tight text-white">{item.product?.title || 'Luxury apparel'}</span>
-                                <p className="text-xs text-[#888888] line-clamp-1 mt-1">{item.product?.description || 'No description available'}</p>
+                        {order.items.map((item, idx) => {
+                          const seller = item.product?.seller
+                          return (
+                            <div key={idx} className="dd-product-item-rich flex gap-3 mb-3 pb-3 border-b border-[rgba(255,255,255,0.05)]">
+                              {item.product?.images?.[0]?.url ? (
+                                <img src={item.product.images[0].url} alt={item.product.title} className="w-12 h-16 object-cover rounded bg-[rgba(255,255,255,0.02)]" />
+                              ) : (
+                                <div className="w-12 h-16 bg-[#222] rounded flex items-center justify-center text-[8px] text-[#666]">LUOMI</div>
+                              )}
+                              <div className="flex-1 flex flex-col justify-between" style={{ minHeight: '64px' }}>
+                                <div>
+                                  <span className="dd-product-title block font-semibold text-sm leading-tight text-white">{item.product?.title || 'Luxury apparel'}</span>
+                                  {seller && (
+                                    <div className="text-[10px] text-[#C8A96E] font-medium mt-1 leading-normal" style={{ letterSpacing: '0.2px' }}>
+                                      <strong>Pickup:</strong> {seller.fullname} ({seller.email} • {seller.contact}) <br />
+                                      {seller.address}, {seller.city} - {seller.pincode}
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-[#888888] line-clamp-1 mt-1">{item.product?.description || 'No description available'}</p>
+                                </div>
+                                <span className="text-[10px] text-[#aaaaaa]">Qty: {item.quantity} | ID: <span className="font-mono text-white select-all">{item.product?._id}</span></span>
                               </div>
-                              <span className="text-[10px] text-[#aaaaaa]">Qty: {item.quantity} | ID: <span className="font-mono text-white select-all">{item.product?._id}</span></span>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
 
                       {/* Buyer Shipping Details */}
                       <div className="dd-shipping-details">
                         <div className="dd-detail-row font-semibold mb-1 text-sm text-white">
-                          <span>Customer: {order.user?.fullname || 'Buyer'}</span>
+                          <span>Customer: {order.user?.fullname || 'Buyer'} {order.user?.email ? `(${order.user.email})` : ''}</span>
                         </div>
                         <div className="dd-detail-row">
                           <FiMapPin size={13} className="dd-detail-icon" />
@@ -301,11 +313,11 @@ export default function DeliveryDashboard() {
                   type="text" 
                   value={verifyProductId}
                   onChange={e => setVerifyProductId(e.target.value)}
-                  placeholder="Enter or scan Product ID (e.g. 64f1...)"
+                  placeholder="Enter Product ID or last 6 characters (e.g. 75c19)"
                   className="dd-input-field"
                   required
                 />
-                <span className="dd-input-help">Type the database Object ID of any item in this order to validate packages.</span>
+                <span className="dd-input-help">Type the Product ID or the last 6 characters of the Product ID from the bill/package to validate.</span>
               </div>
 
               {/* COD payment collection checkbox */}

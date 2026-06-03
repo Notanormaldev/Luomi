@@ -43,7 +43,7 @@ export default function Cart() {
   const [error, setError] = useState(null)
 
   // Checkout state
-  const [showCheckoutForm, setShowCheckoutForm] = useState(false)
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [pincode, setPincode] = useState('')
@@ -53,7 +53,6 @@ export default function Cart() {
 
   // Check if user already has complete saved address
   const hasSavedAddress = !!(user?.address?.trim() && user?.city?.trim() && user?.pincode?.trim() && user?.contact?.trim())
-  const [useExistingAddress, setUseExistingAddress] = useState(true)
 
   // Prefill checkout details from saved profile
   useEffect(() => {
@@ -163,10 +162,10 @@ export default function Cart() {
 
   // Handle Checkout
   const triggerCheckout = async () => {
-    const activeAddress = (hasSavedAddress && useExistingAddress) ? user.address : address
-    const activeCity = (hasSavedAddress && useExistingAddress) ? user.city : city
-    const activePincode = (hasSavedAddress && useExistingAddress) ? user.pincode : pincode
-    const activeContact = (hasSavedAddress && useExistingAddress) ? user.contact : contact
+    const activeAddress = hasSavedAddress ? user.address : address
+    const activeCity = hasSavedAddress ? user.city : city
+    const activePincode = hasSavedAddress ? user.pincode : pincode
+    const activeContact = hasSavedAddress ? user.contact : contact
 
     if (!activeAddress?.trim() || !activeCity?.trim() || !activePincode?.trim() || !activeContact?.trim()) {
       setCheckoutError('Please provide complete shipping details.')
@@ -177,9 +176,9 @@ export default function Cart() {
       setCheckoutError('Pincode must be exactly 6 digits.')
       return
     }
-    // Validate phone: 10 digits
-    if (!/^\d{10}$/.test(activeContact.trim())) {
-      setCheckoutError('Phone number must be exactly 10 digits.')
+    // Validate phone: 10-digit Indian mobile number
+    if (!/^[6-9]\d{9}$/.test(activeContact.trim())) {
+      setCheckoutError('Please enter a valid 10-digit Indian phone number (starting with 6, 7, 8, or 9).')
       return
     }
     setCheckoutError('')
@@ -191,7 +190,7 @@ export default function Cart() {
     }
 
     // Auto-save address to profile if using a new address
-    if (!(hasSavedAddress && useExistingAddress)) {
+    if (!hasSavedAddress) {
       try {
         await updateSettingsApi({ address: activeAddress, city: activeCity, pincode: activePincode, contact: activeContact })
       } catch (e) {
@@ -204,6 +203,7 @@ export default function Cart() {
       if (paymentMethod === 'COD') {
         const res = await handleCheckout(payload)
         if (res.success) {
+          setShowCheckoutModal(false)
           navigate('/order-success', { state: { order: res.order } })
         } else {
           setCheckoutError(res.error || 'Checkout failed')
@@ -234,6 +234,7 @@ export default function Cart() {
                   razorpay_signature: response.razorpay_signature
                 })
                 if (verifyRes.success) {
+                  setShowCheckoutModal(false)
                   navigate('/order-success', { state: { order: verifyRes.order } })
                 } else {
                   setCheckoutError(verifyRes.error || 'Payment verification failed.')
@@ -247,7 +248,7 @@ export default function Cart() {
             prefill: {
               name: user.fullname,
               email: user.email,
-              contact: contact
+              contact: activeContact
             },
             theme: {
               color: '#111111'
@@ -563,145 +564,16 @@ export default function Cart() {
                   </span>
                 </div>
 
-                {showCheckoutForm ? (
-                  <div className="ct-checkout-panel mt-6 pt-6 border-t border-[var(--border)]">
-                    <h4 className="font-heading text-xs uppercase tracking-wider mb-4 text-left font-bold">Shipping & Payment</h4>
-
-                    {/* Saved address block OR new address form */}
-                    {hasSavedAddress && useExistingAddress ? (
-                      <div className="ct-saved-address-block">
-                        <div className="ct-saved-address-label">Delivering to saved address:</div>
-                        <div className="ct-saved-address-info">
-                          <span>{user.address}, {user.city} — {user.pincode}</span>
-                          <span style={{ opacity: 0.6 }}>📞 {user.contact}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="ct-change-address-btn"
-                          onClick={() => setUseExistingAddress(false)}
-                        >
-                          Use different address
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3 text-left">
-                        {hasSavedAddress && (
-                          <button
-                            type="button"
-                            className="ct-change-address-btn"
-                            style={{ marginBottom: '0.5rem', alignSelf: 'flex-start' }}
-                            onClick={() => setUseExistingAddress(true)}
-                          >
-                            ← Use saved address
-                          </button>
-                        )}
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Address</label>
-                          <input
-                            type="text"
-                            value={address}
-                            onChange={e => setAddress(e.target.value)}
-                            placeholder="Delivery Address"
-                            className="ct-checkout-input"
-                          />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">City</label>
-                            <input
-                              type="text"
-                              value={city}
-                              onChange={e => setCity(e.target.value)}
-                              placeholder="City"
-                              className="ct-checkout-input"
-                            />
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Pincode (6 digits)</label>
-                            <input
-                              type="text"
-                              value={pincode}
-                              onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                              placeholder="6-digit Pincode"
-                              className="ct-checkout-input"
-                              maxLength={6}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Phone Number (10 digits)</label>
-                          <input
-                            type="text"
-                            value={contact}
-                            onChange={e => setContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                            placeholder="10-digit Phone Number"
-                            className="ct-checkout-input"
-                            maxLength={10}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Payment Mode — always visible */}
-                    <div className="flex flex-col gap-1 mt-4">
-                      <label className="text-[10px] uppercase tracking-wider text-[#888888] font-bold">Payment Mode</label>
-                      <div className="flex gap-4 mt-1">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value="COD"
-                            checked={paymentMethod === 'COD'}
-                            onChange={() => setPaymentMethod('COD')}
-                            className="accent-white"
-                          />
-                          <span>COD</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer text-xs" style={{ color: 'var(--text)' }}>
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value="Razorpay"
-                            checked={paymentMethod === 'Razorpay'}
-                            onChange={() => setPaymentMethod('Razorpay')}
-                            className="accent-white"
-                          />
-                          <span>Online (Razorpay)</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {checkoutError && <p className="text-red-500 text-xs font-semibold mt-3 text-left">{checkoutError}</p>}
-
-                    <div className="flex flex-col gap-2 mt-4">
-                      <button
-                        className="ct-checkout-now-btn"
-                        onClick={triggerCheckout}
-                        disabled={updating || cartActionLoading}
-                        style={{ marginTop: '0.5rem' }}
-                      >
-                        {updating ? 'CONFIRMING ORDER...' : 'Confirm & Place Order'}
-                      </button>
-                      <button
-                        className="btn-cancel-checkout text-xs uppercase tracking-widest text-[#888888] hover:text-white transition-colors mt-2"
-                        onClick={() => setShowCheckoutForm(false)}
-                        disabled={updating}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
-                      >
-                        Cancel Checkout
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* Checkout button */
-                  <button
-                    className="ct-checkout-now-btn"
-                    onClick={() => setShowCheckoutForm(true)}
-                    disabled={updating || cartActionLoading}
-                  >
-                    {updating ? 'PROCESSING...' : 'Checkout Now'}
-                  </button>
-                )}
+                <button
+                  className="ct-checkout-now-btn"
+                  onClick={() => {
+                    setCheckoutError('');
+                    setShowCheckoutModal(true);
+                  }}
+                  disabled={updating || cartActionLoading}
+                >
+                  {updating ? 'PROCESSING...' : 'Checkout Now'}
+                </button>
               </div>
             </div>
 
@@ -709,6 +581,119 @@ export default function Cart() {
         )}
       </div>
 
+      {/* Checkout Modal Overlay */}
+      {showCheckoutModal && (
+        <div className="ct-modal-overlay">
+          <div className="ct-modal animate-slide-up">
+            <h3 className="ct-modal-title">Checkout Details</h3>
+            <p className="ct-modal-subtitle">Confirm your shipping address and select payment method.</p>
+            
+            {hasSavedAddress ? (
+              <div className="ct-saved-address-block">
+                <span className="ct-saved-address-label">Delivery Address</span>
+                <p className="ct-saved-address-value">{user.address}, {user.city} - {user.pincode}</p>
+                <p className="ct-saved-address-phone">📞 {user.contact}</p>
+              </div>
+            ) : (
+              <div className="ct-address-form">
+                <div className="ct-form-group">
+                  <label className="ct-form-label">Address</label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                    placeholder="Enter your flat/house no, street, locality"
+                    className="ct-checkout-input"
+                  />
+                </div>
+                <div className="ct-form-grid">
+                  <div className="ct-form-group">
+                    <label className="ct-form-label">City</label>
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                      placeholder="City"
+                      className="ct-checkout-input"
+                    />
+                  </div>
+                  <div className="ct-form-group">
+                    <label className="ct-form-label">Pincode</label>
+                    <input
+                      type="text"
+                      value={pincode}
+                      onChange={e => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="6-digit Pincode"
+                      className="ct-checkout-input"
+                      maxLength={6}
+                    />
+                  </div>
+                </div>
+                <div className="ct-form-group">
+                  <label className="ct-form-label">Phone Number (India only)</label>
+                  <input
+                    type="text"
+                    value={contact}
+                    onChange={e => setContact(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="10-digit mobile number"
+                    className="ct-checkout-input"
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Payment Method */}
+            <div className="ct-form-group mt-2">
+              <label className="ct-form-label">Select Payment Method</label>
+              <div className="ct-payment-methods">
+                <label className="ct-payment-option">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={paymentMethod === 'COD'}
+                    onChange={() => setPaymentMethod('COD')}
+                  />
+                  <span>Cash on Delivery (COD)</span>
+                </label>
+                <label className="ct-payment-option">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="Razorpay"
+                    checked={paymentMethod === 'Razorpay'}
+                    onChange={() => setPaymentMethod('Razorpay')}
+                  />
+                  <span>Online Payment (Razorpay)</span>
+                </label>
+              </div>
+            </div>
+
+            {checkoutError && <p className="ct-checkout-error-text">{checkoutError}</p>}
+
+            <div className="ct-modal-actions">
+              <button 
+                className="ct-modal-btn ct-btn-cancel" 
+                onClick={() => {
+                  setShowCheckoutModal(false);
+                  setCheckoutError('');
+                }}
+                disabled={updating}
+              >
+                Cancel
+              </button>
+              <button 
+                className="ct-modal-btn ct-btn-confirm" 
+                onClick={triggerCheckout}
+                disabled={updating || cartActionLoading}
+              >
+                {updating ? 'PROCESSING...' : 'Place Order'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

@@ -204,7 +204,13 @@ async function getDeliveryPendingOrders(req, res) {
         const orders = await orderModel.find({
             status: 'out_for_delivery',
             'shippingAddress.city': { $regex: new RegExp('^' + city + '$', 'i') }
-        }).populate('items.product').populate('user', 'fullname email contact profilepic');
+        }).populate({
+            path: 'items.product',
+            populate: {
+                path: 'seller',
+                select: 'fullname email contact address city pincode'
+            }
+        }).populate('user', 'fullname email contact profilepic');
 
         const warehouseAddress = getWarehouseAddress(city);
 
@@ -221,7 +227,7 @@ async function confirmDelivery(req, res) {
         const { orderId } = req.params;
         const { productId, paymentReceivedTick } = req.body;
 
-        const order = await orderModel.findById(orderId);
+        const order = await orderModel.findById(orderId).populate('items.product');
         if (!order) {
             return res.status(404).json({ success: false, msg: "Order not found" });
         }
@@ -230,16 +236,22 @@ async function confirmDelivery(req, res) {
             return res.status(400).json({ success: false, msg: `Cannot confirm delivery. Order status is '${order.status}'` });
         }
 
-        // 1. Validate Product ID exists in this order
-        const itemExists = order.items.some(item => item.product.toString() === productId);
-        if (!itemExists) {
-            return res.status(400).json({ success: false, msg: "Validation failed: product ID does not belong to this order" });
+        // Validate matched item by exact ID or last 6 characters of ID
+        const inputLower = productId.trim().toLowerCase();
+        const matchedItem = order.items.find(item => {
+            if (!item.product) return false;
+            const itemProdId = item.product._id.toString().toLowerCase();
+            return itemProdId === inputLower || itemProdId.endsWith(inputLower);
+        });
+
+        if (!matchedItem) {
+            return res.status(400).json({ 
+                success: false, 
+                msg: "Validation failed: Entered ID or code does not match any product in this order" 
+            });
         }
 
-        const validatingProduct = await productModel.findById(productId);
-        if (!validatingProduct) {
-            return res.status(404).json({ success: false, msg: "Validating product details not found" });
-        }
+        const validatingProduct = matchedItem.product;
 
         // 2. Validate COD Payment Checkbox if payment method is COD
         if (order.paymentMethod === 'COD') {
