@@ -181,7 +181,7 @@ export default function DeliveryDashboard() {
           <div className="dd-metric-card">
             <span className="dd-metric-label">Pickup Warehouse Hub</span>
             <div className="flex items-baseline justify-between mt-2">
-              <span className="dd-metric-value text-xs text-[#eeeeee] font-medium leading-tight" style={{ minHeight: '38px', display: 'flex', alignItems: 'center' }}>
+              <span className="dd-metric-value text-xs text-[var(--dd-text)] font-medium leading-tight" style={{ minHeight: '38px', display: 'flex', alignItems: 'center' }}>
                 {warehouseAddress || 'Luomi Regional Hub'}
               </span>
             </div>
@@ -242,7 +242,7 @@ export default function DeliveryDashboard() {
                               )}
                               <div className="flex-1 flex flex-col justify-between" style={{ minHeight: '64px' }}>
                                 <div>
-                                  <span className="dd-product-title block font-semibold text-sm leading-tight text-white">{item.product?.title || 'Luxury apparel'}</span>
+                                  <span className="dd-product-title block font-semibold text-sm leading-tight text-[var(--dd-text)]">{item.product?.title || 'Luxury apparel'}</span>
                                   {seller && (
                                     <div className="text-[10px] text-[#C8A96E] font-medium mt-1 leading-normal" style={{ letterSpacing: '0.2px' }}>
                                       <strong>Pickup:</strong> {seller.fullname} ({seller.email} • {seller.contact}) <br />
@@ -251,7 +251,7 @@ export default function DeliveryDashboard() {
                                   )}
                                   <p className="text-xs text-[#888888] line-clamp-1 mt-1">{item.product?.description || 'No description available'}</p>
                                 </div>
-                                <span className="text-[10px] text-[#aaaaaa]">Qty: {item.quantity} | ID: <span className="font-mono text-white select-all">{item.product?._id}</span></span>
+                                <span className="text-[10px] text-[#aaaaaa]">Qty: {item.quantity} | ID: <span className="font-mono text-[var(--dd-text)] select-all">{item.product?._id}</span></span>
                               </div>
                             </div>
                           )
@@ -260,7 +260,7 @@ export default function DeliveryDashboard() {
 
                       {/* Buyer Shipping Details */}
                       <div className="dd-shipping-details">
-                        <div className="dd-detail-row font-semibold mb-1 text-sm text-white">
+                        <div className="dd-detail-row font-semibold mb-1 text-sm text-[var(--dd-text)]">
                           <span>Customer: {order.user?.fullname || 'Buyer'} {order.user?.email ? `(${order.user.email})` : ''}</span>
                         </div>
                         <div className="dd-detail-row">

@@ -48,6 +48,17 @@ export default function Wishlist() {
     }
   }, [user])
 
+  // Redirect if logged-in user is not a buyer
+  useEffect(() => {
+    if (user && user.role !== 'buyer') {
+      if (user.role === 'seller') {
+        navigate('/dashbord/seller')
+      } else if (user.role === 'delivery') {
+        navigate('/dashbord/delivery')
+      }
+    }
+  }, [user, navigate])
+
   const fmt = (amount) => {
     if (amount === undefined || amount === null) return '0'
     const n = parseFloat(amount)

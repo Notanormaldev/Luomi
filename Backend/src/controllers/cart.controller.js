@@ -44,6 +44,14 @@ async function addToCart(req, res) {
         const userId = req.user.id;
         const { productId, quantity, variantId } = req.body;
 
+        const userObj = await usermodel.findById(userId);
+        if (!userObj) {
+            return res.status(404).json({ success: false, msg: "User not found" });
+        }
+        if (userObj.role === 'delivery') {
+            return res.status(403).json({ success: false, msg: "Delivery Partners are restricted from shopping/placing orders." });
+        }
+
         if (!productId) {
             return res.status(400).json({ success: false, msg: "Product ID is required" });
         }
@@ -240,6 +248,9 @@ async function checkout(req, res) {
         const userObj = await usermodel.findById(userId);
         if (!userObj) {
             return res.status(404).json({ success: false, msg: "User not found" });
+        }
+        if (userObj.role === 'delivery') {
+            return res.status(403).json({ success: false, msg: "Delivery Partners are restricted from shopping/placing orders." });
         }
 
         const cart = await cartModel.findOne({ user: userId }).populate('items.product');

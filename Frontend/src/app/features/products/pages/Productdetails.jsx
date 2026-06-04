@@ -226,6 +226,10 @@ function Productdetails() {
       return
     }
     if (!user) { navigate('/login'); return }
+    if (user.role === 'delivery') {
+      alert("Delivery Partners are restricted from shopping or placing orders.")
+      return
+    }
     const cartPayload = { productId: product._id, quantity }
     if (selectedVariant) cartPayload.variantId = selectedVariant._id
     const existing = cartItems.find(i => {

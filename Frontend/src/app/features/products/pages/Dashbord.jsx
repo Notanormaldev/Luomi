@@ -15,7 +15,10 @@ import {
   FiTruck, 
   FiDollarSign, 
   FiSettings, 
-  FiCheck
+  FiCheck,
+  FiClock,
+  FiLoader,
+  FiCheckCircle
 } from 'react-icons/fi'
 import './Dashbord.css'
 
@@ -27,6 +30,7 @@ function Dashbord() {
   const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState([])
   const [ordersLoading, setOrdersLoading] = useState(true)
+  const [activeFilter, setActiveFilter] = useState('all')
   
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
@@ -124,9 +128,19 @@ function Dashbord() {
   const totalProducts = products.length
   const productsWithVariants = products.filter(p => p.variants && p.variants.length > 1).length
   const totalOrders = orders.length
+  const pendingOrders = orders.filter(o => o.status === 'pending').length
+  const processingOrders = orders.filter(o => o.status === 'processing').length
   const outForDeliveryOrders = orders.filter(o => o.status === 'out_for_delivery').length
+  const deliveredOrders = orders.filter(o => o.status === 'delivered').length
   const codOrders = orders.filter(o => o.paymentMethod === 'COD').length
   const onlineOrders = orders.filter(o => o.paymentMethod === 'Razorpay' || o.paymentMethod?.toLowerCase() === 'online').length
+
+  const filteredOrders = orders.filter(o => {
+    if (activeFilter === 'all') return true
+    if (activeFilter === 'COD') return o.paymentMethod === 'COD'
+    if (activeFilter === 'online') return o.paymentMethod === 'Razorpay' || o.paymentMethod?.toLowerCase() === 'online'
+    return o.status === activeFilter
+  })
 
   return (
     <div className="dashboard-container">
@@ -172,7 +186,7 @@ function Dashbord() {
           </div>
         </div>
 
-        {/* Metrics Row (6 cards representing full store summary) */}
+        {/* Metrics Row (8 cards representing full store summary) */}
         <div className="dashboard-metrics">
           <div className="metric-card">
             <div className="metric-header">
@@ -183,16 +197,10 @@ function Dashbord() {
             <span className="metric-trend">Active Silhouettes</span>
           </div>
 
-          <div className="metric-card">
-            <div className="metric-header">
-              <span className="metric-label">Variant Items</span>
-              <FiShoppingBag size={16} className="metric-icon" />
-            </div>
-            <span className="metric-value">{loading ? '...' : productsWithVariants}</span>
-            <span className="metric-trend">Multi-option pieces</span>
-          </div>
-
-          <div className="metric-card">
+          <div 
+            className={`metric-card clickable-metric ${activeFilter === 'all' ? 'active-metric' : ''}`}
+            onClick={() => setActiveFilter('all')}
+          >
             <div className="metric-header">
               <span className="metric-label">Total Orders</span>
               <FiShoppingBag size={16} className="metric-icon" />
@@ -201,7 +209,34 @@ function Dashbord() {
             <span className="metric-trend">Client orders received</span>
           </div>
 
-          <div className="metric-card">
+          <div 
+            className={`metric-card clickable-metric ${activeFilter === 'pending' ? 'active-metric' : ''}`}
+            onClick={() => setActiveFilter('pending')}
+          >
+            <div className="metric-header">
+              <span className="metric-label">Pending Orders</span>
+              <FiClock size={16} className="metric-icon" />
+            </div>
+            <span className="metric-value">{ordersLoading ? '...' : pendingOrders}</span>
+            <span className="metric-trend">Awaiting verification</span>
+          </div>
+
+          <div 
+            className={`metric-card clickable-metric ${activeFilter === 'processing' ? 'active-metric' : ''}`}
+            onClick={() => setActiveFilter('processing')}
+          >
+            <div className="metric-header">
+              <span className="metric-label">Processing</span>
+              <FiLoader size={16} className="metric-icon" />
+            </div>
+            <span className="metric-value">{ordersLoading ? '...' : processingOrders}</span>
+            <span className="metric-trend">In preparation</span>
+          </div>
+
+          <div 
+            className={`metric-card clickable-metric ${activeFilter === 'out_for_delivery' ? 'active-metric' : ''}`}
+            onClick={() => setActiveFilter('out_for_delivery')}
+          >
             <div className="metric-header">
               <span className="metric-label">Out for Delivery</span>
               <FiTruck size={16} className="metric-icon" />
@@ -210,7 +245,22 @@ function Dashbord() {
             <span className="metric-trend">Dispatched packages</span>
           </div>
 
-          <div className="metric-card">
+          <div 
+            className={`metric-card clickable-metric ${activeFilter === 'delivered' ? 'active-metric' : ''}`}
+            onClick={() => setActiveFilter('delivered')}
+          >
+            <div className="metric-header">
+              <span className="metric-label">Delivered Orders</span>
+              <FiCheckCircle size={16} className="metric-icon" />
+            </div>
+            <span className="metric-value">{ordersLoading ? '...' : deliveredOrders}</span>
+            <span className="metric-trend">Successfully fulfilled</span>
+          </div>
+
+          <div 
+            className={`metric-card clickable-metric ${activeFilter === 'COD' ? 'active-metric' : ''}`}
+            onClick={() => setActiveFilter('COD')}
+          >
             <div className="metric-header">
               <span className="metric-label">COD Orders</span>
               <FiDollarSign size={16} className="metric-icon" />
@@ -219,13 +269,16 @@ function Dashbord() {
             <span className="metric-trend">Cash-on-delivery mode</span>
           </div>
 
-          <div className="metric-card">
+          <div 
+            className={`metric-card clickable-metric ${activeFilter === 'online' ? 'active-metric' : ''}`}
+            onClick={() => setActiveFilter('online')}
+          >
             <div className="metric-header">
               <span className="metric-label">Online Payments</span>
               <FiDollarSign size={16} className="metric-icon" />
             </div>
             <span className="metric-value">{ordersLoading ? '...' : onlineOrders}</span>
-            <span className="metric-trend">Prepaid Razorpay orders</span>
+            <span className="metric-trend">Prepaid online orders</span>
           </div>
         </div>
 
@@ -325,8 +378,10 @@ function Dashbord() {
           {/* Right Column: Recent Client Purchases */}
           <div className="orders-section">
             <div className="catalog-header-row">
-              <h2 className="catalog-section-title">Client Purchases</h2>
-              <span className="text-xs text-[var(--dash-subtitle)] font-label uppercase">Orders: {orders.length}</span>
+              <h2 className="catalog-section-title">
+                Client Purchases {activeFilter !== 'all' && <span className="text-[var(--dash-accent)] text-xs ml-2 font-normal">({activeFilter.replace('_', ' ').toUpperCase()})</span>}
+              </h2>
+              <span className="text-xs text-[var(--dash-subtitle)] font-label uppercase">Showing: {filteredOrders.length} of {orders.length}</span>
             </div>
 
             {ordersLoading ? (
@@ -340,9 +395,16 @@ function Dashbord() {
                   When clients purchase your silhouettes, their order information will materialize here.
                 </p>
               </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="empty-orders-box">
+                <p className="empty-orders-title">No matching orders</p>
+                <p className="empty-orders-subtitle">
+                  There are no orders with status "{activeFilter.replace('_', ' ')}" at the moment.
+                </p>
+              </div>
             ) : (
               <div className="orders-list-wrapper">
-                {orders.map((order) => {
+                {filteredOrders.map((order) => {
                   const displayId = `#${order._id.toString().slice(-6).toUpperCase()}`
                   const orderDate = new Date(order.createdAt).toLocaleDateString(undefined, {
                     month: 'short',

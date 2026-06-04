@@ -1,11 +1,11 @@
 import { Router } from "express";
 import cartController from "../controllers/cart.controller.js";
-import { authtokenmiddleware } from "../Middleware/authtoken.middleware.js";
+import { authbuyermiddleware } from "../Middleware/authbuyer.middleware.js";
 
 const cartRoute = Router();
 
 // Apply auth middleware to all cart actions
-cartRoute.use(authtokenmiddleware);
+cartRoute.use(authbuyermiddleware);
 
 cartRoute.get('/', cartController.getCart);
 cartRoute.get('/pricing', cartController.getCartWithPricing);

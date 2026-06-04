@@ -198,10 +198,10 @@
   border-color: var(--dash-title);
 }
 
-/* 6-Card Metrics Row */
+/* 8-Card Metrics Row */
 .dashboard-metrics {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(8, 1fr);
   gap: 16px;
   animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
@@ -223,6 +223,17 @@
   border-color: var(--dash-accent);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.metric-card.clickable-metric {
+  cursor: pointer;
+}
+
+.metric-card.clickable-metric.active-metric {
+  border-color: var(--dash-accent);
+  background-color: var(--dash-hover-bg);
+  box-shadow: 0 4px 15px rgba(200, 169, 110, 0.1);
+  transform: translateY(-2px);
 }
 
 .metric-header {
@@ -819,7 +830,13 @@
 }
 
 /* Responsive Rules */
-@media (max-width: 1280px) {
+@media (max-width: 1440px) {
+  .dashboard-metrics {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
   .dashboard-metrics {
     grid-template-columns: repeat(3, 1fr);
   }

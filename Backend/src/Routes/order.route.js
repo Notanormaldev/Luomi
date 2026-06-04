@@ -1,6 +1,7 @@
 import { Router } from "express";
 import orderController from "../controllers/order.controller.js";
 import { authtokenmiddleware } from "../Middleware/authtoken.middleware.js";
+import { authbuyermiddleware } from "../Middleware/authbuyer.middleware.js";
 import { authsellermiddleware } from "../Middleware/authseller.middleware.js";
 import { authdeliverymiddleware } from "../Middleware/authdelivery.middleware.js";
 import multer from 'multer';
@@ -15,7 +16,7 @@ const upload = multer({
 const orderRoute = Router();
 
 // Payment verification (buyer)
-orderRoute.post('/verify-payment', authtokenmiddleware, orderController.verifyPayment);
+orderRoute.post('/verify-payment', authbuyermiddleware, orderController.verifyPayment);
 
 // Out for delivery mark (seller)
 orderRoute.post('/seller/out-for-delivery/:orderId', authsellermiddleware, orderController.markOutForDelivery);
