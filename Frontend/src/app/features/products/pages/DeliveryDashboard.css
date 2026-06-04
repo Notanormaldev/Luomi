@@ -18,7 +18,7 @@
   min-height: 100vh;
   background-color: var(--dd-bg);
   color: var(--dd-text);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Hanken Grotesk', 'Public Sans', sans-serif;
   transition: all 0.3s ease;
   padding-bottom: 80px;
 }
@@ -113,10 +113,17 @@
 .dd-metric-card {
   background-color: var(--dd-card-bg);
   border: 1px solid var(--dd-border);
+  border-radius: 0px;
   padding: 1.5rem 2rem;
   text-align: left;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.dd-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
 
 .dd-metric-label {
@@ -155,25 +162,31 @@
   letter-spacing: 1.5px;
 }
 
-/* Order Grid */
+/* Order List — Stitch horizontal card style */
 .dd-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 2rem;
-}
-
-@media (max-width: 640px) {
-  .dd-grid {
-    grid-template-columns: 1fr;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .dd-order-card {
   background-color: var(--dd-card-bg);
   border: 1px solid var(--dd-border);
+  border-radius: 0px;
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   text-align: left;
+  transition: border-color 0.3s ease;
+  min-height: 240px;
+}
+
+.dd-order-card:hover {
+  border-color: #111111;
+}
+
+[data-theme='dark'] .dd-order-card:hover {
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .dd-card-header {
@@ -300,10 +313,10 @@
 }
 
 .dd-confirm-btn {
-  background-color: var(--dd-text);
-  color: var(--dd-bg);
-  border: 1px solid var(--dd-text);
-  padding: 0.6rem 1.2rem;
+  background-color: #111111;
+  color: #ffffff;
+  border: 1px solid #111111;
+  padding: 16px 32px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
@@ -314,7 +327,150 @@
 
 .dd-confirm-btn:hover {
   background-color: transparent;
+  color: #111111;
+}
+
+[data-theme='dark'] .dd-confirm-btn {
+  background-color: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+}
+
+[data-theme='dark'] .dd-confirm-btn:hover {
+  background-color: transparent;
+  color: #ffffff;
+}
+
+/* Product image panel on the left side of horizontal card */
+.dd-card-image-panel {
+  width: 200px;
+  min-width: 200px;
+  border-right: 1px solid var(--dd-border);
+  overflow: hidden;
+  position: relative;
+}
+
+.dd-card-image-panel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.7s ease;
+}
+
+.dd-order-card:hover .dd-card-image-panel img {
+  transform: scale(1.05);
+}
+
+.dd-card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  color: #aaaaaa;
+}
+
+/* Card content panel (right side) */
+.dd-card-content-panel {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dd-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.dd-card-order-ref {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dd-card-ref-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888888;
+}
+
+.dd-card-ref-value {
+  font-size: 18px;
+  font-weight: 700;
   color: var(--dd-text);
+}
+
+.dd-card-payment-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--dd-border);
+  text-transform: uppercase;
+  border-radius: 0;
+}
+
+.dd-card-payment-badge.COD {
+  border-color: #111111;
+  color: #111111;
+}
+
+[data-theme='dark'] .dd-card-payment-badge.COD {
+  border-color: #e5e5e5;
+  color: #e5e5e5;
+}
+
+.dd-card-payment-badge.Razorpay,
+.dd-card-payment-badge.online,
+.dd-card-payment-badge.ONLINE {
+  border-color: #111111;
+  color: #111111;
+  background: #111111;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .dd-card-payment-badge.Razorpay {
+  background: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+}
+
+.dd-card-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dd-card-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dd-card-detail-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888888;
+}
+
+.dd-card-detail-value {
+  font-size: 14px;
+  color: var(--dd-text);
+  line-height: 1.4;
 }
 
 /* Empty/Loading states */
@@ -375,7 +531,9 @@
 }
 
 @keyframes dd-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Modal Overlay */
@@ -394,10 +552,11 @@
 .dd-modal {
   background-color: var(--dd-card-bg);
   border: 1px solid var(--dd-border);
+  border-radius: 0px;
   max-width: 500px;
   width: 100%;
   padding: 2.5rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   text-align: left;
 }
 
@@ -436,13 +595,16 @@
 
 .dd-input-field {
   width: 100%;
-  background-color: rgba(120, 120, 120, 0.02);
-  border: 1px solid var(--dd-border);
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid var(--dd-border);
+  border-radius: 0px;
   color: var(--dd-text);
-  padding: 0.8rem 1rem;
+  padding: 0.8rem 0;
   font-size: 13px;
   font-family: inherit;
   box-sizing: border-box;
+  transition: border-color 0.3s ease;
 }
 
 .dd-input-field:focus {
@@ -581,6 +743,17 @@
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dd-product-thumbnail {
+  border-radius: 12px !important;
 }

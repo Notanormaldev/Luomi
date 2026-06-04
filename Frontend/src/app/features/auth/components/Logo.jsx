@@ -20,7 +20,7 @@ function Logo() {
             </linearGradient>
           </defs>
         </svg>
-        <DiJira size={30} className="logo-icon" />
+        <DiJira size={30} className="logo-icon" style={{ fill: 'currentColor' }} />
       </div>
 
       {/* Text "LUOMI" */}

@@ -219,7 +219,7 @@
   display: flex;
   flex-direction: column;
   background: var(--wl-bg);
-  border-radius: 4px;
+  border-radius: 12px;
   overflow: hidden;
   position: relative;
   transition: transform 0.2s ease;
@@ -235,7 +235,7 @@
   background: var(--wl-skeleton);
   cursor: pointer;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 12px;
 }
 
 .wl-card-img {
@@ -284,7 +284,7 @@
 .wl-card-remove:hover {
   opacity: 1;
   background: var(--wl-search-bg);
-  color: #ff5a36;
+  color: var(--wl-text);
 }
 
 .wl-card-info {

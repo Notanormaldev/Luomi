@@ -218,75 +218,81 @@ export default function DeliveryDashboard() {
               {orders.map(order => {
                 const orderIdShort = `#${order._id.toString().slice(-6).toUpperCase()}`
                 const isCOD = order.paymentMethod === 'COD'
+                const firstItem = order.items?.[0]
+                const firstImage = firstItem?.product?.images?.[0]?.url
+                const seller = firstItem?.product?.seller
                 
                 return (
                   <div key={order._id} className="dd-order-card">
-                    <div className="dd-card-header">
-                      <span className="dd-card-id">{orderIdShort}</span>
-                      <span className={`dd-card-payment-badge ${order.paymentMethod}`}>
-                        {isCOD ? 'COD - CASH' : 'PAID ONLINE'}
-                      </span>
+                    {/* Left: Product Image Panel */}
+                    <div className="dd-card-image-panel">
+                      {firstImage ? (
+                        <img src={firstImage} alt={firstItem?.product?.title || 'Order'} />
+                      ) : (
+                        <div className="dd-card-image-placeholder">LUOMI</div>
+                      )}
                     </div>
 
-                    <div className="dd-card-body">
-                      {/* Products list with rich details */}
-                      <div className="dd-card-products">
-                        {order.items.map((item, idx) => {
-                          const seller = item.product?.seller
-                          return (
-                            <div key={idx} className="dd-product-item-rich flex gap-3 mb-3 pb-3 border-b border-[rgba(255,255,255,0.05)]">
-                              {item.product?.images?.[0]?.url ? (
-                                <img src={item.product.images[0].url} alt={item.product.title} className="w-12 h-16 object-cover rounded bg-[rgba(255,255,255,0.02)]" />
-                              ) : (
-                                <div className="w-12 h-16 bg-[#222] rounded flex items-center justify-center text-[8px] text-[#666]">LUOMI</div>
-                              )}
-                              <div className="flex-1 flex flex-col justify-between" style={{ minHeight: '64px' }}>
-                                <div>
-                                  <span className="dd-product-title block font-semibold text-sm leading-tight text-[var(--dd-text)]">{item.product?.title || 'Luxury apparel'}</span>
-                                  {seller && (
-                                    <div className="text-[10px] text-[#C8A96E] font-medium mt-1 leading-normal" style={{ letterSpacing: '0.2px' }}>
-                                      <strong>Pickup:</strong> {seller.fullname} ({seller.email} • {seller.contact}) <br />
-                                      {seller.address}, {seller.city} - {seller.pincode}
-                                    </div>
-                                  )}
-                                  <p className="text-xs text-[#888888] line-clamp-1 mt-1">{item.product?.description || 'No description available'}</p>
-                                </div>
-                                <span className="text-[10px] text-[#aaaaaa]">Qty: {item.quantity} | ID: <span className="font-mono text-[var(--dd-text)] select-all">{item.product?._id}</span></span>
-                              </div>
-                            </div>
-                          )
-                        })}
+                    {/* Right: Content Panel */}
+                    <div className="dd-card-content-panel">
+                      {/* Top: Order ref + Payment badge */}
+                      <div className="dd-card-top">
+                        <div className="dd-card-order-ref">
+                          <span className="dd-card-ref-label">Order Ref</span>
+                          <span className="dd-card-ref-value">{orderIdShort}</span>
+                        </div>
+                        <span className={`dd-card-payment-badge ${order.paymentMethod}`}>
+                          {isCOD ? 'COD' : 'ONLINE'}
+                        </span>
                       </div>
 
-                      {/* Buyer Shipping Details */}
-                      <div className="dd-shipping-details">
-                        <div className="dd-detail-row font-semibold mb-1 text-sm text-[var(--dd-text)]">
-                          <span>Customer: {order.user?.fullname || 'Buyer'} {order.user?.email ? `(${order.user.email})` : ''}</span>
+                      {/* Details Grid */}
+                      <div className="dd-card-details-grid">
+                        <div className="dd-card-detail-item">
+                          <span className="dd-card-detail-label">Recipient</span>
+                          <span className="dd-card-detail-value">{order.user?.fullname || 'Buyer'}</span>
                         </div>
-                        <div className="dd-detail-row">
-                          <FiMapPin size={13} className="dd-detail-icon" />
-                          <span className="dd-detail-text">
+                        <div className="dd-card-detail-item">
+                          <span className="dd-card-detail-label">Address</span>
+                          <span className="dd-card-detail-value" style={{ fontSize: '12px' }}>
                             {order.shippingAddress?.address}, {order.shippingAddress?.city} - {order.shippingAddress?.pincode}
                           </span>
                         </div>
-                        <div className="dd-detail-row font-normal">
-                          <FiPhone size={13} className="dd-detail-icon" />
-                          <span className="dd-detail-text">{order.shippingAddress?.contact}</span>
+                        {seller && (
+                          <div className="dd-card-detail-item">
+                            <span className="dd-card-detail-label">Pickup From</span>
+                            <span className="dd-card-detail-value" style={{ fontSize: '12px' }}>
+                              {seller.fullname} · {seller.city} - {seller.pincode}
+                            </span>
+                          </div>
+                        )}
+                        <div className="dd-card-detail-item">
+                          <span className="dd-card-detail-label">Contact</span>
+                          <span className="dd-card-detail-value">{order.shippingAddress?.contact || '—'}</span>
+                        </div>
+                        {order.items.length > 1 && (
+                          <div className="dd-card-detail-item">
+                            <span className="dd-card-detail-label">Items</span>
+                            <span className="dd-card-detail-value">{order.items.length} items</span>
+                          </div>
+                        )}
+                        <div className="dd-card-detail-item">
+                          <span className="dd-card-detail-label">{isCOD ? 'Collect' : 'Amount'}</span>
+                          <span className="dd-card-detail-value" style={{ fontSize: '18px', fontFamily: "'Bodoni Moda', serif", fontWeight: 300 }}>
+                            ₹{order.totalAmount.toLocaleString('en-IN')}
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="dd-card-footer">
-                      <div className="dd-amount-container">
-                        <span className="dd-amount-label">{isCOD ? 'Collect:' : 'Amount:'}</span>
-                        <span className="dd-amount-value">₹{order.totalAmount.toLocaleString('en-IN')}</span>
+                      {/* CTA Button */}
+                      <div>
+                        <button 
+                          onClick={() => handleOpenConfirmModal(order)}
+                          className="dd-confirm-btn font-label"
+                        >
+                          Complete Drop
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => handleOpenConfirmModal(order)}
-                        className="dd-confirm-btn font-label"
-                      >
-                        Complete Drop
-                      </button>
                     </div>
                   </div>
                 )

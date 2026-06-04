@@ -28,7 +28,7 @@ function Productdetails() {
   const { handlegetoneprodcut, handlegetallprodcuts } = useproduct()
   const { user } = useauth()
   const allProducts = useSelector(state => state.product.products) || []
-  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
+  const { items: cartItems, handleGetCart, handleAddToCart } = usecart()
   const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
 
   useEffect(() => {
@@ -80,15 +80,11 @@ function Productdetails() {
     return () => window.removeEventListener('theme-changed', sync)
   }, [])
 
-  // Fetch cart
-  useEffect(() => { if (user) handleGetCart() }, [user])
-
   // Fetch product
   useEffect(() => {
     const fetch = async () => {
       setLoading(true)
       try {
-        // Fix: hook expects { productid } object, returns { success, products: product }
         const data = await handlegetoneprodcut({ productid: id })
         if (data && data.success && data.products) {
           const prod = data.products
@@ -155,8 +151,6 @@ function Productdetails() {
     setSelectedAttributes(prev => {
       const next = { ...prev, [key]: val }
 
-      // If color was changed, check if the previously selected size is available in this new color.
-      // If not, clear size selection so they must explicitly choose an available size again.
       if (key.toLowerCase() === 'color' && prev['size']) {
         const sizeVal = prev['size']
         const isCompatible = product.variants.some(v =>
@@ -212,7 +206,6 @@ function Productdetails() {
   const discountPct = hasDiscount ? Math.round(((basePrice - currentPrice) / basePrice) * 100) : 0
 
   const totalCartItems = cartItems.reduce((a, c) => a + c.quantity, 0)
-  const cartTotal = useSelector(s => s.cart.subtotal) || 0
 
   const hasVariants = product?.variants && product.variants.length > 0
   const availableStock = hasVariants
@@ -227,7 +220,8 @@ function Productdetails() {
     }
     if (!user) { navigate('/login'); return }
     if (user.role === 'delivery') {
-      alert("Delivery Partners are restricted from shopping or placing orders.")
+      setToastMsg("Delivery Partners are restricted from shopping or placing orders.")
+      setTimeout(() => setToastMsg(null), 3000)
       return
     }
     const cartPayload = { productId: product._id, quantity }
@@ -237,9 +231,9 @@ function Productdetails() {
       return i.product._id === product._id && !i.selectedVariant
     })
     const currentQty = existing?.quantity || 0
-    // Let backend be the final authority for stock — only do a soft check here
     if (availableStock > 0 && currentQty + quantity > availableStock) {
-      alert(`Only ${availableStock} available in stock`)
+      setToastMsg(`Only ${availableStock} available in stock`)
+      setTimeout(() => setToastMsg(null), 3000)
       return
     }
     const res = await handleAddToCart(cartPayload)
@@ -251,14 +245,19 @@ function Productdetails() {
         setTimeout(() => setToastMsg(null), 3000)
       }
     } else {
-      alert(res.error || 'Failed to add')
+      setToastMsg(res.error || 'Failed to add')
+      setTimeout(() => setToastMsg(null), 3000)
     }
   }
 
   const handlePageQtyChange = (delta) => {
     const newQty = quantity + delta
     if (newQty < 1) return
-    if (newQty > availableStock) { alert(`Only ${availableStock} in stock`); return }
+    if (newQty > availableStock) {
+      setToastMsg(`Only ${availableStock} in stock`)
+      setTimeout(() => setToastMsg(null), 3000)
+      return
+    }
     setQuantity(newQty)
   }
 
@@ -292,72 +291,86 @@ function Productdetails() {
 
   if (loading) {
     return (
-      <div className="sn-page-loader">
-        <div className="sn-nano-bar"></div>
-        <h1 className="sn-loader-logo">LUOMI</h1>
+      <div className="lh-page-loader">
+        <div className="lh-nano-bar"></div>
+        <h1 className="lh-loader-logo">LUOMI</h1>
       </div>
     )
   }
 
   return (
-    <div className="pd-root">
+    <div className="pd-root-design">
 
       {/* ── Navbar ── */}
-      <div className="pd-navbar">
-        <div className="pd-nav-inner">
-          <div className="pd-nav-left">
-            <button className="pd-icon-btn" onClick={() => navigate('/')}>
+      <div className="pd-navbar-design">
+        <div className="pd-nav-inner-design">
+          <div className="pd-nav-left-design">
+            <button className="pd-icon-btn-design" onClick={() => navigate('/')}>
               <FiArrowLeft size={18} />
             </button>
-            <Link to="/" className="pd-logo-link"><Logo /></Link>
+            <Link to="/" className="pd-logo-link-design"><Logo /></Link>
           </div>
-          <div className="pd-nav-right">
+          <div className="pd-nav-right-design">
             {user?.role === 'seller' && (
-              <Link to="/dashbord/seller" className="pd-dashboard-link" title="Go to Seller Atelier Dashboard">
+              <Link to="/dashbord/seller" className="pd-dashboard-link-design" title="Go to Seller Atelier Dashboard">
                 Atelier
               </Link>
             )}
-            <button className="pd-cart-btn pd-icon-btn" onClick={() => navigate('/cart')}>
+            <Link to="/wishlist" className="pd-icon-btn-design" title="Wishlist">
+              <FiHeart size={19} />
+            </Link>
+            <button className="pd-cart-btn-design pd-icon-btn-design" onClick={() => navigate('/cart')}>
               <FiShoppingBag size={19} />
-              {totalCartItems > 0 && <span className="pd-cart-badge">{totalCartItems}</span>}
+              {totalCartItems > 0 && <span className="pd-cart-badge-design">{totalCartItems}</span>}
             </button>
             {user ? (
-              <Link to="/settings" className="pd-icon-btn"><FiUser size={19} /></Link>
+              <Link to="/settings" className="pd-icon-btn-design"><FiUser size={19} /></Link>
             ) : (
-              <Link to="/login" className="pd-icon-btn"><FiUser size={19} /></Link>
+              <Link to="/login" className="pd-icon-btn-design"><FiUser size={19} /></Link>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── Main ── */}
-      {loading ? (
-        <div className="pd-skeleton-wrap">
-          <div className="pd-skeleton-gallery pd-shimmer"></div>
-          <div className="pd-skeleton-info">
-            <div className="pd-skeleton-line pd-shimmer" style={{ width: '60%', height: '24px' }}></div>
-            <div className="pd-skeleton-line pd-shimmer" style={{ width: '40%', height: '18px', marginTop: '10px' }}></div>
-            <div className="pd-skeleton-line pd-shimmer" style={{ width: '80%', height: '14px', marginTop: '16px' }}></div>
-            <div className="pd-skeleton-line pd-shimmer" style={{ width: '100%', height: '44px', marginTop: '24px' }}></div>
-          </div>
-        </div>
-      ) : error || !product ? (
-        <div className="pd-error">
+      {/* ── Main Details Grid ── */}
+      {error || !product ? (
+        <div className="pd-error-design">
           <p>{error || 'Product not found'}</p>
           <button onClick={() => navigate('/')}>Go back</button>
         </div>
       ) : (
-        <div className="pd-content">
+        <div className="pd-content-design">
 
-          {/* Left: Gallery */}
-          <div className="pd-gallery">
-            {/* Thumbnail rail */}
+          {/* Left: Gallery (Sticky on desktop, horizontal thumb strip below) */}
+          <div className="pd-gallery-design">
+            {/* Main image container */}
+            <div className="pd-main-img-wrap-design">
+              {activeImgUrl ? (
+                <img src={activeImgUrl} alt={product.title} className="pd-main-img-design" />
+              ) : (
+                <div className="pd-img-empty-design"><span>LUOMI</span></div>
+              )}
+              {galleryImages.length > 1 && (
+                <>
+                  <button className="pd-img-nav-design pd-img-prev-design" onClick={() => {
+                    const i = galleryImages.indexOf(activeImgUrl)
+                    setActiveImgUrl(galleryImages[(i - 1 + galleryImages.length) % galleryImages.length])
+                  }}>‹</button>
+                  <button className="pd-img-nav-design pd-img-next-design" onClick={() => {
+                    const i = galleryImages.indexOf(activeImgUrl)
+                    setActiveImgUrl(galleryImages[(i + 1) % galleryImages.length])
+                  }}>›</button>
+                </>
+              )}
+            </div>
+
+            {/* Thumbnail horizontal scroll strip below */}
             {galleryImages.length > 1 && (
-              <div className="pd-thumbs">
+              <div className="pd-thumbs-strip-design">
                 {galleryImages.map((url, i) => (
                   <div
                     key={i}
-                    className={`pd-thumb ${activeImgUrl === url ? 'active' : ''}`}
+                    className={`pd-thumb-tile-design ${activeImgUrl === url ? 'active' : ''}`}
                     onClick={() => setActiveImgUrl(url)}
                   >
                     <img src={url} alt={`view ${i + 1}`} />
@@ -365,56 +378,36 @@ function Productdetails() {
                 ))}
               </div>
             )}
-
-            {/* Main image */}
-            <div className="pd-main-img-wrap">
-              {activeImgUrl ? (
-                <img src={activeImgUrl} alt={product.title} className="pd-main-img" />
-              ) : (
-                <div className="pd-img-empty"><span>LUOMI</span></div>
-              )}
-              {/* Nav arrows */}
-              {galleryImages.length > 1 && (
-                <>
-                  <button className="pd-img-nav pd-img-prev" onClick={() => {
-                    const i = galleryImages.indexOf(activeImgUrl)
-                    setActiveImgUrl(galleryImages[(i - 1 + galleryImages.length) % galleryImages.length])
-                  }}>‹</button>
-                  <button className="pd-img-nav pd-img-next" onClick={() => {
-                    const i = galleryImages.indexOf(activeImgUrl)
-                    setActiveImgUrl(galleryImages[(i + 1) % galleryImages.length])
-                  }}>›</button>
-                </>
-              )}
-            </div>
           </div>
 
-          {/* Right: Product Info */}
-          <div className="pd-info">
+          {/* Right: Info Panel */}
+          <div className="pd-info-design">
 
-            {/* Title + Price */}
-            <div className="pd-header">
-              <h1 className="pd-title">{product.title}</h1>
-              <div className="pd-price-row">
-                <span className="pd-price">₹{fmt(selectedVariant?.price?.amount ?? product.price?.amount)}</span>
+            {/* Breadcrumbs */}
+            <nav className="pd-breadcrumbs-design">
+              <Link to="/">Shop</Link>
+              <span>/</span>
+              <span className="pd-breadcrumb-active-design">{product.category || 'Apparel'}</span>
+            </nav>
+
+            {/* Header: Title & Prices */}
+            <div className="pd-header-design">
+              <h1 className="pd-title-design">{product.title}</h1>
+              <div className="pd-price-row-design">
+                <span className="pd-price-design">₹{fmt(selectedVariant?.price?.amount ?? product.price?.amount)}</span>
                 {hasDiscount && (
                   <>
-                    <span className="pd-price-original">₹{fmt(product.price?.amount)}</span>
-                    <span className="pd-discount-tag">{discountPct}% OFF</span>
+                    <span className="pd-price-original-design">₹{fmt(product.price?.amount)}</span>
+                    <span className="pd-discount-tag-design">{discountPct}% OFF</span>
                   </>
                 )}
               </div>
-              <p className="pd-tax-note">Inclusive of all taxes</p>
+              <p className="pd-tax-note-design">Inclusive of all taxes</p>
             </div>
 
-            {/* Description */}
-            {product.description && (
-              <p className="pd-desc">{product.description}</p>
-            )}
-
-            {/* Variant selectors */}
+            {/* Selector groups */}
             {product.variants?.length > 0 && (
-              <div className="pd-variants">
+              <div className="pd-variants-design">
                 {attributeList.map(attr => {
                   const isColor = attr.key === 'color'
                   const isSize = attr.key === 'size'
@@ -422,14 +415,14 @@ function Productdetails() {
                   const vals = isSize ? sortSizes(attr.values) : attr.values
 
                   return (
-                    <div key={attr.key} className="pd-attr-group">
-                      <div className="pd-attr-label">
+                    <div key={attr.key} className="pd-attr-group-design">
+                      <div className="pd-attr-label-design">
                         <span>{attr.displayName}</span>
-                        {current && <span className="pd-attr-selected">{current}</span>}
+                        {current && <span className="pd-attr-selected-design">{current}</span>}
                       </div>
 
                       {isColor ? (
-                        <div className="pd-color-list">
+                        <div className="pd-color-list-design">
                           {vals.map(val => {
                             const matchVar = product.variants.find(v => getAttr(v.attributes, 'color') === val)
                             const preview = matchVar?.images?.[0]?.url || product.images?.[0]?.url
@@ -437,7 +430,7 @@ function Productdetails() {
                             return (
                               <button
                                 key={val}
-                                className={`pd-color-btn ${isActive ? 'active' : ''}`}
+                                className={`pd-color-btn-design ${isActive ? 'active' : ''}`}
                                 onClick={() => handleAttributeSelect(attr.key, val)}
                                 title={val}
                               >
@@ -450,7 +443,7 @@ function Productdetails() {
                           })}
                         </div>
                       ) : (
-                        <div className="pd-size-list">
+                        <div className="pd-size-list-design">
                           {vals.map(val => {
                             const testAttrs = { ...selectedAttributes, [attr.key]: val }
                             const matchVar = product.variants.find(v =>
@@ -463,12 +456,12 @@ function Productdetails() {
                             return (
                               <button
                                 key={val}
-                                className={`pd-size-btn ${isActive ? 'active' : ''} ${isOos || notAvail ? 'oos' : ''}`}
+                                className={`pd-size-btn-design ${isActive ? 'active' : ''} ${isOos || notAvail ? 'oos' : ''}`}
                                 disabled={notAvail}
                                 onClick={() => handleAttributeSelect(attr.key, val)}
                               >
                                 {val}
-                                {isOos && !notAvail && <span className="pd-oos-line"></span>}
+                                {isOos && !notAvail && <span className="pd-oos-line-design"></span>}
                               </button>
                             )
                           })}
@@ -480,17 +473,16 @@ function Productdetails() {
               </div>
             )}
 
-            {/* Qty + Add to bag */}
-            <div className="pd-purchase">
-              {/* Qty row */}
-              <div className="pd-qty-row">
-                <span className="pd-qty-label">Qty</span>
-                <div className="pd-qty-ctrl">
-                  <button onClick={() => handlePageQtyChange(-1)} className="pd-qty-btn"><FiMinus size={12} /></button>
-                  <span className="pd-qty-val">{quantity}</span>
-                  <button onClick={() => handlePageQtyChange(1)} className="pd-qty-btn"><FiPlus size={12} /></button>
+            {/* Qty and buying CTAs */}
+            <div className="pd-purchase-design">
+              <div className="pd-qty-row-design">
+                <span className="pd-qty-label-design">Qty</span>
+                <div className="pd-qty-ctrl-design">
+                  <button onClick={() => handlePageQtyChange(-1)} className="pd-qty-btn-design"><FiMinus size={12} /></button>
+                  <span className="pd-qty-val-design">{quantity}</span>
+                  <button onClick={() => handlePageQtyChange(1)} className="pd-qty-btn-design"><FiPlus size={12} /></button>
                 </div>
-                <span className="pd-stock-info">
+                <span className="pd-stock-info-design">
                   {hasVariants ? (
                     !selectedAttributes['size'] ? (
                       'Select size to check availability'
@@ -509,9 +501,10 @@ function Productdetails() {
                 </span>
               </div>
 
-              <div className="pd-cta-row">
+              {/* Buying CTA row: Solid Add to Bag (full width black) and Outlined Buy Now */}
+              <div className="pd-cta-row-design">
                 <button
-                  className="pd-add-bag-btn"
+                  className="pd-add-bag-btn-design"
                   disabled={hasVariants ? (selectedAttributes['size'] && (!selectedVariant || selectedVariant.stock <= 0)) : product?.stock <= 0}
                   onClick={() => addToCart(false)}
                 >
@@ -521,7 +514,7 @@ function Productdetails() {
                   }
                 </button>
                 <button
-                  className="pd-buy-now-btn"
+                  className="pd-buy-now-btn-design"
                   disabled={hasVariants ? (selectedAttributes['size'] && (!selectedVariant || selectedVariant.stock <= 0)) : product?.stock <= 0}
                   onClick={() => addToCart(true)}
                 >
@@ -531,52 +524,86 @@ function Productdetails() {
                   }
                 </button>
                 <button
-                  className={`pd-wishlist-btn ${isWishlisted(id) ? 'active' : ''}`}
+                  className={`pd-wishlist-btn-design ${isWishlisted(id) ? 'active' : ''}`}
                   onClick={() => {
                     if (!user) { navigate('/login'); return }
                     handleToggleWishlist({ productId: id })
                   }}
                   title="Toggle Wishlist"
                 >
-                  <FiHeart size={18} fill={isWishlisted(id) ? "#ff5a36" : "none"} />
+                  <FiHeart size={18} fill={isWishlisted(id) ? "currentColor" : "none"} />
                 </button>
               </div>
             </div>
 
-            {/* Delivery info */}
-            <div className="pd-delivery-info">
-              <div className="pd-delivery-item">
+            {/* Delivery benefits */}
+            <div className="pd-delivery-info-design">
+              <div className="pd-delivery-item-design">
                 <FiTruck size={14} />
                 <span>Free delivery on orders above ₹999</span>
               </div>
-              <div className="pd-delivery-item">
+              <div className="pd-delivery-item-design">
                 <FiRefreshCw size={14} />
                 <span>Easy 14-day returns & exchanges</span>
               </div>
             </div>
 
-            {/* ASK JERRY - inline */}
-            <div className="pd-jerry-section">
+            {/* Accordions */}
+            <div className="pd-info-accordion-design">
+              <details className="pd-accordion-item-design" open>
+                <summary className="pd-accordion-summary-design">
+                  <span>Product Details</span>
+                </summary>
+                <div className="pd-accordion-content-design">
+                  <p>{product.description || "A premium minimalist piece designed for the modern wardrobe. Meticulously crafted with clean silhouettes and high-quality materials to ensure longevity and comfort."}</p>
+                  <ul className="pd-accordion-list-design">
+                    <li>Fine tailoring and architectural structure</li>
+                    <li>Sourced from sustainable premium organic linen blends</li>
+                    <li>Comfort fit designed for everyday luxury styling</li>
+                  </ul>
+                </div>
+              </details>
+
+              <details className="pd-accordion-item-design">
+                <summary className="pd-accordion-summary-design">
+                  <span>Fabric & Care</span>
+                </summary>
+                <div className="pd-accordion-content-design">
+                  <p>Dry clean only or cold hand wash. Handle with care. Use soft steaming to remove wrinkles. Avoid hot ironing or machine spinning to preserve fabric fibers.</p>
+                </div>
+              </details>
+
+              <details className="pd-accordion-item-design">
+                <summary className="pd-accordion-summary-design">
+                  <span>Shipping & Returns</span>
+                </summary>
+                <div className="pd-accordion-content-design">
+                  <p>Complimentary standard delivery across all domestic locations. Returns and exchanges are accepted within 14 days of delivery provided the item is in pristine, unused condition with all original tags attached.</p>
+                </div>
+              </details>
+            </div>
+
+            {/* Jerry AI section */}
+            <div className="pd-jerry-section-design">
               <button
-                className="pd-jerry-toggle"
+                className="pd-jerry-toggle-design"
                 onClick={() => setIsJerryOpen(!isJerryOpen)}
               >
                 <FiMessageCircle size={16} />
                 <span>ASK JERRY</span>
-                <span className="pd-jerry-badge">AI</span>
-                <span className="pd-jerry-chevron">{isJerryOpen ? '▲' : '▼'}</span>
+                <span className="pd-jerry-badge-design">AI</span>
+                <span className="pd-jerry-chevron-design">{isJerryOpen ? '▲' : '▼'}</span>
               </button>
 
               {isJerryOpen && (
-                <div className="pd-jerry-box">
-                  {/* Messages */}
-                  <div className="pd-jerry-msgs">
+                <div className="pd-jerry-box-design">
+                  <div className="pd-jerry-msgs-design">
                     {jerryMessages.map((msg, i) => (
-                      <div key={i} className={`pd-jerry-msg ${msg.sender}`}>
+                      <div key={i} className={`pd-jerry-msg-design ${msg.sender}`}>
                         {msg.sender === 'jerry' && (
-                          <span className="pd-jerry-avatar">J</span>
+                          <span className="pd-jerry-avatar-design">J</span>
                         )}
-                        <div className="pd-jerry-bubble">
+                        <div className="pd-jerry-bubble-design">
                           {msg.text.split("**").map((part, pi) =>
                             pi % 2 === 1 ? <strong key={pi}>{part}</strong> : part
                           )}
@@ -584,9 +611,9 @@ function Productdetails() {
                       </div>
                     ))}
                     {jerryLoading && (
-                      <div className="pd-jerry-msg jerry">
-                        <span className="pd-jerry-avatar">J</span>
-                        <div className="pd-jerry-bubble pd-jerry-typing">
+                      <div className="pd-jerry-msg-design jerry">
+                        <span className="pd-jerry-avatar-design">J</span>
+                        <div className="pd-jerry-bubble-design pd-jerry-typing-design">
                           <span></span><span></span><span></span>
                         </div>
                       </div>
@@ -594,10 +621,9 @@ function Productdetails() {
                     <div ref={jerryEndRef}></div>
                   </div>
 
-                  {/* Quick asks */}
-                  <div className="pd-jerry-quick">
+                  <div className="pd-jerry-quick-design">
                     {QUICK_ASKS.map(q => (
-                      <button key={q} className="pd-jerry-chip"
+                      <button key={q} className="pd-jerry-chip-design"
                         disabled={jerryLoading}
                         onClick={() => handleAskJerry(null, q)}>
                         {q}
@@ -605,17 +631,16 @@ function Productdetails() {
                     ))}
                   </div>
 
-                  {/* Input */}
-                  <form className="pd-jerry-form" onSubmit={handleAskJerry}>
+                  <form className="pd-jerry-form-design" onSubmit={handleAskJerry}>
                     <input
                       type="text"
                       placeholder="Type your question..."
                       value={jerryInput}
                       onChange={e => setJerryInput(e.target.value)}
-                      className="pd-jerry-input"
+                      className="pd-jerry-input-design"
                       disabled={jerryLoading}
                     />
-                    <button type="submit" className="pd-jerry-send" disabled={jerryLoading || !jerryInput.trim()}>
+                    <button type="submit" className="pd-jerry-send-design" disabled={jerryLoading || !jerryInput.trim()}>
                       <FiSend size={14} />
                     </button>
                   </form>
@@ -627,7 +652,7 @@ function Productdetails() {
         </div>
       )}
 
-      {/* Similar Products Section */}
+      {/* Complete the Look section */}
       {product && (
         (() => {
           const similarProducts = allProducts
@@ -639,29 +664,30 @@ function Productdetails() {
               if (b.genderCategory === product?.genderCategory && a.genderCategory !== product?.genderCategory) return 1
               return 0
             })
-            .slice(0, 8);
+            .slice(0, 4);
 
           if (similarProducts.length === 0) return null;
 
           return (
-            <div className="pd-similar-section">
-              <h2 className="pd-similar-title">SIMILAR PRODUCTS</h2>
-              <div className="pd-similar-grid">
+            <div className="pd-similar-section-design">
+              <h2 className="pd-similar-title-design">Complete the Look</h2>
+              <div className="pd-similar-grid-design">
                 {similarProducts.map(p => (
-                  <div key={p._id} className="pd-similar-card" onClick={() => { window.scrollTo(0, 0); navigate(`/product/${p._id}`) }}>
-                    <div className="pd-similar-card-img-wrap">
+                  <div key={p._id} className="pd-similar-card-design" onClick={() => { window.scrollTo(0, 0); navigate(`/product/${p._id}`) }}>
+                    <div className="pd-similar-card-img-wrap-design">
                       {p.images?.[0]?.url ? (
-                        <img src={p.images[0].url} alt={p.title} className="pd-similar-card-img" />
+                        <img src={p.images[0].url} alt={p.title} className="pd-similar-card-img-design" />
                       ) : (
-                        <div className="pd-similar-card-img-placeholder"><span>LUOMI</span></div>
+                        <div className="pd-similar-card-img-placeholder-design"><span>LUOMI</span></div>
                       )}
                       {p.images?.[1]?.url && (
-                        <img src={p.images[1].url} alt={p.title} className="pd-similar-card-img pd-similar-card-img-hover" />
+                        <img src={p.images[1].url} alt={p.title} className="pd-similar-card-img-hover-design" />
                       )}
                     </div>
-                    <div className="pd-similar-card-body">
-                      <h3 className="pd-similar-card-title">{p.title}</h3>
-                      <span className="pd-similar-card-price">₹{fmt(p.price?.amount)}</span>
+                    <div className="pd-similar-card-body-design">
+                      <span className="pd-similar-card-cat-design">{p.subCategory?.toUpperCase() || 'APPAREL'}</span>
+                      <h3 className="pd-similar-card-title-design">{p.title}</h3>
+                      <span className="pd-similar-card-price-design">₹{fmt(p.price?.amount)}</span>
                     </div>
                   </div>
                 ))}
@@ -671,10 +697,23 @@ function Productdetails() {
         })()
       )}
 
+      {/* Footer */}
+      <footer className="pd-footer-design">
+        <div className="pd-footer-logo-design">LUOMI MAISON</div>
+        <div className="pd-footer-links-design">
+          <a href="#sustainability">Sustainability</a>
+          <a href="#service">Client Service</a>
+          <a href="#stores">Store Locator</a>
+          <a href="#instagram">Instagram</a>
+          <a href="#pinterest">Pinterest</a>
+        </div>
+        <div className="pd-footer-copy-design">© 2026 LUOMI ATELIER. ALL RIGHTS RESERVED.</div>
+      </footer>
+
       {/* Floating Toast Notification */}
       {toastMsg && (
-        <div className="pd-toast animate-slide-up">
-          <FiShoppingBag size={14} className="pd-toast-icon" />
+        <div className="pd-toast-design animate-slide-up">
+          <FiShoppingBag size={14} className="pd-toast-icon-design" />
           <span>{toastMsg}</span>
         </div>
       )}

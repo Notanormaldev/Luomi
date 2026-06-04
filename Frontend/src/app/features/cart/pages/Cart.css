@@ -243,7 +243,7 @@
 .ct-table-card {
   background-color: var(--ct-card-bg);
   border: 1px solid var(--ct-border);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 12px 24px;
   box-shadow: var(--ct-card-shadow);
   transition: border-color 0.3s ease;
@@ -496,7 +496,7 @@
 .ct-summary-card {
   background-color: var(--ct-card-bg);
   border: 1px solid var(--ct-border);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 28px;
   box-shadow: var(--ct-card-shadow);
   display: flex;
@@ -993,7 +993,7 @@
 .ct-modal {
   background-color: var(--ct-card-bg, #FFFFFF);
   border: 1px solid var(--ct-border, #E2E8F0);
-  border-radius: 16px;
+  border-radius: 12px;
   width: 90%;
   max-width: 480px;
   padding: 30px;

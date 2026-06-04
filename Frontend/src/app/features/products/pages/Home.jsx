@@ -36,20 +36,24 @@ const CATEGORY_TABS = [
   { label: 'Plus-Size', value: 'All', sub: 'plus size' },
 ]
 
-const FEATURED_CATS = [
-  { label: 'SHIRTS', sub: 'shirt', tagline: 'Fresh & Sharp', defaultImg: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=600&auto=format&fit=crop' },
-  { label: 'TROUSERS', sub: 'trouser', tagline: 'Clean Silhouette', defaultImg: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?q=80&w=600&auto=format&fit=crop' },
-  { label: 'POLOS', sub: 'polos', tagline: 'Everyday Essential', defaultImg: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?q=80&w=600&auto=format&fit=crop' },
-  { label: 'JEANS', sub: 'jeans', tagline: 'Effortlessly Cool', defaultImg: 'https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=600&auto=format&fit=crop' },
-  { label: 'CARGOS', sub: 'cargos', tagline: 'Street-Ready', defaultImg: 'https://images.unsplash.com/photo-1517423568366-8b83523034fd?q=80&w=600&auto=format&fit=crop' },
-  { label: 'T-SHIRTS', sub: 't-shirt', tagline: 'Always On Trend', defaultImg: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=600&auto=format&fit=crop' },
+const SHOP_BY_CATS = [
+  { label: 'Shirts', sub: 'shirt', img: '/cat_shirt.png', tabIndex: 1 },
+  { label: 'T-Shirts', sub: 't-shirt', img: '/cat_tshirts.png', tabIndex: 2 },
+  { label: 'Jeans', sub: 'jeans', img: '/cat_jeans.png', tabIndex: 3 },
+  { label: 'Trousers', sub: 'trouser', img: '/cat_trousers.png', tabIndex: 4 },
+  { label: 'Cargo Pants', sub: 'cargos', img: '/cat_cargos.png', tabIndex: 5 },
+  { label: 'Polos', sub: 'polos', img: '/cat_polos.png', tabIndex: 6 },
+  { label: 'Hoodies', sub: 'hoodies', img: '/cat_hoodies.png', tabIndex: 7 },
+  { label: 'Sweatshirts', sub: 'sweatshirts', img: '/cat_sweatshirts.png', tabIndex: 8 },
+  { label: 'Shorts', sub: 'shorts', img: '/cat_shorts.png', tabIndex: 9 },
+  { label: 'Activewear', sub: 'activewear', img: '/cat_activewear.png', tabIndex: 10 }
 ]
 
 const HERO_PANELS = [
-  { sub: 'polos', headline: 'THE POLO ATELIER', sub2: 'CELEB-STYLED KNITS.\nREFINED SPORT AESTHETIC.', img: '/hero_polo.png' },
-  { sub: 'jeans', headline: 'DENIM ESCAPE', sub2: 'PREMIUM COZY CUTS.\nSTRETCH & STRUCTURE.', img: '/hero_denim.png' },
-  { sub: 'shirt', headline: 'SHIRTING & LINENS', sub2: 'EFFORTLESS LUXURY.\nORGANIC FABRICS.', img: '/hero_linen.png' },
-  { sub: 't-shirt', headline: 'GRAPHIC LUXE TEES', sub2: 'STREET CULTURE STYLE.\nHEAVYWEIGHT COTTON.', img: '/hero_streetwear.png' },
+  { sub: 'polos', headline: 'THE POLO ATELIER', sub2: 'CELEB-STYLED KNITS. REFINED SPORT AESTHETIC.', img: '/hero_polo.png' },
+  { sub: 'jeans', headline: 'DENIM ESCAPE', sub2: 'PREMIUM COZY CUTS. STRETCH & STRUCTURE.', img: '/hero_denim.png' },
+  { sub: 'shirt', headline: 'SHIRTING & LINENS', sub2: 'EFFORTLESS LUXURY. ORGANIC FABRICS.', img: '/hero_linen.png' },
+  { sub: 't-shirt', headline: 'GRAPHIC LUXE TEES', sub2: 'STREET CULTURE STYLE. HEAVYWEIGHT COTTON.', img: '/hero_streetwear.png' },
 ]
 
 const TOP_SEARCHES = ['Slim Fit Shirts', 'Black T-Shirts', 'Cargo Pants', 'Relaxed Jeans', 'Polo T-Shirts', 'Linen Shirts']
@@ -68,7 +72,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { handlegetallprodcuts } = useproduct()
   const { user } = useauth()
-  const { items: cartItems, handleGetCart, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleCheckout } = usecart()
+  const { items: cartItems, handleGetCart, handleAddToCart } = usecart()
   const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
 
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
@@ -81,6 +85,7 @@ export default function Home() {
   const [isCatOpen, setIsCatOpen] = useState(false)
   const [heroIdx, setHeroIdx] = useState(0)
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
+  const [isBrowsing, setIsBrowsing] = useState(false)
 
   const searchRef = useRef(null)
 
@@ -133,33 +138,23 @@ export default function Home() {
     return isNaN(n) ? '0' : n.toLocaleString('en-IN')
   }
 
-  /* pick first product for a sub-category (returns full product object) */
-  const getSubProduct = (sub) => {
-    return allProducts.find(x => x.subCategory?.toLowerCase() === sub.toLowerCase() && x.images?.length > 0) || null
-  }
-
   /* Click handler to find product, navigate or fallback to tab filter */
   const handleHeroClick = (sub) => {
     const tabIdx = CATEGORY_TABS.findIndex(t => t.sub.toLowerCase() === sub.toLowerCase())
     if (tabIdx !== -1) {
       setActiveTab(tabIdx)
-      setTimeout(() => {
-        const el = document.querySelector('.sn-main')
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      }, 100)
+      setIsBrowsing(true)
+      window.scrollTo(0, 0)
     }
   }
 
-  /* Click handler for categories in the drawer overlay */
-  const handleCategorySelectInDrawer = (index) => {
+  const handleCategoryTabClick = (index) => {
     setActiveTab(index)
-    setIsCatOpen(false)
-    setSearchQuery('')
-    setTimeout(() => {
-      document.querySelector('.sn-main')?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    if (index === 0) {
+      setIsBrowsing(false)
+    } else {
+      setIsBrowsing(true)
+    }
   }
 
   /* filter */
@@ -204,7 +199,6 @@ export default function Home() {
 
   /* cart helpers */
   const totalItems = cartItems.reduce((a, c) => a + c.quantity, 0)
-  const cartTotal = useSelector(s => s.cart.subtotal) || 0
 
   const addToCart = async (product) => {
     if (!user) { navigate('/login'); return }
@@ -216,17 +210,18 @@ export default function Home() {
     const existing = cartItems.find(i => i.product._id === product._id && !i.selectedVariant)
     const currentQty = existing?.quantity || 0
     const stock = product.stock ?? 0
-    if (stock > 0 && currentQty + 1 > stock) { alert(`Only ${stock} in stock`); return }
+    if (stock > 0 && currentQty + 1 > stock) { setToastMsg(`Only ${stock} in stock`); setTimeout(() => setToastMsg(null), 3000); return }
     const res = await handleAddToCart({ productId: product._id, quantity: 1 })
     if (res.success) {
       setToastMsg(`"${product.title}" added to your bag`)
       setTimeout(() => setToastMsg(null), 3000)
     } else {
-      alert(res.error || 'Failed')
+      setToastMsg(res.error || 'Failed to add to bag')
+      setTimeout(() => setToastMsg(null), 3000)
     }
   }
 
-  /* hero auto‑advance on mobile */
+  /* hero auto‑advance */
   useEffect(() => {
     const t = setInterval(() => setHeroIdx(i => (i + 1) % HERO_PANELS.length), 4500)
     return () => clearInterval(t)
@@ -235,44 +230,41 @@ export default function Home() {
   /* ── JSX ── */
   if (loading) {
     return (
-      <div className="sn-page-loader">
-        <div className="sn-nano-bar"></div>
-        <h1 className="sn-loader-logo">LUOMI</h1>
+      <div className="lh-page-loader">
+        <div className="lh-nano-bar"></div>
+        <h1 className="lh-loader-logo">LUOMI</h1>
       </div>
     )
   }
 
   return (
-    <div className="sn-home">
+    <div className="lh-home">
 
       {/* ════════════════ NAVBAR ════════════════ */}
-      <div className="sn-navbar">
-        <div className="sn-nav-inner">
+      <div className="lh-navbar">
+        <div className="lh-nav-inner">
 
-          {/* left: Hamburger menu only */}
-          <div className="sn-nav-left">
-            <button className="sn-icon-btn sn-menu-btn" onClick={() => setIsCatOpen(true)} aria-label="Menu">
-              <div className="sn-hamburger-icon">
-                <span className="line top"></span>
-                <span className="line mid"></span>
-                <span className="line bot"></span>
-              </div>
+          {/* Left: Menu button */}
+          <div className="lh-nav-left">
+            <button className="lh-nav-action-btn lh-menu-btn" onClick={() => setIsCatOpen(true)} aria-label="Menu" style={{ paddingLeft: 0 }}>
+              <FiMenu size={16} />
+              <span className="lh-action-label">MENU</span>
             </button>
           </div>
 
-          {/* center: Centered Logo */}
-          <div className="sn-nav-center">
-            <Link to="/" className="sn-logo-link"><Logo /></Link>
+          {/* Center: Logo */}
+          <div className="lh-nav-center">
+            <Link to="/" className="lh-logo-link" onClick={() => { setIsBrowsing(false); setActiveTab(0); setSearchQuery(''); }}><Logo /></Link>
           </div>
 
-          {/* right: Search, User and Cart */}
-          <div className="sn-nav-right">
-            {/* search */}
-            <div className="sn-search-wrap" ref={searchRef}>
-              <FiSearch size={15} className="sn-search-icon" />
+          {/* Right: Actions */}
+          <div className="lh-nav-right">
+            {/* Search input */}
+            <div className="lh-search-wrap" ref={searchRef}>
+              <FiSearch size={15} className="lh-search-icon" />
               <input
                 type="text"
-                className="sn-search-input"
+                className="lh-search-input"
                 placeholder={PLACEHOLDERS[placeholderIdx]}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -280,42 +272,42 @@ export default function Home() {
                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 180)}
               />
               {searchQuery && (
-                <button className="sn-search-clear" onClick={() => setSearchQuery('')}>
+                <button className="lh-search-clear" onClick={() => setSearchQuery('')}>
                   <FiX size={13} />
                 </button>
               )}
 
-              {/* dropdown */}
+              {/* Search dropdown */}
               {isSearchFocused && (
-                <div className="sn-search-dropdown">
+                <div className="lh-search-dropdown">
                   {!searchQuery ? (
                     <>
-                      <p className="sn-dd-heading">TOP SEARCHES</p>
-                      <div className="sn-top-searches">
+                      <p className="lh-dd-heading">TOP SEARCHES</p>
+                      <div className="lh-top-searches">
                         {TOP_SEARCHES.map(s => (
-                          <button key={s} className="sn-top-pill" onClick={() => setSearchQuery(s)}>{s}</button>
+                          <button key={s} className="lh-top-pill" onClick={() => setSearchQuery(s)}>{s}</button>
                         ))}
                       </div>
                     </>
                   ) : (
                     <>
-                      <p className="sn-dd-heading">RESULTS ({searchResults.length})</p>
+                      <p className="lh-dd-heading">RESULTS ({searchResults.length})</p>
                       {searchResults.length === 0
-                        ? <p className="sn-dd-empty">No products for "{searchQuery}"</p>
+                        ? <p className="lh-dd-empty">No products for "{searchQuery}"</p>
                         : (
-                          <div className="sn-dd-list">
+                          <div className="lh-dd-list">
                             {searchResults.map(p => (
-                              <div key={p._id} className="sn-dd-item"
+                              <div key={p._id} className="lh-dd-item"
                                 onClick={() => { navigate(`/product/${p._id}`); setSearchQuery(''); setIsSearchFocused(false) }}>
                                 {p.images?.[0]?.url
-                                  ? <img src={p.images[0].url} alt={p.title} className="sn-dd-img" />
-                                  : <div className="sn-dd-img sn-dd-img-ph" />
+                                  ? <img src={p.images[0].url} alt={p.title} className="lh-dd-img" />
+                                  : <div className="lh-dd-img lh-dd-img-ph" />
                                 }
-                                <div className="sn-dd-info">
-                                  <span className="sn-dd-title">{p.title}</span>
-                                  <span className="sn-dd-price">₹{fmt(p.price?.amount)}</span>
+                                <div className="lh-dd-info">
+                                  <span className="lh-dd-title">{p.title}</span>
+                                  <span className="lh-dd-price">₹{fmt(p.price?.amount)}</span>
                                 </div>
-                                <FiChevronRight size={13} style={{ color: 'var(--sn-text-subtle)', flexShrink: 0 }} />
+                                <FiChevronRight size={13} style={{ color: 'var(--lh-text-muted)', flexShrink: 0 }} />
                               </div>
                             ))}
                           </div>
@@ -327,86 +319,106 @@ export default function Home() {
               )}
             </div>
 
-            {/* seller dashboard link */}
+            <button className="lh-nav-action-btn lh-collections-btn" onClick={() => {
+              setIsBrowsing(false);
+              setActiveTab(0);
+              setSearchQuery('');
+              setTimeout(() => {
+                document.querySelector('.lh-categories')?.scrollIntoView({ behavior: 'smooth' });
+              }, 100);
+            }}>
+              <span className="lh-action-label">COLLECTIONS</span>
+            </button>
+
             {user?.role === 'seller' && (
-              <Link to="/dashbord/seller" className="sn-dashboard-link" title="Go to Seller Atelier Dashboard">
+              <Link to="/dashbord/seller" className="lh-dashboard-link" title="Go to Seller Atelier Dashboard">
                 Atelier
               </Link>
             )}
 
-            {/* user */}
             {user
-              ? <Link to="/settings" className="sn-icon-btn" title={user.fullname}><FiUser size={19} /></Link>
-              : <Link to="/login" className="sn-icon-btn"><FiUser size={19} /></Link>
+              ? <Link to="/settings" className="lh-icon-btn" title={user.fullname}><FiUser size={19} /></Link>
+              : <Link to="/login" className="lh-icon-btn"><FiUser size={19} /></Link>
             }
 
-            {/* wishlist */}
-            <Link to="/wishlist" className="sn-icon-btn" title="Wishlist">
+            <Link to="/wishlist" className="lh-icon-btn" title="Wishlist">
               <FiHeart size={19} />
             </Link>
 
-            {/* cart */}
-            <button className="sn-icon-btn sn-cart-btn" onClick={() => navigate('/cart')}>
+            <button className="lh-icon-btn lh-cart-btn" onClick={() => navigate('/cart')}>
               <FiShoppingBag size={19} />
-              {totalItems > 0 && <span className="sn-cart-badge">{totalItems}</span>}
+              {totalItems > 0 && <span className="lh-cart-badge">{totalItems}</span>}
             </button>
           </div>
         </div>
 
-        {/* Gender Bar & Category Bar (Desktop and Mobile) */}
-        <div className="sn-gender-bar">
-          {['All', 'Men', 'Women', 'Kids', 'Unisex'].map(g => (
-            <button 
-              key={g} 
-              className={`sn-gender-btn ${selectedGender === g ? 'active' : ''}`}
-              onClick={() => { setSelectedGender(g); setActiveTab(0); }}
-            >
-              {g === 'All' ? 'ALL ATELIER' : g.toUpperCase()}
-            </button>
-          ))}
-        </div>
-        <div className="sn-cat-bar" aria-label="Product categories">
-          {CATEGORY_TABS.map((tab, i) => (
-            <button
-              key={tab.label}
-              className={`sn-cat-btn ${activeTab === i ? 'active' : ''}`}
-              onClick={() => setActiveTab(i)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Gender Bar & Category Bar (Only visible in browse/search mode) */}
+        {(isBrowsing || searchQuery) && (
+          <div className="lh-filter-strip">
+            <div className="lh-gender-bar">
+              {['All', 'Men', 'Women', 'Kids', 'Unisex'].map(g => (
+                <button
+                  key={g}
+                  className={`lh-gender-btn ${selectedGender === g ? 'active' : ''}`}
+                  onClick={() => { setSelectedGender(g); }}
+                >
+                  {g === 'All' ? 'ALL ATELIER' : g.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <div className="lh-cat-bar" aria-label="Product categories">
+              {CATEGORY_TABS.map((tab, i) => (
+                <button
+                  key={tab.label}
+                  className={`lh-cat-btn ${activeTab === i ? 'active' : ''}`}
+                  onClick={() => handleCategoryTabClick(i)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ════════════════ CATEGORY SIDEBAR ════════════════ */}
-      <div className={`sn-cat-overlay ${isCatOpen ? 'open' : ''}`} onClick={() => setIsCatOpen(false)}>
-        <div className="sn-cat-sidebar" onClick={e => e.stopPropagation()}>
-          <div className="sn-cat-sidebar-head">
-            <button className="sn-icon-btn" onClick={() => setIsCatOpen(false)}><FiX size={20} /></button>
-            <span className="sn-cat-sidebar-label">CATEGORIES</span>
+      <div className={`lh-cat-overlay ${isCatOpen ? 'open' : ''}`} onClick={() => setIsCatOpen(false)}>
+        <div className="lh-cat-sidebar" onClick={e => e.stopPropagation()}>
+          <div className="lh-cat-sidebar-head">
+            <button className="lh-icon-btn" onClick={() => setIsCatOpen(false)}><FiX size={20} /></button>
+            <span className="lh-cat-sidebar-label">LUOMI ATELIER</span>
           </div>
-          <div className="sn-cat-sidebar-body">
+          <div className="lh-cat-sidebar-body">
             {user?.role === 'seller' && (
-              <button className="sn-cat-sidebar-link" style={{ color: '#ff5a36', fontWeight: 'bold' }}
+              <button className="lh-cat-sidebar-link-btn"
                 onClick={() => { navigate('/dashbord/seller'); setIsCatOpen(false); }}>
                 ATELIER DASHBOARD
               </button>
             )}
-            <p className="sn-sidebar-section-title">SECTIONS</p>
+            <p className="lh-sidebar-section-title">SECTIONS</p>
             {['All', 'Men', 'Women', 'Kids', 'Unisex'].map(g => (
-              <button 
-                key={g} 
-                className={`sn-cat-sidebar-link ${selectedGender === g ? 'active' : ''}`}
-                onClick={() => { setSelectedGender(g); setActiveTab(0); setIsCatOpen(false); }}
+              <button
+                key={g}
+                className={`lh-cat-sidebar-link ${selectedGender === g ? 'active' : ''}`}
+                onClick={() => { setSelectedGender(g); setIsBrowsing(true); setIsCatOpen(false); }}
               >
                 {g === 'All' ? 'ALL ATELIER' : g.toUpperCase()}
               </button>
             ))}
-            <div style={{ height: 1, background: 'var(--sn-border)', margin: '10px 0' }} />
-            <p className="sn-sidebar-section-title">CATEGORIES</p>
+            <div className="lh-sidebar-divider" />
+            <p className="lh-sidebar-section-title">CATEGORIES</p>
             {CATEGORY_TABS.map((tab, i) => (
-              <button key={tab.label} className="sn-cat-sidebar-link"
-                onClick={() => handleCategorySelectInDrawer(i)}>
+              <button key={tab.label} className="lh-cat-sidebar-link"
+                onClick={() => {
+                  setActiveTab(i);
+                  if (i === 0) {
+                    setIsBrowsing(false);
+                  } else {
+                    setIsBrowsing(true);
+                  }
+                  setIsCatOpen(false);
+                  setSearchQuery('');
+                }}>
                 {tab.label}
               </button>
             ))}
@@ -414,41 +426,41 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ════════════════ HERO — only on Discover tab ════════════════ */}
-      {activeTab === 0 && !searchQuery && (
-        <>
-          {/* Responsive sliding Hero Carousel (Snitch & Souled Store style) */}
-          <section className="sn-hero-carousel" aria-label="Hero carousel">
+      {/* ════════════════ EDITORIAL HOME PAGE ════════════════ */}
+      {!isBrowsing && !searchQuery && (
+        <div className="lh-editorial-homepage">
+          {/* 1. Hero Carousel */}
+          <section className="lh-hero-carousel" aria-label="Hero carousel">
             {HERO_PANELS.map((panel, i) => {
               const isActive = heroIdx === i
               return (
                 <div
                   key={i}
-                  className={`sn-hero-slide ${isActive ? 'active' : ''}`}
+                  className={`lh-hero-slide ${isActive ? 'active' : ''}`}
                   onClick={() => handleHeroClick(panel.sub)}
                 >
                   <img
                     src={panel.img}
                     alt={panel.headline}
-                    className="sn-hero-slide-img"
+                    className="lh-hero-slide-img"
                   />
-                  <div className="sn-hero-slide-overlay" />
-                  <div className="sn-hero-slide-content">
-                    <p className="sn-hero-slide-subtitle">TRENDING COLLECTION</p>
-                    <h2 className="sn-hero-slide-title">{panel.headline}</h2>
-                    <p className="sn-hero-slide-desc">{panel.sub2}</p>
-                    <button className="sn-hero-slide-cta">SHOP COLLECTION</button>
+                  <div className="lh-hero-slide-overlay" />
+                  <div className="lh-hero-slide-content">
+                    <p className="lh-hero-slide-subtitle">TRENDING COLLECTION</p>
+                    <h2 className="lh-hero-slide-title">{panel.headline}</h2>
+                    <p className="lh-hero-slide-desc">{panel.sub2}</p>
+                    <button className="lh-hero-slide-cta">SHOP COLLECTION</button>
                   </div>
                 </div>
               )
             })}
 
             {/* Dots */}
-            <div className="sn-hero-carousel-dots">
+            <div className="lh-hero-carousel-dots">
               {HERO_PANELS.map((_, i) => (
                 <button
                   key={i}
-                  className={`sn-hero-carousel-dot ${heroIdx === i ? 'active' : ''}`}
+                  className={`lh-hero-carousel-dot ${heroIdx === i ? 'active' : ''}`}
                   onClick={(e) => { e.stopPropagation(); setHeroIdx(i); }}
                   aria-label={`Go to slide ${i + 1}`}
                 />
@@ -456,123 +468,203 @@ export default function Home() {
             </div>
 
             {/* Arrows */}
-            <button className="sn-hero-carousel-arrow left" onClick={(e) => { e.stopPropagation(); setHeroIdx(i => (i - 1 + HERO_PANELS.length) % HERO_PANELS.length); }}>
+            <button className="lh-hero-carousel-arrow left" onClick={(e) => { e.stopPropagation(); setHeroIdx(i => (i - 1 + HERO_PANELS.length) % HERO_PANELS.length); }}>
               <FiChevronLeft size={22} />
             </button>
-            <button className="sn-hero-carousel-arrow right" onClick={(e) => { e.stopPropagation(); setHeroIdx(i => (i + 1) % HERO_PANELS.length); }}>
+            <button className="lh-hero-carousel-arrow right" onClick={(e) => { e.stopPropagation(); setHeroIdx(i => (i + 1) % HERO_PANELS.length); }}>
               <FiChevronRight size={22} />
             </button>
           </section>
 
-          {/* ═══ FEATURED CATEGORIES ═══ */}
-          <section className="sn-feat-cats" aria-label="Featured categories">
-            <h2 className="sn-sect-title">FEATURED CATEGORIES</h2>
-            <div className="sn-feat-grid">
-              {FEATURED_CATS.map(cat => {
-                return (
-                  <div
-                    key={cat.label}
-                    className="sn-feat-card"
-                    onClick={() => handleHeroClick(cat.sub)}
-                  >
-                    <div className="sn-feat-card-inner">
-                      <img
-                        src={cat.defaultImg}
-                        alt={cat.label}
-                        className="sn-feat-img"
-                      />
-                    </div>
-                    <div className="sn-feat-label">
-                      <span className="sn-feat-name">{cat.label}</span>
-                    </div>
+          {/* 2. New Arrivals Section */}
+          <section className="lh-new-arrivals">
+            <div className="lh-section-header">
+              <h2 className="lh-section-title">New Arrivals</h2>
+              <button className="lh-view-all-btn" onClick={() => { setIsBrowsing(true); setActiveTab(0); }}>
+                View All &rarr;
+              </button>
+            </div>
+            <div className="lh-arrivals-grid">
+              {allProducts.slice(0, 4).map(product => (
+                <div key={product._id} className="lh-product-card" onClick={() => navigate(`/product/${product._id}`)}>
+                  <div className="lh-img-wrapper">
+                    {product.images?.[0]?.url
+                      ? <img src={product.images[0].url} alt={product.title} className="lh-product-img" />
+                      : <div className="lh-img-placeholder"><span>LUOMI</span></div>
+                    }
+                    {product.images?.[1]?.url && (
+                      <img src={product.images[1].url} alt={product.title} className="lh-product-img lh-product-img-hover" />
+                    )}
+                    {/* wishlist heart */}
+                    <button
+                      className={`lh-card-heart ${isWishlisted(product._id) ? 'active' : ''}`}
+                      onClick={e => {
+                        e.stopPropagation()
+                        if (!user) { navigate('/login'); return }
+                        handleToggleWishlist({ productId: product._id })
+                      }}
+                      title="Add to Wishlist"
+                    >
+                      <FiHeart size={14} fill={isWishlisted(product._id) ? "currentColor" : "none"} />
+                    </button>
                   </div>
-                )
-              })}
+                  <div className="lh-product-info">
+                    <h3 className="lh-product-name">{product.title}</h3>
+                    <span className="lh-product-price">₹{fmt(product.price?.amount)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
-        </>
+
+          {/* 3. Shop by Category Section */}
+          <section className="lh-categories">
+            <h2 className="lh-section-title-centered">Shop by Category</h2>
+            <div className="lh-category-grid">
+              {SHOP_BY_CATS.map((cat, index) => (
+                <div
+                  key={cat.label}
+                  className="lh-category-card"
+                  onClick={() => {
+                    setActiveTab(cat.tabIndex);
+                    setIsBrowsing(true);
+                    window.scrollTo(0, 0);
+                  }}
+                >
+                  <div className="lh-category-img-wrap">
+                    <img src={cat.img} alt={cat.label} className="lh-category-img" />
+                  </div>
+                  <div className="lh-category-info">
+                    <span className="lh-category-number">0{index + 1}</span>
+                    <span className="lh-category-name">{cat.label}</span>
+                    <span className="lh-category-arrow">&rarr;</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 4. Editorial Banner */}
+          <section className="lh-editorial">
+            <div className="lh-editorial-img">
+              <img src="/editorial_fashion.png" alt="Editorial Collection" />
+            </div>
+            <div className="lh-editorial-content">
+              <p className="lh-editorial-subtitle">THE WINTER EDIT</p>
+              <h2 className="lh-editorial-title">THE ART OF REFINE</h2>
+              <p className="lh-editorial-desc">A curation of heavyweight knits, tailored silhouettes, and premium textures.</p>
+              <button className="lh-editorial-btn" onClick={() => { setActiveTab(1); setIsBrowsing(true); window.scrollTo(0, 0); }}>
+                Shop Collection
+              </button>
+            </div>
+          </section>
+
+          {/* Atelier Note */}
+          <section className="lh-atelier-note">
+            <div className="lh-note-inner">
+              <span className="lh-note-label">Atelier Note</span>
+              <h2 className="lh-note-title">
+                "Architecture you can wear. We believe in the quiet luxury of precision tailoring, the intimacy of pure silk, and the permanence of thoughtful design."
+              </h2>
+              <div className="lh-note-divider" />
+              <p className="lh-note-author">L.M. — Creative Director</p>
+            </div>
+          </section>
+
+          {/* 5. Minimal Footer */}
+          <footer className="lh-footer">
+            <div className="lh-footer-logo">LUOMI MAISON</div>
+            <div className="lh-footer-links">
+              <a href="#sustainability">Sustainability</a>
+              <a href="#service">Client Service</a>
+              <a href="#stores">Store Locator</a>
+              <a href="#instagram">Instagram</a>
+              <a href="#pinterest">Pinterest</a>
+            </div>
+            <div className="lh-footer-copy">© 2026 LUOMI ATELIER. ALL RIGHTS RESERVED.</div>
+          </footer>
+        </div>
       )}
 
-      {/* ════════════════ PRODUCT GRID ════════════════ */}
-      <div className="sn-main">
-        {(activeTab !== 0 || searchQuery) && (
-          <div className="sn-filter-bar">
-            <span className="sn-filter-count">
+      {/* ════════════════ PRODUCT BROWSE GRID (Browse Mode) ════════════════ */}
+      {(isBrowsing || searchQuery) && (
+        <div className="lh-main">
+          <div className="lh-filter-bar">
+            <span className="lh-filter-count">
               {filteredProducts.length} Products
               {currentTab.label !== 'Discover' && ` — ${currentTab.label}`}
             </span>
           </div>
-        )}
 
-        {activeTab === 0 && !searchQuery && (
-          <div className="sn-grid-header">
-            <h2 className="sn-sect-title">NEW ARRIVALS</h2>
-          </div>
-        )}
+          {filteredProducts.length === 0 ? (
+            <div className="lh-empty">
+              <FiSearch size={32} style={{ opacity: .3 }} />
+              <p>No products found</p>
+              <button onClick={() => { setActiveTab(0); setIsBrowsing(false); setSearchQuery('') }} className="lh-empty-reset">
+                Back to Homepage
+              </button>
+            </div>
+          ) : (
+            <div className="lh-grid">
+              {filteredProducts.map(product => (
+                <div key={product._id} className="lh-card" onClick={() => navigate(`/product/${product._id}`)}>
+                  <div className="lh-card-img-wrap">
+                    {product.images?.[0]?.url
+                      ? <img src={product.images[0].url} alt={product.title} className="lh-card-img" />
+                      : <div className="lh-card-img-placeholder"><span>LUOMI</span></div>
+                    }
+                    {product.images?.[1]?.url && (
+                      <img src={product.images[1].url} alt={product.title} className="lh-card-img lh-card-img-hover" />
+                    )}
+                    {/* wishlist heart */}
+                    <button
+                      className={`lh-card-heart ${isWishlisted(product._id) ? 'active' : ''}`}
+                      onClick={e => {
+                        e.stopPropagation()
+                        if (!user) { navigate('/login'); return }
+                        handleToggleWishlist({ productId: product._id })
+                      }}
+                      title="Add to Wishlist"
+                    >
+                      <FiHeart size={14} fill={isWishlisted(product._id) ? "currentColor" : "none"} />
+                    </button>
+                    {/* ADD TO BAG hover CTA */}
+                    <button
+                      className="lh-card-atb"
+                      onClick={e => { e.stopPropagation(); addToCart(product) }}
+                    >
+                      ADD TO BAG
+                    </button>
+                  </div>
+                  <div className="lh-card-body">
+                    <span className="lh-card-cat">{product.subCategory?.toUpperCase() || 'APPAREL'}</span>
+                    <h3 className="lh-card-title">{product.title}</h3>
+                    <span className="lh-card-price">₹{fmt(product.price?.amount)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {loading ? (
-          <div className="sn-grid">
-            {[...Array(8)].map((_, n) => (
-              <div key={n} className="sn-card-skeleton">
-                <div className="sn-skeleton-img sn-shimmer" />
-                <div className="sn-skeleton-line sn-shimmer" style={{ width: '70%', marginTop: 12 }} />
-                <div className="sn-skeleton-line sn-shimmer" style={{ width: '40%', marginTop: 6 }} />
-              </div>
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="sn-empty">
-            <FiSearch size={32} style={{ opacity: .3 }} />
-            <p>No products found</p>
-            <button onClick={() => { setActiveTab(0); setSearchQuery('') }} className="sn-empty-reset">
-              Show all products
-            </button>
-          </div>
-        ) : (
-          <div className="sn-grid">
-            {filteredProducts.map(product => (
-              <div key={product._id} className="sn-card" onClick={() => navigate(`/product/${product._id}`)}>
-                <div className="sn-card-img-wrap">
-                  {product.images?.[0]?.url
-                    ? <img src={product.images[0].url} alt={product.title} className="sn-card-img" />
-                    : <div className="sn-card-img-placeholder"><span>LUOMI</span></div>
-                  }
-                  {product.images?.[1]?.url && (
-                    <img src={product.images[1].url} alt={product.title} className="sn-card-img sn-card-img-hover" />
-                  )}
-                  {/* wishlist heart */}
-                  <button
-                    className={`sn-card-heart ${isWishlisted(product._id) ? 'active' : ''}`}
-                    onClick={e => {
-                      e.stopPropagation()
-                      if (!user) { navigate('/login'); return }
-                      handleToggleWishlist({ productId: product._id })
-                    }}
-                    title="Add to Wishlist"
-                  >
-                    <FiHeart size={14} fill={isWishlisted(product._id) ? "#ff5a36" : "none"} />
-                  </button>
-                  {/* ADD TO BAG hover CTA */}
-                  <button
-                    className="sn-card-atb"
-                    onClick={e => { e.stopPropagation(); addToCart(product) }}
-                  >
-                    ADD TO BAG
-                  </button>
-                </div>
-                <div className="sn-card-body">
-                  <h3 className="sn-card-title">{product.title}</h3>
-                  <span className="sn-card-price">₹{fmt(product.price?.amount)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+          {/* Footer on Browse Page too */}
+          <footer className="lh-footer" style={{ marginTop: '80px' }}>
+            <div className="lh-footer-logo">LUOMI MAISON</div>
+            <div className="lh-footer-links">
+              <a href="#sustainability">Sustainability</a>
+              <a href="#service">Client Service</a>
+              <a href="#stores">Store Locator</a>
+              <a href="#instagram">Instagram</a>
+              <a href="#pinterest">Pinterest</a>
+            </div>
+            <div className="lh-footer-copy">© 2026 LUOMI ATELIER. ALL RIGHTS RESERVED.</div>
+          </footer>
+        </div>
+      )}
+
       {/* Floating Toast Notification */}
       {toastMsg && (
-        <div className="sn-toast animate-slide-up">
-          <FiShoppingBag size={14} className="sn-toast-icon" />
+        <div className="lh-toast animate-slide-up">
+          <FiShoppingBag size={14} className="lh-toast-icon" />
           <span>{toastMsg}</span>
         </div>
       )}
