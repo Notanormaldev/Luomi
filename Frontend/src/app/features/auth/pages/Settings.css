@@ -117,6 +117,13 @@
   top: 100px;
 }
 
+@media (max-width: 767px) {
+  .profile-card {
+    position: static;
+    margin-bottom: 24px;
+  }
+}
+
 .profile-header {
   display: flex;
   flex-direction: column;

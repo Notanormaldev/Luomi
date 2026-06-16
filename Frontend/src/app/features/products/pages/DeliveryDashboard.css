@@ -757,3 +757,36 @@
 .dd-product-thumbnail {
   border-radius: 12px !important;
 }
+
+/* ─── MOBILE RESPONSIVENESS OVERRIDES ─── */
+@media (max-width: 640px) {
+  .dd-wrapper {
+    padding: 1rem;
+  }
+  .dd-order-card {
+    flex-direction: column;
+    min-height: auto;
+  }
+  .dd-card-image-panel {
+    width: 100%;
+    min-width: 100%;
+    height: 220px;
+    border-right: none;
+    border-bottom: 1px solid var(--dd-border);
+  }
+  .dd-card-content-panel {
+    padding: 1.25rem;
+  }
+  .dd-card-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .dd-modal {
+    padding: 1.5rem;
+  }
+  .dd-modal-actions {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

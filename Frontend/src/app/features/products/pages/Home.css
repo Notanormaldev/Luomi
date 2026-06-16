@@ -90,9 +90,9 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  padding: 0 48px;
+  padding: 0 24px;
   height: 70px;
-  max-width: 1440px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
@@ -257,6 +257,99 @@
   padding: 20px;
   z-index: 300;
   border-radius: 2px;
+}
+
+.mobile-only-search-btn {
+  display: none !important;
+}
+
+.lh-mobile-search-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--lh-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 210;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.lh-mobile-search-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.lh-mobile-search-input {
+  width: 100%;
+  height: 38px;
+  background: rgba(120, 120, 120, 0.05);
+  border: 1px solid var(--lh-border);
+  border-radius: 19px;
+  padding: 0 36px 0 36px;
+  font-size: 13px;
+  font-family: 'Hanken Grotesk', sans-serif;
+  letter-spacing: 0.05em;
+  color: var(--lh-text);
+  outline: none;
+  box-sizing: border-box;
+}
+
+[data-theme='dark'] .lh-mobile-search-input {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lh-mobile-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--lh-text);
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.lh-mobile-search-clear {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--lh-text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.lh-mobile-search-cancel {
+  background: none;
+  border: none;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lh-text);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 8px 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lh-mobile-search-bar .lh-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
 }
 
 .lh-dd-heading {
@@ -543,6 +636,20 @@
   height: 1px;
   background: var(--lh-border);
   margin: 15px 30px;
+}
+
+.lh-cat-sidebar-user-info {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--lh-text-muted);
+  padding: 8px 30px 14px;
+  text-transform: uppercase;
+}
+
+.lh-sidebar-username {
+  color: var(--lh-text);
+  text-transform: none;
 }
 
 /* ─── 1. HERO CAROUSEL ──────────────────── */
@@ -1329,16 +1436,59 @@
 
 @media (max-width: 860px) {
   .lh-nav-inner {
-    grid-template-columns: auto auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     height: 60px;
+    padding: 0 12px;
+    position: relative;
   }
   .lh-nav-left {
-    display: none;
+    display: flex;
+    justify-content: flex-start;
+    flex-shrink: 0;
   }
   .lh-nav-center {
-    justify-content: flex-start;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    justify-content: center;
+    pointer-events: none;
+  }
+  .lh-logo-link {
+    pointer-events: auto;
   }
   .lh-action-label {
+    display: none;
+  }
+  .desktop-only-search {
+    display: none !important;
+  }
+  .mobile-only-search-btn {
+    display: flex !important;
+  }
+  .lh-dashboard-link {
+    display: none !important;
+  }
+  .lh-nav-right a[href="/settings"],
+  .lh-nav-right a[href="/login"] {
+    display: none !important;
+  }
+  .lh-nav-right {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .lh-icon-btn {
+    padding: 4px;
+  }
+  .lh-gender-bar {
+    gap: 16px;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 0 16px;
+    scrollbar-width: none;
+  }
+  .lh-gender-bar::-webkit-scrollbar {
     display: none;
   }
   .lh-hero-carousel {

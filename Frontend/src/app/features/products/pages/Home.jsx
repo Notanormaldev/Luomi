@@ -15,7 +15,8 @@ import {
   FiMenu,
   FiChevronRight,
   FiChevronLeft,
-  FiHeart
+  FiHeart,
+  FiLogOut
 } from 'react-icons/fi'
 import { usewishlist } from '../../wishlist/hook/usewishlist'
 import './Home.css'
@@ -71,7 +72,7 @@ const PLACEHOLDERS = [
 export default function Home() {
   const navigate = useNavigate()
   const { handlegetallprodcuts } = useproduct()
-  const { user } = useauth()
+  const { user, handlelogout } = useauth()
   const { items: cartItems, handleGetCart, handleAddToCart } = usecart()
   const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
 
@@ -83,6 +84,7 @@ export default function Home() {
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [toastMsg, setToastMsg] = useState(null)
   const [isCatOpen, setIsCatOpen] = useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [heroIdx, setHeroIdx] = useState(0)
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
   const [isBrowsing, setIsBrowsing] = useState(false)
@@ -242,13 +244,82 @@ export default function Home() {
 
       {/* ════════════════ NAVBAR ════════════════ */}
       <div className="lh-navbar">
-        <div className="lh-nav-inner">
+        {/* Mobile-only Search Bar Overlay */}
+        {isMobileSearchOpen && (
+          <div className="lh-mobile-search-bar" ref={searchRef}>
+            <div className="lh-mobile-search-input-wrap">
+              <FiSearch size={18} className="lh-mobile-search-icon" />
+              <input
+                type="text"
+                autoFocus
+                className="lh-mobile-search-input"
+                placeholder={PLACEHOLDERS[placeholderIdx]}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setTimeout(() => setIsSearchFocused(false), 180)}
+              />
+              {searchQuery && (
+                <button className="lh-mobile-search-clear" onClick={() => setSearchQuery('')}>
+                  <FiX size={15} />
+                </button>
+              )}
+            </div>
+            <button 
+              className="lh-mobile-search-cancel" 
+              onClick={() => { setIsMobileSearchOpen(false); setSearchQuery(''); setIsSearchFocused(false); }}
+            >
+              Cancel
+            </button>
 
+            {/* Mobile Search dropdown */}
+            {isSearchFocused && (
+              <div className="lh-search-dropdown">
+                {!searchQuery ? (
+                  <>
+                    <p className="lh-dd-heading">TOP SEARCHES</p>
+                    <div className="lh-top-searches">
+                      {TOP_SEARCHES.map(s => (
+                        <button key={s} className="lh-top-pill" onClick={() => setSearchQuery(s)}>{s}</button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="lh-dd-heading">RESULTS ({searchResults.length})</p>
+                    {searchResults.length === 0
+                      ? <p className="lh-dd-empty">No products for "{searchQuery}"</p>
+                      : (
+                        <div className="lh-dd-list">
+                          {searchResults.map(p => (
+                            <div key={p._id} className="lh-dd-item"
+                              onClick={() => { navigate(`/product/${p._id}`); setSearchQuery(''); setIsMobileSearchOpen(false); setIsSearchFocused(false) }}>
+                              {p.images?.[0]?.url
+                                ? <img src={p.images[0].url} alt={p.title} className="lh-dd-img" />
+                                : <div className="lh-dd-img lh-dd-img-ph" />
+                              }
+                              <div className="lh-dd-info">
+                                <span className="lh-dd-title">{p.title}</span>
+                                <span className="lh-dd-price">₹{fmt(p.price?.amount)}</span>
+                              </div>
+                              <FiChevronRight size={13} style={{ color: 'var(--lh-text-muted)', flexShrink: 0 }} />
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    }
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="lh-nav-inner">
           {/* Left: Menu button */}
           <div className="lh-nav-left">
-            <button className="lh-nav-action-btn lh-menu-btn" onClick={() => setIsCatOpen(true)} aria-label="Menu" style={{ paddingLeft: 0 }}>
-              <FiMenu size={16} />
-              <span className="lh-action-label">MENU</span>
+            <button className="lh-nav-action-btn lh-menu-btn" onClick={() => setIsCatOpen(true)} aria-label="Menu" style={{ paddingLeft: 0, marginLeft: '-8px' }}>
+              <FiMenu size={24} />
             </button>
           </div>
 
@@ -259,8 +330,8 @@ export default function Home() {
 
           {/* Right: Actions */}
           <div className="lh-nav-right">
-            {/* Search input */}
-            <div className="lh-search-wrap" ref={searchRef}>
+            {/* Desktop-only Search input */}
+            <div className="lh-search-wrap desktop-only-search" ref={searchRef}>
               <FiSearch size={15} className="lh-search-icon" />
               <input
                 type="text"
@@ -319,15 +390,13 @@ export default function Home() {
               )}
             </div>
 
-            <button className="lh-nav-action-btn lh-collections-btn" onClick={() => {
-              setIsBrowsing(false);
-              setActiveTab(0);
-              setSearchQuery('');
-              setTimeout(() => {
-                document.querySelector('.lh-categories')?.scrollIntoView({ behavior: 'smooth' });
-              }, 100);
-            }}>
-              <span className="lh-action-label">COLLECTIONS</span>
+            {/* Mobile-only Search Button */}
+            <button 
+              className="lh-icon-btn mobile-only-search-btn" 
+              onClick={() => setIsMobileSearchOpen(true)}
+              title="Search"
+            >
+              <FiSearch size={19} />
             </button>
 
             {user?.role === 'seller' && (
@@ -422,6 +491,31 @@ export default function Home() {
                 {tab.label}
               </button>
             ))}
+            <div className="lh-sidebar-divider" />
+            <p className="lh-sidebar-section-title">ACCOUNT</p>
+            {user ? (
+              <>
+                <div className="lh-cat-sidebar-user-info">
+                  Logged in as <strong className="lh-sidebar-username">{user.fullname}</strong>
+                </div>
+                <button className="lh-cat-sidebar-link"
+                  onClick={() => { navigate('/settings'); setIsCatOpen(false); }}>
+                  <FiUser size={14} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                  Settings & Profile
+                </button>
+                <button className="lh-cat-sidebar-link"
+                  onClick={async () => { await handlelogout(); navigate('/'); setIsCatOpen(false); }}>
+                  <FiLogOut size={14} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <button className="lh-cat-sidebar-link"
+                onClick={() => { navigate('/login'); setIsCatOpen(false); }}>
+                <FiUser size={14} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                Log In / Register
+              </button>
+            )}
           </div>
         </div>
       </div>

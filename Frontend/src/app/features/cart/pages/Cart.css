@@ -82,7 +82,7 @@
 
 .ct-nav-inner {
   max-width: 100%;
-  padding: 0 5%;
+  padding: 0 24px;
   height: 64px;
   display: flex;
   align-items: center;
@@ -810,6 +810,24 @@
 
 /* ─── MOBILE RESPONSIVENESS ─── */
 @media (max-width: 640px) {
+  .ct-nav-inner {
+    padding: 0 12px;
+    height: 60px;
+  }
+  .ct-nav-left,
+  .ct-nav-right {
+    gap: 4px;
+  }
+  .ct-icon-btn {
+    padding: 4px;
+  }
+  .ct-dashboard-link {
+    display: none !important;
+  }
+  .ct-nav-right a[href="/settings"],
+  .ct-nav-right a[href="/login"] {
+    display: none !important;
+  }
   .ct-page {
     padding: 24px 16px 60px;
   }

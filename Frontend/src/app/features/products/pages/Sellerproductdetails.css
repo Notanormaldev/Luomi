@@ -78,9 +78,9 @@
 }
 
 .seller-navbar {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 16px 40px;
+  padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
