@@ -1,8 +1,9 @@
 import productmodel from "../models/product.model.js";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import config from "../config/config.js";
 
 const model = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY || "dummy-key",
+  apiKey: config.GEMINI_API_KEY,
   model: "gemini-2.5-flash",
 });
 
@@ -50,7 +51,7 @@ Rules:
 
     let reply = "";
     try {
-      if (!process.env.GEMINI_API_KEY) {
+      if (!config.GEMINI_API_KEY) {
         throw new Error("GEMINI_API_KEY is not defined in environment");
       }
 

@@ -15,7 +15,9 @@ const requireenvs=[
     "IMAGEKIT_PRIVATE_KEY",
     "RAZORPAY_KEY_ID",
     "RAZORPAY_KEY_SECRET",
-    "NODE_ENVIRONMENT"
+    "NODE_ENVIRONMENT",
+    "GEMINI_API_KEY",
+    "FRONTEND_URL"
 ]
 requireenvs.forEach((key)=>{
     if(!process.env[key]){
@@ -40,7 +42,9 @@ requireenvs.forEach((key)=>{
     IMAGEKIT_PRIVATE_KEY:process.env.IMAGEKIT_PRIVATE_KEY,
     RAZORPAY_KEY_ID:process.env.RAZORPAY_KEY_ID,
     RAZORPAY_KEY_SECRET:process.env.RAZORPAY_KEY_SECRET,
-    NODE_ENVIRONMENT:process.env.NODE_ENVIRONMENT
+    NODE_ENVIRONMENT:process.env.NODE_ENVIRONMENT,
+    GEMINI_API_KEY:process.env.GEMINI_API_KEY,
+    FRONTEND_URL:process.env.FRONTEND_URL
 }
 
 

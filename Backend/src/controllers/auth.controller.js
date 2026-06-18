@@ -9,13 +9,23 @@ import redis from "../config/cache.js"
 
 
 
+function setAuthCookie(res, token) {
+   const isProduction = process.env.NODE_ENVIRONMENT === 'production';
+   res.cookie('token', token, {
+       httpOnly: true,
+       secure: isProduction,
+       sameSite: isProduction ? 'none' : 'lax',
+       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in ms
+   });
+}
+
 async function tokenresponse(user,res,msg){
    const token = jwt.sign({
     id:user._id,
     user:user
    },config.JWT,{expiresIn:'7d'})
 
-   res.cookie('token',token)
+   setAuthCookie(res, token);
    
    user.password=undefined
    return res.status(201).json({
@@ -204,11 +214,12 @@ async function googlecallback(req,res){
     id:user._id,
     user:user
   },config.JWT,{expiresIn:"7d"})
-  res.cookie('token',token)
+  setAuthCookie(res, token);
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
    if(user.role === "seller"){
-       res.redirect("http://localhost:5173/dashbord/seller")
+       res.redirect(`${frontendUrl}/dashbord/seller`)
     }else{
-       res.redirect("http://localhost:5173")
+       res.redirect(frontendUrl)
     }
 }
 async function logout(req,res){
@@ -269,7 +280,7 @@ async function becomeSeller(req, res) {
             user: user
         }, config.JWT, { expiresIn: '7d' });
         
-        res.cookie('token', token);
+        setAuthCookie(res, token);
         
         return res.status(200).json({
             success: true,
@@ -374,7 +385,7 @@ async function becomeDelivery(req, res) {
             user: user
         }, config.JWT, { expiresIn: '7d' });
         
-        res.cookie('token', token);
+        setAuthCookie(res, token);
         
         return res.status(200).json({
             success: true,
@@ -410,7 +421,7 @@ async function updateSettings(req, res) {
             user: user
         }, config.JWT, { expiresIn: '7d' });
         
-        res.cookie('token', token);
+        setAuthCookie(res, token);
         
         return res.status(200).json({
             success: true,
