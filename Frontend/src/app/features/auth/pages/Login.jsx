@@ -334,7 +334,7 @@ function Login() {
 
           {/* Header */}
           <div className="mb-8 text-left">
-            <h1 className="font-body text-[32px] md:text-[38px] font-medium mb-3 leading-tight tracking-tight text-[var(--dash-title)]">
+            <h1 className="font-body text-[32px] md:text-[38px] font-light mb-3 leading-tight tracking-tight text-[var(--dash-title)]">
               Your next <span className="font-bold">favorite</span> outfit is<br />only one click away.
             </h1>
             <p className="text-[var(--dash-subtitle)] text-[15px]">
@@ -372,9 +372,10 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="auth-input"
+                style={{ paddingRight: '50px' }}
               />
               {/* Minimal text show/hide */}
-              <div className="absolute right-4 top-[36px] flex items-center">
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center" style={{ top: '50%', transform: 'translateY(-50%)' }}>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
