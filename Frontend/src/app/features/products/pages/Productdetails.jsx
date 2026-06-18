@@ -22,6 +22,41 @@ import {
 import { usewishlist } from '../../wishlist/hook/usewishlist'
 import './Productdetails.css'
 
+// Helper function to parse Jerry's responses (bold text and relative/absolute links)
+const parseMessageText = (text) => {
+  if (!text) return null;
+  const regex = /(\*\*.*?\*\*|\[.*?\]\(.*?\))/g;
+  const parts = text.split(regex);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+      const closeBracketIdx = part.indexOf(']');
+      const linkText = part.slice(1, closeBracketIdx);
+      const url = part.slice(closeBracketIdx + 2, -1);
+      if (url.startsWith('/')) {
+        return (
+          <Link
+            to={url}
+            key={index}
+            className="jerry-chat-link"
+            onClick={() => window.scrollTo(0, 0)}
+          >
+            {linkText}
+          </Link>
+        );
+      }
+      return (
+        <a href={url} target="_blank" rel="noopener noreferrer" key={index} className="jerry-chat-link">
+          {linkText}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 function Productdetails() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -48,11 +83,11 @@ function Productdetails() {
   // Jerry
   const [isJerryOpen, setIsJerryOpen] = useState(false)
   const [jerryMessages, setJerryMessages] = useState([
-    { sender: 'jerry', text: "Hi! I'm Jerry 👋 Ask me anything about this product — sizes, fit, material, styling tips, or stock." }
+    { sender: 'jerry', text: "Hi! I'm Jerry 👋, your Luomi personal shopping assistant. I can answer any questions about this product. What would you like to know?" }
   ])
   const [jerryInput, setJerryInput] = useState('')
   const [jerryLoading, setJerryLoading] = useState(false)
-  const jerryEndRef = useRef(null)
+  const jerryMsgsRef = useRef(null)
 
   // Variants
   const [selectedVariant, setSelectedVariant] = useState(null)
@@ -89,6 +124,19 @@ function Productdetails() {
         if (data && data.success && data.products) {
           const prod = data.products
           setProduct(prod)
+          setJerryMessages([
+            {
+              sender: 'jerry',
+              text: `Hi! I'm Jerry 👋, your Luomi personal shopping assistant. I can answer any questions about **${prod.title}**:
+- **Sizes & Fit** (available sizes, fit recommendation)
+- **Fabric & Care** (materials, wash instructions)
+- **Colors** (shades and swatches)
+- **Stock Status & Pricing**
+- **Styling Suggestions**
+
+What would you like to know?`
+            }
+          ])
           const pImgs = prod.images ? prod.images.map(i => i.url).filter(Boolean) : []
           const allVImgs = prod.variants ? prod.variants.flatMap(v => v.images ? v.images.map(i => i.url).filter(Boolean) : []) : []
           const combined = Array.from(new Set([...pImgs, ...allVImgs]))
@@ -142,9 +190,11 @@ function Productdetails() {
   // Reset qty on variant change
   useEffect(() => { setQuantity(1) }, [selectedVariant])
 
-  // Scroll Jerry messages
+  // Scroll Jerry messages container to bottom
   useEffect(() => {
-    jerryEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (jerryMsgsRef.current) {
+      jerryMsgsRef.current.scrollTop = jerryMsgsRef.current.scrollHeight
+    }
   }, [jerryMessages, isJerryOpen])
 
   const handleAttributeSelect = (key, val) => {
@@ -305,7 +355,7 @@ function Productdetails() {
       <div className="pd-navbar-design">
         <div className="pd-nav-inner-design">
           <div className="pd-nav-left-design">
-            <button className="pd-icon-btn-design" onClick={() => navigate('/')}>
+            <button className="pd-icon-btn-design" onClick={() => navigate(-1)}>
               <FiArrowLeft size={18} />
             </button>
             <Link to="/" className="pd-logo-link-design"><Logo /></Link>
@@ -597,16 +647,14 @@ function Productdetails() {
 
               {isJerryOpen && (
                 <div className="pd-jerry-box-design">
-                  <div className="pd-jerry-msgs-design">
+                  <div className="pd-jerry-msgs-design" ref={jerryMsgsRef}>
                     {jerryMessages.map((msg, i) => (
                       <div key={i} className={`pd-jerry-msg-design ${msg.sender}`}>
                         {msg.sender === 'jerry' && (
                           <span className="pd-jerry-avatar-design">J</span>
                         )}
-                        <div className="pd-jerry-bubble-design">
-                          {msg.text.split("**").map((part, pi) =>
-                            pi % 2 === 1 ? <strong key={pi}>{part}</strong> : part
-                          )}
+                        <div className="pd-jerry-bubble-design" style={{ whiteSpace: 'pre-line', textAlign: 'left' }}>
+                          {parseMessageText(msg.text)}
                         </div>
                       </div>
                     ))}
@@ -618,7 +666,6 @@ function Productdetails() {
                         </div>
                       </div>
                     )}
-                    <div ref={jerryEndRef}></div>
                   </div>
 
                   <div className="pd-jerry-quick-design">

@@ -31,6 +31,7 @@ function Dashbord() {
   const [orders, setOrders] = useState([])
   const [ordersLoading, setOrdersLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [toastMsg, setToastMsg] = useState(null)
   
   // Theme State
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
@@ -89,7 +90,8 @@ function Dashbord() {
     try {
       const res = await axios.post(`/api/order/seller/out-for-delivery/${orderId}`, {}, { withCredentials: true })
       if (res.data.success) {
-        alert('Order marked as Out for Delivery! Customer will receive email details.')
+        setToastMsg('Order successfully marked as Out for Delivery!')
+        setTimeout(() => setToastMsg(null), 4000)
         const orderRes = await axios.get('/api/product/orders/seller', { withCredentials: true })
         if (orderRes.data.success) {
           setOrders(orderRes.data.orders)
@@ -97,7 +99,8 @@ function Dashbord() {
       }
     } catch (err) {
       console.error('Failed to mark order out for delivery:', err)
-      alert(err.response?.data?.msg || 'Failed to dispatch order.')
+      setToastMsg(err.response?.data?.msg || 'Failed to dispatch order.')
+      setTimeout(() => setToastMsg(null), 4000)
     }
   }
 
@@ -166,6 +169,15 @@ function Dashbord() {
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
               {theme === 'light' ? <FiMoon size={16} /> : <FiSun size={16} />}
+            </button>
+
+            {/* Settings Button */}
+            <button 
+              className="theme-toggle-btn" 
+              onClick={() => navigate('/settings')}
+              title="Settings"
+            >
+              <FiSettings size={16} />
             </button>
 
             <div 
@@ -494,6 +506,13 @@ function Dashbord() {
           </div>
 
         </div>
+
+      {toastMsg && (
+        <div className="lh-toast animate-slide-up">
+          <FiCheckCircle size={14} className="lh-toast-icon" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
 
       </div>
     </div>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useauth } from '../../auth/hook/useauth'
 import Logo from '../../auth/components/Logo'
 import axios from 'axios'
-import { FiArrowLeft, FiTruck, FiMapPin, FiPhone, FiCheck, FiCamera, FiAlertCircle } from 'react-icons/fi'
+import { FiArrowLeft, FiTruck, FiMapPin, FiPhone, FiCheck, FiCamera, FiAlertCircle, FiSettings } from 'react-icons/fi'
 import './DeliveryDashboard.css'
 
 export default function DeliveryDashboard() {
@@ -144,7 +144,7 @@ export default function DeliveryDashboard() {
   return (
     <div className="dd-root">
       {/* Top Centered Brand Logo */}
-      <div className="w-full flex justify-center pb-6 border-b border-[rgba(255,255,255,0.05)] mb-2 mt-4">
+      <div className="dd-logo-container">
         <Logo />
       </div>
 
@@ -156,7 +156,27 @@ export default function DeliveryDashboard() {
             <p className="dd-subtitle">Manage deliveries and verify dropoffs in your registered region</p>
           </div>
 
-          <div className="dd-user-actions">
+          <div className="dd-user-actions" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <button 
+              onClick={() => navigate('/settings')}
+              title="Settings"
+              style={{
+                background: 'none',
+                border: '1px solid var(--dd-border)',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--dd-text)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+              className="dd-settings-btn"
+            >
+              <FiSettings size={16} />
+            </button>
             <div 
               className="dd-profile-minimal cursor-pointer hover:opacity-80 transition-opacity" 
               onClick={() => navigate('/settings')}
@@ -284,6 +304,31 @@ export default function DeliveryDashboard() {
                         </div>
                       </div>
 
+                      {/* Package Items with IDs */}
+                      <div className="dd-items-list" style={{ marginTop: '0.5rem', marginBottom: '1.5rem', borderTop: '1px dashed var(--dd-border)', paddingTop: '1rem' }}>
+                        <span className="dd-card-detail-label" style={{ display: 'block', marginBottom: '0.5rem' }}>Package Items (Product IDs)</span>
+                        {order.items.map((item, idx) => {
+                          const prod = item.product
+                          if (!prod) return null
+                          return (
+                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px', marginBottom: '0.4rem' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--dd-text)', fontWeight: 500 }}>{prod.title}</span>
+                                <span style={{ color: '#888888', fontSize: '11px' }}>x{item.quantity}</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#888888' }}>
+                                  ID: {prod._id}
+                                </span>
+                                <span style={{ fontSize: '11px', color: 'var(--dd-text)', fontWeight: '600', backgroundColor: 'rgba(120, 120, 120, 0.05)', padding: '2px 6px', border: '1px solid var(--dd-border)' }}>
+                                  Code: {prod._id.toString().slice(-6)}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
                       {/* CTA Button */}
                       <div>
                         <button 
@@ -312,6 +357,24 @@ export default function DeliveryDashboard() {
             </p>
 
             <form onSubmit={handleConfirmHandover} className="dd-modal-form">
+              {/* Package items details in modal */}
+              <div style={{ background: 'rgba(120, 120, 120, 0.03)', border: '1px solid var(--dd-border)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <span className="dd-form-label" style={{ display: 'block', fontSize: '9px', fontWeight: '600' }}>Package Items & Verification Codes</span>
+                {selectedOrder.items.map((item, idx) => {
+                  const prod = item.product
+                  if (!prod) return null
+                  const code = prod._id.toString().slice(-6);
+                  return (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
+                      <span style={{ color: 'var(--dd-text)' }}>{prod.title} (x{item.quantity})</span>
+                      <span style={{ fontFamily: 'monospace', color: 'var(--dd-text)', fontWeight: '600', backgroundColor: 'rgba(120, 120, 120, 0.05)', padding: '1px 5px', border: '1px solid var(--dd-border)' }}>
+                        {code}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
               {/* Product ID input */}
               <div className="dd-form-group">
                 <label className="dd-form-label">Verify Product ID</label>

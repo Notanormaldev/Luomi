@@ -764,6 +764,18 @@
   max-width: 80%;
 }
 
+.jerry-chat-link {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.jerry-chat-link:hover {
+  opacity: 0.7;
+}
+
 .pd-jerry-msg-design.user {
   justify-content: flex-end;
 }

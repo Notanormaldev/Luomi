@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useproduct } from '../hook/useproduct'
 import { useauth } from '../../auth/hook/useauth'
@@ -34,7 +34,7 @@ const CATEGORY_TABS = [
   { label: 'Sweatshirts', value: 'All', sub: 'sweatshirts' },
   { label: 'Shorts', value: 'All', sub: 'shorts' },
   { label: 'Activewear', value: 'All', sub: 'activewear' },
-  { label: 'Plus-Size', value: 'All', sub: 'plus size' },
+  { label: 'Plus-Size', value: 'All', sub: 'plus size' }
 ]
 
 const SHOP_BY_CATS = [
@@ -77,19 +77,106 @@ export default function Home() {
   const { handleGetWishlist, handleToggleWishlist, isWishlisted } = usewishlist()
 
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
-  const [selectedGender, setSelectedGender] = useState('All')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const categoryParam = searchParams.get('category') || ''
+  const genderParam = searchParams.get('gender') || 'All'
+  const browseParam = searchParams.get('browse') === 'true'
+
+  const selectedGender = genderParam
+  const isBrowsing = browseParam || !!categoryParam || !!searchParams.get('q')
+
+  const activeTab = categoryParam
+    ? Math.max(0, CATEGORY_TABS.findIndex(t => t.sub.toLowerCase() === categoryParam.toLowerCase()))
+    : 0
+
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState(0)
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [toastMsg, setToastMsg] = useState(null)
   const [isCatOpen, setIsCatOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [heroIdx, setHeroIdx] = useState(0)
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
-  const [isBrowsing, setIsBrowsing] = useState(false)
 
   const searchRef = useRef(null)
+
+  // Keep local search input query in sync with URL changes (e.g. Back button)
+  useEffect(() => {
+    setSearchQuery(searchParams.get('q') || '')
+  }, [searchParams])
+
+  const handleGenderChange = (g) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (g === 'All') {
+        next.delete('gender')
+      } else {
+        next.set('gender', g)
+      }
+      return next
+    })
+  }
+
+  const handleCategoryTabClick = (index) => {
+    const tab = CATEGORY_TABS[index]
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (index === 0) {
+        next.delete('category')
+        next.delete('browse')
+      } else {
+        next.set('category', tab.sub)
+        next.set('browse', 'true')
+      }
+      return next
+    })
+  }
+
+  const handleHeroClick = (sub) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('category', sub)
+      next.set('browse', 'true')
+      return next
+    })
+    window.scrollTo(0, 0)
+  }
+
+  const handleSearchInputChange = (val) => {
+    setSearchQuery(val)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (!val) {
+        next.delete('q')
+      } else {
+        next.set('q', val)
+      }
+      return next
+    }, { replace: true })
+  }
+
+  const handleSearchSelect = (val) => {
+    setSearchQuery(val)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('q', val)
+      return next
+    })
+  }
+
+  const handleViewAll = () => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('browse', 'true')
+      next.delete('category')
+      return next
+    })
+  }
+
+  const handleReset = () => {
+    setSearchParams(new URLSearchParams())
+    setSearchQuery('')
+  }
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -138,25 +225,6 @@ export default function Home() {
     if (a === undefined || a === null) return '0'
     const n = parseFloat(a)
     return isNaN(n) ? '0' : n.toLocaleString('en-IN')
-  }
-
-  /* Click handler to find product, navigate or fallback to tab filter */
-  const handleHeroClick = (sub) => {
-    const tabIdx = CATEGORY_TABS.findIndex(t => t.sub.toLowerCase() === sub.toLowerCase())
-    if (tabIdx !== -1) {
-      setActiveTab(tabIdx)
-      setIsBrowsing(true)
-      window.scrollTo(0, 0)
-    }
-  }
-
-  const handleCategoryTabClick = (index) => {
-    setActiveTab(index)
-    if (index === 0) {
-      setIsBrowsing(false)
-    } else {
-      setIsBrowsing(true)
-    }
   }
 
   /* filter */
@@ -255,19 +323,19 @@ export default function Home() {
                 className="lh-mobile-search-input"
                 placeholder={PLACEHOLDERS[placeholderIdx]}
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => handleSearchInputChange(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 180)}
               />
               {searchQuery && (
-                <button className="lh-mobile-search-clear" onClick={() => setSearchQuery('')}>
+                <button className="lh-mobile-search-clear" onClick={() => handleSearchInputChange('')}>
                   <FiX size={15} />
                 </button>
               )}
             </div>
             <button 
               className="lh-mobile-search-cancel" 
-              onClick={() => { setIsMobileSearchOpen(false); setSearchQuery(''); setIsSearchFocused(false); }}
+              onClick={() => { setIsMobileSearchOpen(false); handleSearchInputChange(''); setIsSearchFocused(false); }}
             >
               Cancel
             </button>
@@ -280,7 +348,7 @@ export default function Home() {
                     <p className="lh-dd-heading">TOP SEARCHES</p>
                     <div className="lh-top-searches">
                       {TOP_SEARCHES.map(s => (
-                        <button key={s} className="lh-top-pill" onClick={() => setSearchQuery(s)}>{s}</button>
+                        <button key={s} className="lh-top-pill" onClick={() => handleSearchSelect(s)}>{s}</button>
                       ))}
                     </div>
                   </>
@@ -293,7 +361,7 @@ export default function Home() {
                         <div className="lh-dd-list">
                           {searchResults.map(p => (
                             <div key={p._id} className="lh-dd-item"
-                              onClick={() => { navigate(`/product/${p._id}`); setSearchQuery(''); setIsMobileSearchOpen(false); setIsSearchFocused(false) }}>
+                              onClick={() => { navigate(`/product/${p._id}`); handleSearchInputChange(''); setIsMobileSearchOpen(false); setIsSearchFocused(false) }}>
                               {p.images?.[0]?.url
                                 ? <img src={p.images[0].url} alt={p.title} className="lh-dd-img" />
                                 : <div className="lh-dd-img lh-dd-img-ph" />
@@ -325,7 +393,7 @@ export default function Home() {
 
           {/* Center: Logo */}
           <div className="lh-nav-center">
-            <Link to="/" className="lh-logo-link" onClick={() => { setIsBrowsing(false); setActiveTab(0); setSearchQuery(''); }}><Logo /></Link>
+            <Link to="/" className="lh-logo-link" onClick={handleReset}><Logo /></Link>
           </div>
 
           {/* Right: Actions */}
@@ -338,12 +406,12 @@ export default function Home() {
                 className="lh-search-input"
                 placeholder={PLACEHOLDERS[placeholderIdx]}
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => handleSearchInputChange(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 180)}
               />
               {searchQuery && (
-                <button className="lh-search-clear" onClick={() => setSearchQuery('')}>
+                <button className="lh-search-clear" onClick={() => handleSearchInputChange('')}>
                   <FiX size={13} />
                 </button>
               )}
@@ -356,7 +424,7 @@ export default function Home() {
                       <p className="lh-dd-heading">TOP SEARCHES</p>
                       <div className="lh-top-searches">
                         {TOP_SEARCHES.map(s => (
-                          <button key={s} className="lh-top-pill" onClick={() => setSearchQuery(s)}>{s}</button>
+                          <button key={s} className="lh-top-pill" onClick={() => handleSearchSelect(s)}>{s}</button>
                         ))}
                       </div>
                     </>
@@ -369,7 +437,7 @@ export default function Home() {
                           <div className="lh-dd-list">
                             {searchResults.map(p => (
                               <div key={p._id} className="lh-dd-item"
-                                onClick={() => { navigate(`/product/${p._id}`); setSearchQuery(''); setIsSearchFocused(false) }}>
+                                onClick={() => { navigate(`/product/${p._id}`); handleSearchInputChange(''); setIsSearchFocused(false) }}>
                                 {p.images?.[0]?.url
                                   ? <img src={p.images[0].url} alt={p.title} className="lh-dd-img" />
                                   : <div className="lh-dd-img lh-dd-img-ph" />
@@ -429,7 +497,7 @@ export default function Home() {
                 <button
                   key={g}
                   className={`lh-gender-btn ${selectedGender === g ? 'active' : ''}`}
-                  onClick={() => { setSelectedGender(g); }}
+                  onClick={() => { handleGenderChange(g); }}
                 >
                   {g === 'All' ? 'ALL ATELIER' : g.toUpperCase()}
                 </button>
@@ -469,7 +537,16 @@ export default function Home() {
               <button
                 key={g}
                 className={`lh-cat-sidebar-link ${selectedGender === g ? 'active' : ''}`}
-                onClick={() => { setSelectedGender(g); setIsBrowsing(true); setIsCatOpen(false); }}
+                onClick={() => {
+                  setSearchParams(prev => {
+                    const next = new URLSearchParams(prev)
+                    if (g === 'All') next.delete('gender')
+                    else next.set('gender', g)
+                    next.set('browse', 'true')
+                    return next
+                  })
+                  setIsCatOpen(false)
+                }}
               >
                 {g === 'All' ? 'ALL ATELIER' : g.toUpperCase()}
               </button>
@@ -479,14 +556,9 @@ export default function Home() {
             {CATEGORY_TABS.map((tab, i) => (
               <button key={tab.label} className="lh-cat-sidebar-link"
                 onClick={() => {
-                  setActiveTab(i);
-                  if (i === 0) {
-                    setIsBrowsing(false);
-                  } else {
-                    setIsBrowsing(true);
-                  }
+                  handleCategoryTabClick(i);
                   setIsCatOpen(false);
-                  setSearchQuery('');
+                  handleSearchInputChange('');
                 }}>
                 {tab.label}
               </button>
@@ -574,7 +646,7 @@ export default function Home() {
           <section className="lh-new-arrivals">
             <div className="lh-section-header">
               <h2 className="lh-section-title">New Arrivals</h2>
-              <button className="lh-view-all-btn" onClick={() => { setIsBrowsing(true); setActiveTab(0); }}>
+              <button className="lh-view-all-btn" onClick={handleViewAll}>
                 View All &rarr;
               </button>
             </div>
@@ -588,6 +660,9 @@ export default function Home() {
                     }
                     {product.images?.[1]?.url && (
                       <img src={product.images[1].url} alt={product.title} className="lh-product-img lh-product-img-hover" />
+                    )}
+                    {product.stock > 0 && product.stock < 10 && (
+                      <span className="lh-low-stock-badge">Only Few Left</span>
                     )}
                     {/* wishlist heart */}
                     <button
@@ -620,8 +695,12 @@ export default function Home() {
                   key={cat.label}
                   className="lh-category-card"
                   onClick={() => {
-                    setActiveTab(cat.tabIndex);
-                    setIsBrowsing(true);
+                    setSearchParams(prev => {
+                      const next = new URLSearchParams(prev)
+                      next.set('category', cat.sub)
+                      next.set('browse', 'true')
+                      return next
+                    })
                     window.scrollTo(0, 0);
                   }}
                 >
@@ -641,13 +720,21 @@ export default function Home() {
           {/* 4. Editorial Banner */}
           <section className="lh-editorial">
             <div className="lh-editorial-img">
-              <img src="/editorial_fashion.png" alt="Editorial Collection" />
+              <img src="/images/hero/editorial.png" alt="Editorial Collection" />
             </div>
             <div className="lh-editorial-content">
               <p className="lh-editorial-subtitle">THE WINTER EDIT</p>
               <h2 className="lh-editorial-title">THE ART OF REFINE</h2>
               <p className="lh-editorial-desc">A curation of heavyweight knits, tailored silhouettes, and premium textures.</p>
-              <button className="lh-editorial-btn" onClick={() => { setActiveTab(1); setIsBrowsing(true); window.scrollTo(0, 0); }}>
+              <button className="lh-editorial-btn" onClick={() => {
+                setSearchParams(prev => {
+                  const next = new URLSearchParams(prev)
+                  next.set('category', 'shirt')
+                  next.set('browse', 'true')
+                  return next
+                })
+                window.scrollTo(0, 0);
+              }}>
                 Shop Collection
               </button>
             </div>
@@ -694,7 +781,7 @@ export default function Home() {
             <div className="lh-empty">
               <FiSearch size={32} style={{ opacity: .3 }} />
               <p>No products found</p>
-              <button onClick={() => { setActiveTab(0); setIsBrowsing(false); setSearchQuery('') }} className="lh-empty-reset">
+              <button onClick={handleReset} className="lh-empty-reset">
                 Back to Homepage
               </button>
             </div>
@@ -709,6 +796,9 @@ export default function Home() {
                     }
                     {product.images?.[1]?.url && (
                       <img src={product.images[1].url} alt={product.title} className="lh-card-img lh-card-img-hover" />
+                    )}
+                    {product.stock > 0 && product.stock < 10 && (
+                      <span className="lh-low-stock-badge">Only Few Left</span>
                     )}
                     {/* wishlist heart */}
                     <button

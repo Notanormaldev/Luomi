@@ -62,6 +62,11 @@
   text-decoration: none;
 }
 
+.os-nav-left {
+  display: flex;
+  align-items: center;
+}
+
 /* Container */
 .os-container {
   max-width: 800px;

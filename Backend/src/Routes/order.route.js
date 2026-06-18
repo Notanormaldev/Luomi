@@ -18,6 +18,9 @@ const orderRoute = Router();
 // Payment verification (buyer)
 orderRoute.post('/verify-payment', authbuyermiddleware, orderController.verifyPayment);
 
+// Get buyer's own orders
+orderRoute.get('/my-orders', authtokenmiddleware, orderController.getMyOrders);
+
 // Out for delivery mark (seller)
 orderRoute.post('/seller/out-for-delivery/:orderId', authsellermiddleware, orderController.markOutForDelivery);
 

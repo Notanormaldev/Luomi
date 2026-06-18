@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useauth } from '../hook/useauth'
 import Logo from '../components/Logo'
-import { FiArrowLeft, FiUser, FiSliders, FiSun, FiMoon, FiCheck, FiLogOut, FiInfo, FiCpu, FiMapPin, FiTruck, FiChevronDown, FiChevronUp } from 'react-icons/fi'
+import axios from 'axios'
+import { FiArrowLeft, FiUser, FiSliders, FiSun, FiMoon, FiCheck, FiLogOut, FiInfo, FiCpu, FiMapPin, FiTruck, FiChevronDown, FiChevronUp, FiPackage, FiClock } from 'react-icons/fi'
 import './Settings.css'
 
 function Settings() {
@@ -35,6 +36,29 @@ function Settings() {
   const [settingsError, setSettingsError] = useState('')
   const [settingsSuccess, setSettingsSuccess] = useState('')
   const [savingSettings, setSavingSettings] = useState(false)
+
+  // Orders State
+  const [orders, setOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(true)
+
+  // Fetch buyer orders
+  useEffect(() => {
+    const fetchMyOrders = async () => {
+      try {
+        const res = await axios.get('/api/order/my-orders', { withCredentials: true })
+        if (res.data.success) {
+          setOrders(res.data.orders)
+        }
+      } catch (err) {
+        console.error("Failed to fetch orders:", err)
+      } finally {
+        setOrdersLoading(false)
+      }
+    }
+    if (user) {
+      fetchMyOrders()
+    }
+  }, [user])
 
   // Redirect if not logged in
   useEffect(() => {
@@ -319,6 +343,108 @@ function Settings() {
                     {savingSettings ? "SAVING DETAILS..." : "SAVE SHIPPING DETAILS"}
                   </button>
                 </form>
+              </div>
+
+              {/* My Orders Section */}
+              <div className="settings-card section-card">
+                <div className="section-title-wrap">
+                  <FiPackage className="section-icon" />
+                  <h2 className="section-title">My Orders</h2>
+                </div>
+                <p className="section-desc">
+                  Track your order status and estimated delivery times for your active and historical purchases.
+                </p>
+
+                {ordersLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 0' }}>
+                    <div className="loading-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.7 }}>Retrieving purchases...</span>
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 1rem', border: '1px dashed var(--border)', borderRadius: '0px', backgroundColor: 'rgba(120, 120, 120, 0.02)' }}>
+                    <p style={{ fontSize: '12px', color: '#888888', margin: 0, letterSpacing: '0.5px' }}>No orders placed yet. Explore our latest arrivals to curate your wardrobe.</p>
+                    <Link to="/" className="settings-cta-btn" style={{ display: 'inline-block', marginTop: '1.25rem', padding: '0.65rem 1.5rem', fontSize: '9px', textDecoration: 'none' }}>
+                      Browse Collection
+                    </Link>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {orders.map((order) => {
+                      const orderIdShort = `#${order._id.toString().slice(-6).toUpperCase()}`
+                      const orderDate = new Date(order.createdAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })
+                      const deliveryDate = new Date(new Date(order.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })
+
+                      return (
+                        <div key={order._id} style={{ border: '1px solid var(--border)', borderRadius: '0px', padding: '1.5rem', backgroundColor: 'rgba(120, 120, 120, 0.02)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                          {/* Order Card Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                                <span style={{ fontSize: '13px', fontWeight: '600', letterSpacing: '0.5px', fontFamily: "'Space Grotesk', sans-serif" }}>{orderIdShort}</span>
+                                <span className={`status-badge status-${order.status}`} style={{ fontSize: '9px', fontWeight: '600', letterSpacing: '0.5px', padding: '2px 8px', borderRadius: '100px' }}>
+                                  {order.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                              <span style={{ fontSize: '11px', color: '#888888' }}>Placed on {orderDate}</span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ fontSize: '14px', fontWeight: '500', display: 'block', fontFamily: "'Bodoni Moda', serif" }}>
+                                {order.currency === 'INR' ? '₹' : order.currency || '₹'}{order.totalAmount.toLocaleString('en-IN')}
+                              </span>
+                              <span style={{ fontSize: '10px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{order.paymentMethod} • {order.paymentStatus}</span>
+                            </div>
+                          </div>
+
+                          {/* Items List */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {order.items.map((item, idx) => {
+                              const prod = item.product;
+                              if (!prod) return null;
+                              return (
+                                <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                  {prod.images && prod.images.length > 0 ? (
+                                    <img src={prod.images[0].url} alt={prod.title} style={{ width: '50px', height: '60px', objectFit: 'cover', border: '1px solid var(--border)', borderRadius: '0px' }} />
+                                  ) : (
+                                    <div style={{ width: '50px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', border: '1px solid var(--border)', borderRadius: '0px', color: '#888888', backgroundColor: 'rgba(120, 120, 120, 0.05)' }}>LUOMI</div>
+                                  )}
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '500', display: 'block', color: 'var(--text)', fontFamily: "'Cormorant Garamond', serif" }}>{prod.title}</span>
+                                    <span style={{ fontSize: '10px', color: '#888888' }}>Qty: {item.quantity}</span>
+                                  </div>
+                                  <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text)' }}>
+                                    {order.currency === 'INR' ? '₹' : order.currency || '₹'}{(item.price?.amount || prod.price?.amount || 0).toLocaleString('en-IN')}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Delivery Info */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', fontSize: '12px', color: order.status === 'delivered' ? '#10B981' : order.status === 'cancelled' ? '#EF4444' : '#B7791F' }}>
+                            <FiClock size={13} style={{ flexShrink: 0 }} />
+                            <span style={{ letterSpacing: '0.2px' }}>
+                              {order.status === 'delivered' ? (
+                                <>Delivered on {new Date(order.deliveryConfirmedAt || order.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</>
+                              ) : order.status === 'cancelled' ? (
+                                <span>Order Cancelled</span>
+                              ) : (
+                                <>Estimated delivery by <strong>{deliveryDate}</strong> (Within 7 days)</>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Merchant Status / Become Seller */}

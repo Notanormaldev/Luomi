@@ -115,7 +115,7 @@ async function sellergetproducts(req,res){
      })
 }
 async function getallproducts(req,res){
-     const products= await productmodel.find()
+     const products= await productmodel.find().sort({ createdAt: -1 })
 
      return res.status(200).json({
       msg:"All products fetched",

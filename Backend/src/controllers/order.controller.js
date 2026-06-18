@@ -428,9 +428,25 @@ Evaluate if the image is a valid delivery scene, apparel items, or package bag. 
     }
 }
 
+// Get all orders for the logged-in buyer
+async function getMyOrders(req, res) {
+    try {
+        const userId = req.user.id || req.user._id;
+        const orders = await orderModel.find({ user: userId })
+            .populate('items.product', 'title images price subCategory')
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({ success: true, orders });
+    } catch (error) {
+        console.error("getMyOrders Error:", error);
+        return res.status(500).json({ success: false, msg: "Failed to fetch your orders" });
+    }
+}
+
 export default {
     verifyPayment,
     markOutForDelivery,
     getDeliveryPendingOrders,
-    confirmDelivery
+    confirmDelivery,
+    getMyOrders
 };

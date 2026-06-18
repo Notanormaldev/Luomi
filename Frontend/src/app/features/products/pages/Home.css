@@ -947,6 +947,23 @@
   color: var(--lh-bg);
 }
 
+.lh-low-stock-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(220, 38, 38, 0.9);
+  color: #ffffff;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 2px;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
 /* ─── 3. SHOP BY CATEGORY ────────────────── */
 .lh-categories {
   padding: 100px 80px;
