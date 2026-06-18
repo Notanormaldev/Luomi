@@ -41,6 +41,12 @@ export default function Cart() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState(null)
+  const [toastMsg, setToastMsg] = useState(null)
+
+  const triggerToast = (msg) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(null), 3000)
+  }
 
   // Checkout state
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
@@ -126,7 +132,7 @@ export default function Cart() {
     }
 
     if (newQty > stock) {
-      alert(`Only ${stock} items available in stock`)
+      triggerToast(`Only ${stock} items available in stock`)
       return
     }
 
@@ -138,7 +144,7 @@ export default function Cart() {
         variantId: item.selectedVariant || undefined
       })
       if (!res.success) {
-        alert(res.error || 'Failed to update')
+        triggerToast(res.error || 'Failed to update')
       }
     } finally {
       setUpdating(false)
@@ -154,7 +160,7 @@ export default function Cart() {
         variantId: item.selectedVariant || undefined
       })
       if (!res.success) {
-        alert(res.error || 'Failed to remove')
+        triggerToast(res.error || 'Failed to remove')
       }
     } finally {
       setUpdating(false)
@@ -222,7 +228,7 @@ export default function Cart() {
       } else if (paymentMethod === 'Razorpay') {
         const scriptLoaded = await loadRazorpayScript()
         if (!scriptLoaded) {
-          alert('Failed to load Razorpay Payment Gateway. Please try again.')
+          triggerToast('Failed to load Razorpay Payment Gateway. Please try again.')
           setUpdating(false)
           return
         }
@@ -703,6 +709,14 @@ export default function Cart() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMsg && (
+        <div className="lh-toast animate-slide-up">
+          <FiCheckCircle size={14} className="lh-toast-icon" />
+          <span>{toastMsg}</span>
         </div>
       )}
 

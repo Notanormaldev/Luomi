@@ -15,6 +15,7 @@ export default function Wishlist() {
 
   const [theme, setTheme] = useState(localStorage.getItem('luomi-theme') || 'light')
   const [loading, setLoading] = useState(true)
+  const [toastMsg, setToastMsg] = useState(null)
 
   // Theme Sync
   useEffect(() => {
@@ -78,16 +79,19 @@ export default function Wishlist() {
     const currentQty = existing?.quantity || 0
     const stock = product.stock ?? 0
     if (stock > 0 && currentQty + 1 > stock) {
-      alert(`Only ${stock} items in stock`)
+      setToastMsg(`Only ${stock} items in stock`)
+      setTimeout(() => setToastMsg(null), 3000)
       return
     }
     const res = await handleAddToCart({ productId: product._id, quantity: 1 })
     if (res.success) {
       // Remove from wishlist after moving to bag
       await handleToggleWishlist({ productId: product._id })
-      alert('Moved item to Bag!')
+      setToastMsg('Moved item to Bag!')
+      setTimeout(() => setToastMsg(null), 3000)
     } else {
-      alert(res.error || 'Failed to add to bag')
+      setToastMsg(res.error || 'Failed to add to bag')
+      setTimeout(() => setToastMsg(null), 3000)
     }
   }
 
@@ -219,6 +223,12 @@ export default function Wishlist() {
             })}
           </div>
         )}
+      {toastMsg && (
+        <div className="wl-toast animate-slide-up">
+          <FiShoppingBag size={14} className="wl-toast-icon" style={{ color: '#10B981', marginRight: '8px' }} />
+          <span>{toastMsg}</span>
+        </div>
+      )}
       </div>
     </div>
   )

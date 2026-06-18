@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useauth } from '../../auth/hook/useauth'
 import Logo from '../../auth/components/Logo'
 import axios from 'axios'
-import { FiArrowLeft, FiTruck, FiMapPin, FiPhone, FiCheck, FiCamera, FiAlertCircle, FiSettings } from 'react-icons/fi'
+import { FiArrowLeft, FiTruck, FiMapPin, FiPhone, FiCheck, FiCamera, FiAlertCircle, FiSettings, FiCheckCircle } from 'react-icons/fi'
 import './DeliveryDashboard.css'
 
 export default function DeliveryDashboard() {
@@ -22,6 +22,7 @@ export default function DeliveryDashboard() {
   const [deliveryFile, setDeliveryFile] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [formError, setFormError] = useState('')
+  const [toastMsg, setToastMsg] = useState(null)
 
   // Sync theme
   useEffect(() => {
@@ -120,7 +121,8 @@ export default function DeliveryDashboard() {
         }
       )
       if (res.data.success) {
-        alert('Delivery confirmed successfully!')
+        setToastMsg('Delivery confirmed successfully!')
+        setTimeout(() => setToastMsg(null), 4000)
         handleCloseConfirmModal()
         fetchDeliveries()
       }
@@ -450,6 +452,12 @@ export default function DeliveryDashboard() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {toastMsg && (
+        <div className="lh-toast animate-slide-up">
+          <FiCheckCircle size={14} className="lh-toast-icon" />
+          <span>{toastMsg}</span>
         </div>
       )}
     </div>

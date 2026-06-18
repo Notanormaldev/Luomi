@@ -1,9 +1,9 @@
 import productmodel from "../models/product.model.js";
-import { ChatOllama } from "@langchain/ollama";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
-const model = new ChatOllama({
-  baseUrl: "http://localhost:11434",
-  model: "llama3",
+const model = new ChatGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY || "dummy-key",
+  model: "gemini-2.5-flash",
 });
 
 async function askJerry(req, res) {
@@ -26,76 +26,41 @@ async function askJerry(req, res) {
 
     const systemPrompt = `You are "Jerry", a helpful and friendly AI shopping assistant for Luomi — a modern fashion brand.
 
+Our brand name / website name is "Luomi" (pronounced Loo-mee).
+
 You are helping a customer who is looking at this specific product. Here is the complete raw product database record in JSON format:
 ${JSON.stringify(product, null, 2)}
 
-Here is the entire product catalog in our store database in JSON format (use this if the user asks for other colors, items, or comparisons):
+Here is the entire product catalog in our store database in JSON format:
 ${JSON.stringify(allProducts, null, 2)}
 
 Your job is to answer questions about the current product or recommend other items in the catalog. Be direct, helpful, and concise.
+
 Rules:
 1. Answer based on ACTUAL product data above — do NOT make up info not in the data.
-2. If asked about sizes: list the actual available sizes from variants.
+2. If asked about sizes: list all available sizes from variants in full detail.
 3. If asked about fit: read the description for hints (slim, relaxed, oversized, etc).
 4. If asked about material: read the description for hints (linen, cotton, denim, etc).
-5. Keep answers under 3-4 sentences. Be friendly, not fancy.
-6. Do NOT use "silhouette", "atelier", "maison" or luxury fashion jargon.
-7. If you don't know something specific, say so honestly.
-8. If you suggest or recommend other products from the catalog, you MUST format them as Markdown links in the exact format: [Product Title](/product/productId) followed by the price (e.g. "We also recommend the [Short-Sleeve Utility Camp Shirt](/product/12345) (₹999)"). This is crucial so that the user can click on the product to navigate there.`;
+5. If the user asks for recommendations, suggestions, or other items of "this type", "this category", or "like this", you MUST prioritize recommending products from the SAME category / subCategory (e.g. if looking at a shirt, recommend other shirts; if looking at jeans, recommend other jeans) from the catalog.
+6. If the user asks for size recommendations based on their body type or physical build:
+   - If they have a larger build / heavy build / fat / chubby / plus size: suggest larger sizes (L, XL, XXL) or suggest items that have a relaxed/oversized fit.
+   - If they have a smaller build / skinny / thin / lean: suggest smaller sizes (S, XS) or suggest slim/tailored fit items.
+7. If you suggest or recommend other products from the catalog, you MUST format them as Markdown links in the exact format: [Product Title](/product/productId) (price) (e.g., "[Relaxed Denim Pants](/product/123456) (₹1,999)").
+8. Under no circumstances should you use double asterisks ** for bold text or double hyphens -- (dashes) in your replies. Use plain capitalized text for emphasis if needed. Keep answers under 3-4 sentences. Be friendly and direct.`;
 
     let reply = "";
     try {
-      // If GEMINI_API_KEY is present in environment variables, prioritize the Gemini Cloud API (ideal for production hosting)
-      if (process.env.GEMINI_API_KEY) {
-        const apiKey = process.env.GEMINI_API_KEY;
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: "user",
-                  parts: [
-                    { text: `${systemPrompt}\n\nUser Question: ${message}` }
-                  ]
-                }
-              ],
-              generationConfig: {
-                maxOutputTokens: 300,
-                temperature: 0.7
-              }
-            })
-          }
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        } else {
-          const errText = await response.text();
-          throw new Error(`Gemini API error: ${errText}`);
-        }
-      } else {
-        // Local fallback: Fast check if local Ollama is responsive (500ms timeout)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 500);
-        await fetch("http://localhost:11434", { signal: controller.signal }).catch(() => {
-          throw new Error("Ollama is offline");
-        });
-        clearTimeout(timeoutId);
-
-        const response = await model.invoke([
-          ["system", systemPrompt],
-          ["user", message]
-        ]);
-        reply = response.content;
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("GEMINI_API_KEY is not defined in environment");
       }
-    } catch (ollamaErr) {
-      console.warn("Ollama offline/failed, using smart dynamic fallback:", ollamaErr.message);
+
+      const response = await model.invoke([
+        ["system", systemPrompt],
+        ["user", message]
+      ]);
+      reply = response.content;
+    } catch (geminiErr) {
+      console.warn("Gemini Langchain invocation failed, using smart dynamic fallback:", geminiErr.message);
 
       const query = message.toLowerCase();
       const desc = (product.description || "").toLowerCase();
@@ -252,8 +217,41 @@ Rules:
         }
       }
 
-      // 3. FIT RECOMMENDATIONS
-      if (query.includes("fit") || query.includes("tight") || query.includes("loose") || query.includes("baggy") || query.includes("run") || query.includes("silhouette")) {
+      // 3. FIT & BODY BUILD RECOMMENDATIONS
+      const hasLargerBuild = queryWords.some(w => ["fat", "chubby", "heavy", "plus", "broad", "large"].includes(w)) || query.includes("fat") || query.includes("heavy") || query.includes("chubby");
+      const hasSmallerBuild = queryWords.some(w => ["skinny", "thin", "lean", "slim", "small"].includes(w)) || query.includes("skinny") || query.includes("thin") || query.includes("lean");
+
+      if (hasLargerBuild) {
+        let fitText = "Since you prefer a fit for a larger or heavier build, we recommend choosing size L, XL, or XXL depending on measurements.";
+        if (desc.includes("relaxed") || desc.includes("oversized")) {
+          fitText += ` This product (${product.title}) features a relaxed or oversized drape which will offer a comfortable fit.`;
+        } else {
+          const relaxedItems = allProducts.filter(p => 
+            p._id.toString() !== product._id.toString() &&
+            ((p.description || "").toLowerCase().includes("relaxed") || (p.description || "").toLowerCase().includes("oversized"))
+          );
+          if (relaxedItems.length > 0) {
+            const list = relaxedItems.slice(0, 3).map(p => `- [${p.title}](/product/${p._id}) (₹${p.price?.amount?.toLocaleString('en-IN')})`).join('\n');
+            fitText += ` We also suggest checking out these relaxed/oversized fit products in the same category:\n${list}`;
+          }
+        }
+        matchedAnswers.push(`Fit Recommendation: ${fitText}`);
+      } else if (hasSmallerBuild) {
+        let fitText = "For a lean or skinny build, we recommend going with size XS or S for a neat fit.";
+        if (desc.includes("slim") || desc.includes("fitted")) {
+          fitText += ` This product (${product.title}) is designed with a slim/fitted cut, making it ideal for your build.`;
+        } else {
+          const slimItems = allProducts.filter(p => 
+            p._id.toString() !== product._id.toString() &&
+            ((p.description || "").toLowerCase().includes("slim") || (p.description || "").toLowerCase().includes("fitted"))
+          );
+          if (slimItems.length > 0) {
+            const list = slimItems.slice(0, 3).map(p => `- [${p.title}](/product/${p._id}) (₹${p.price?.amount?.toLocaleString('en-IN')})`).join('\n');
+            fitText += ` We also suggest checking out these slim-fit products in the same category:\n${list}`;
+          }
+        }
+        matchedAnswers.push(`Fit Recommendation: ${fitText}`);
+      } else if (query.includes("fit") || query.includes("tight") || query.includes("loose") || query.includes("baggy") || query.includes("run") || query.includes("silhouette")) {
         let fitText = "It fits true to size.";
         if (desc.includes("oversized")) {
           fitText = "It features an oversized fit, designed to run slightly large for a relaxed, street-ready drape.";
@@ -262,7 +260,7 @@ Rules:
         } else if (desc.includes("relaxed")) {
           fitText = "It features a relaxed fit, offering extra comfort and a casual drape.";
         }
-        matchedAnswers.push(`**Fit Recommendation:** ${fitText}`);
+        matchedAnswers.push(`Fit Recommendation: ${fitText}`);
       }
 
       // 4. SPECIFIC COLOR AVAILABILITY (WITH CROSS-RECOMMENDATION)
@@ -380,42 +378,31 @@ Rules:
         if (uniqueSizes.length > 0) matchedAnswers.push(`**Sizes:** ${uniqueSizes.join(', ')}`);
       }
 
-      // 12. CATALOG KEYWORD SEARCH
-      if (matchedAnswers.length === 0 && (foundKeywords.length > 0 || query.includes("show") || query.includes("recommend") || query.includes("suggest") || query.includes("other") || query.includes("have") || query.includes("alternate"))) {
-        const matches = allProducts.filter(p => {
+      // 12. CATALOG KEYWORD SEARCH & RECOMMENDATIONS (PRIORITIZING SAME CATEGORY)
+      const isRecommending = query.includes("recommend") || query.includes("suggest") || query.includes("show") || query.includes("other") || query.includes("alternate") || query.includes("types") || query.includes("more") || foundKeywords.length > 0;
+      if (matchedAnswers.length === 0 && isRecommending) {
+        // Prioritize same subCategory
+        let matches = allProducts.filter(p => {
           if (p._id.toString() === product._id.toString()) return false;
-          
-          const titleLower = (p.title || "").toLowerCase();
-          const descLower = (p.description || "").toLowerCase();
-          const catLower = (p.category || "").toLowerCase();
-          const subCatLower = (p.subCategory || "").toLowerCase();
-          
-          if (foundKeywords.length > 0) {
-            return foundKeywords.some(kw => {
-              const term = kw === "tshirt" ? "t-shirt" : kw;
-              const hasTerm = titleLower.includes(term) || 
-                              descLower.includes(term) || 
-                              catLower.includes(term) || 
-                              subCatLower.includes(term);
-              if (hasTerm) return true;
-              
-              if (kw === "gym" || kw === "running" || kw === "activewear") {
-                return titleLower.includes("active") || descLower.includes("active") || descLower.includes("run") || descLower.includes("gym") || descLower.includes("training") || subCatLower.includes("activewear");
-              }
-              return false;
-            });
-          }
-          return true;
+          return p.subCategory && product.subCategory && p.subCategory.toLowerCase() === product.subCategory.toLowerCase();
         });
+
+        // Fallback to same genderCategory
+        if (matches.length === 0) {
+          matches = allProducts.filter(p => {
+            if (p._id.toString() === product._id.toString()) return false;
+            return p.genderCategory && product.genderCategory && p.genderCategory.toLowerCase() === product.genderCategory.toLowerCase();
+          });
+        }
 
         if (matches.length > 0) {
           const list = matches.slice(0, 4).map(p => `- [${p.title}](/product/${p._id}) (₹${p.price?.amount?.toLocaleString('en-IN')})`).join('\n');
-          matchedAnswers.push(`I found these options in our catalog:\n${list}`);
+          matchedAnswers.push(`I found these other products in the same category that you might like:\n${list}`);
         } else {
           const popular = allProducts.filter(p => p._id.toString() !== product._id.toString()).slice(0, 3);
           if (popular.length > 0) {
             const list = popular.map(p => `- [${p.title}](/product/${p._id}) (₹${p.price?.amount?.toLocaleString('en-IN')})`).join('\n');
-            matchedAnswers.push(`We don't have direct matches in the catalog right now. However, you might like these items:\n${list}`);
+            matchedAnswers.push(`Here are some of our popular products you might like:\n${list}`);
           }
         }
       }
@@ -451,6 +438,11 @@ Rules:
 
 What would you like to know?`;
       }
+    }
+
+    // Programmatically sanitize response: Strip double asterisks ** and double hyphens --
+    if (reply) {
+      reply = reply.replace(/\*\*/g, '').replace(/--/g, '');
     }
 
     return res.status(200).json({

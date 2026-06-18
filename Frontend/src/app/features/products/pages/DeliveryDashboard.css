@@ -805,3 +805,41 @@
   opacity: 0.8;
   transform: scale(1.05);
 }
+
+/* Premium Luxury Toast Notification */
+.lh-toast {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  background: var(--dd-text);
+  color: var(--dd-bg);
+  padding: 1.2rem 2.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  z-index: 10000;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--dd-border);
+  animation: toastSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lh-toast-icon {
+  color: #10B981; /* Success Green */
+  flex-shrink: 0;
+}
+
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
