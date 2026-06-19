@@ -15,11 +15,11 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="./img1.png" alt="Luomi Atelier - Homepage" width="100%" />
+  <img src="./screenshots/img1.png" alt="Luomi Atelier - Homepage" width="100%" />
 </p>
 
 <p align="center">
-  <img src="./img2.png" alt="Luomi Atelier - Product / Dashboard View" width="100%" />
+  <img src="./screenshots/img2.png" alt="Luomi Atelier - Product / Dashboard View" width="100%" />
 </p>
 
 ---
