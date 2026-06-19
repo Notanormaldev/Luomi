@@ -16,7 +16,71 @@
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Inline loader style & structure so it shows instantly while downloading bundles -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #0a0a0a;
+        }
+      }
+      .initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+      }
+      .initial-nanobar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        background: #0a0a0a;
+        width: 30%;
+        animation: initial-nano 1.2s infinite ease-in-out;
+      }
+      @media (prefers-color-scheme: dark) {
+        .initial-nanobar {
+          background: #ffffff;
+        }
+      }
+      .initial-logo {
+        font-family: 'Bodoni Moda', 'Didot', 'Georgia', serif;
+        font-size: 32px;
+        font-weight: 300;
+        letter-spacing: 0.25em;
+        color: #0a0a0a;
+        text-transform: uppercase;
+        animation: initial-fade 1.5s infinite;
+      }
+      @media (prefers-color-scheme: dark) {
+        .initial-logo {
+          color: #ffffff;
+        }
+      }
+      @keyframes initial-nano {
+        0% { left: -30%; width: 30%; }
+        50% { width: 50%; }
+        100% { left: 100%; width: 30%; }
+      }
+      @keyframes initial-fade {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 1; }
+      }
+    </style>
+    <div class="initial-loader">
+      <div class="initial-nanobar"></div>
+      <h1 class="initial-logo">LUOMI</h1>
+    </div>
+  </div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 

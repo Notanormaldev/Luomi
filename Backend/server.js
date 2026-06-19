@@ -11,6 +11,7 @@ const server = app.listen(PORT, () => {
     startCleanupJob();
 })
 
+
 // ─── Graceful Shutdown ──────────────────────────────────────────────────────────
 // AWS Auto Scaling sends SIGTERM when terminating an instance.
 // We give in-flight requests up to 10 seconds to finish before hard-exiting.

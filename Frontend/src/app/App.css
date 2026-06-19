@@ -160,3 +160,139 @@ input, textarea {
     left: 150%;
   }
 }
+
+/* ─── GLOBAL PAGE LOADER (Luomi style) ─── */
+.lh-page-loader {
+  position: fixed;
+  inset: 0;
+  background: var(--lh-bg, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+[data-theme='dark'] .lh-page-loader {
+  background: var(--lh-bg, #0a0a0a);
+}
+
+.lh-nano-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--lh-text, #0a0a0a);
+  width: 30%;
+  animation: nano-loading 1.2s infinite ease-in-out;
+  z-index: 10000;
+}
+
+[data-theme='dark'] .lh-nano-bar {
+  background: var(--lh-text, #ffffff);
+}
+
+.lh-loader-logo {
+  font-family: 'Bodoni Moda', serif;
+  font-size: 32px;
+  font-weight: 300;
+  letter-spacing: 0.25em;
+  color: var(--lh-text, #0a0a0a);
+  text-transform: uppercase;
+  animation: pulse-fade 1.5s infinite;
+}
+
+[data-theme='dark'] .lh-loader-logo {
+  color: var(--lh-text, #ffffff);
+}
+
+@keyframes nano-loading {
+  0% { left: -30%; width: 30%; }
+  50% { width: 50%; }
+  100% { left: 100%; width: 30%; }
+}
+
+@keyframes pulse-fade {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* ─── OFFLINE / CRASH SCREEN ─── */
+.lh-offline-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--lh-bg, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+  gap: 30px;
+  padding: 20px;
+}
+
+[data-theme='dark'] .lh-offline-screen {
+  background: var(--lh-bg, #0a0a0a);
+}
+
+.lh-offline-card {
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  border: 1px solid var(--lh-border, #e5e5e5);
+  padding: 40px 30px;
+  border-radius: 4px;
+  background: var(--lh-bg, #ffffff);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme='dark'] .lh-offline-card {
+  border-color: var(--lh-border, #222222);
+  background: var(--lh-light-bg, #141414);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.lh-offline-card h2 {
+  font-family: 'Bodoni Moda', serif;
+  font-size: 24px;
+  font-weight: 450;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  color: var(--lh-text, #0a0a0a);
+}
+
+[data-theme='dark'] .lh-offline-card h2 {
+  color: var(--lh-text, #ffffff);
+}
+
+.lh-offline-card p {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--lh-text-muted, #888888);
+  margin-bottom: 28px;
+}
+
+.lh-retry-btn {
+  background: var(--lh-text, #0a0a0a);
+  color: var(--lh-bg, #ffffff);
+  border: none;
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: opacity 0.2s ease;
+}
+
+[data-theme='dark'] .lh-retry-btn {
+  background: var(--lh-text, #ffffff);
+  color: var(--lh-bg, #0a0a0a);
+}
+
+.lh-retry-btn:hover {
+  opacity: 0.8;
+}

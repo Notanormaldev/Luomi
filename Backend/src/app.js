@@ -8,6 +8,9 @@ import rateLimit from 'express-rate-limit'
 import { RedisStore } from 'rate-limit-redis'
 import passport from 'passport'
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
+import path from 'path'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
 import config from './config/config.js'
 import redis from './config/cache.js'
 import authrouter from './Routes/auth.route.js'
@@ -86,7 +89,8 @@ const authLimiter = rateLimit({
     })
 })
 
-app.use(globalLimiter)
+// Apply global rate limiting only to API endpoints, avoiding static assets
+app.use('/api', globalLimiter)
 
 // ─── Health Check Endpoint ─────────────────────────────────────────────────────
 // AWS ALB / ECS / App Runner / Kubernetes liveness & readiness probes hit this.
@@ -118,6 +122,26 @@ app.use('/api/cart', cartroute)
 app.use('/api/ai', airoute)
 app.use('/api/wishlist', wishlistroute)
 app.use('/api/order', orderRoute)
+
+// ─── Serve Frontend Static Files ──────────────────────────────────────────────
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const publicPath = path.join(__dirname, '..', 'public')
+
+app.use(express.static(publicPath))
+
+// SPA Fallback: serve index.html for any request that is not an API call
+app.get('*', (req, res, next) => {
+    // If it's an API route that wasn't matched, forward to 404 handler
+    if (req.path.startsWith('/api')) {
+        return next()
+    }
+    const indexFilePath = path.join(publicPath, 'index.html')
+    if (fs.existsSync(indexFilePath)) {
+        res.sendFile(indexFilePath)
+    } else {
+        next()
+    }
+})
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
