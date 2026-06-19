@@ -40,7 +40,13 @@ export async function getme(){
         const res=await authapi.get('/get-me')
         return res.data
      } catch (error) {
-        throw error.response?.data || { msg: "Failed to fetch user session" }
+        if (!error.response) {
+            throw { msg: "Server connection failed. Please check if the server is starting or asleep.", isNetworkError: true }
+        }
+        if (error.response.status >= 500) {
+            throw { msg: "Server error. The service is currently under maintenance.", isServerError: true, status: error.response.status }
+        }
+        throw error.response.data || { msg: "Failed to fetch user session" }
      }
 }
 
