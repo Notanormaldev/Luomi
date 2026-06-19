@@ -884,12 +884,13 @@
 
 .pd-similar-grid-design {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 24px;
 }
 
 .pd-similar-card-design {
   cursor: pointer;
+  min-width: 0;
 }
 
 .pd-similar-card-img-wrap-design {
@@ -1076,7 +1077,7 @@
     padding: 40px 20px;
   }
   .pd-similar-grid-design {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
   .pd-footer-links-design {
@@ -1104,7 +1105,7 @@
     border-radius: 2px;
   }
   .pd-similar-grid-design {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
   }
 }

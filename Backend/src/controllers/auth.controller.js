@@ -215,12 +215,17 @@ async function googlecallback(req,res){
     user:user
   },config.JWT,{expiresIn:"7d"})
   setAuthCookie(res, token);
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-   if(user.role === "seller"){
-       res.redirect(`${frontendUrl}/dashbord/seller`)
-    }else{
-       res.redirect(frontendUrl)
-    }
+  
+  let frontendUrl = config.FRONTEND_URL || 'http://localhost:5173';
+  if (config.NODE_ENVIRONMENT === 'production') {
+    frontendUrl = `${req.protocol}://${req.get('host')}`;
+  }
+
+  if (user.role === "seller") {
+    res.redirect(`${frontendUrl}/dashbord/seller`)
+  } else {
+    res.redirect(frontendUrl)
+  }
 }
 async function logout(req,res){
   const token = req.cookies.token;

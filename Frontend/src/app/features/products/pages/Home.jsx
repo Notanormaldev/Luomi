@@ -119,8 +119,10 @@ export default function Home() {
 
   const handleCategoryTabClick = (index) => {
     const tab = CATEGORY_TABS[index]
+    setSearchQuery('')
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
+      next.delete('q')
       if (index === 0) {
         next.delete('category')
         next.delete('browse')
@@ -558,7 +560,6 @@ export default function Home() {
                 onClick={() => {
                   handleCategoryTabClick(i);
                   setIsCatOpen(false);
-                  handleSearchInputChange('');
                 }}>
                 {tab.label}
               </button>

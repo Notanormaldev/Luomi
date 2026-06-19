@@ -25,7 +25,7 @@ const PRICE_REFRESH_INTERVAL = 30000
 
 export default function Cart() {
   const navigate = useNavigate()
-  const { user } = useauth()
+  const { user, handleupdatesettings } = useauth()
   const {
     items: cartItems,
     subtotal,
@@ -87,6 +87,17 @@ export default function Cart() {
     sync()
     window.addEventListener('theme-changed', sync)
     return () => window.removeEventListener('theme-changed', sync)
+  }, [])
+
+  // Load Razorpay script on mount
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    document.body.appendChild(script)
+    return () => {
+      document.body.removeChild(script)
+    }
   }, [])
 
   // Initial fetch
@@ -167,15 +178,7 @@ export default function Cart() {
     }
   }
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script')
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-      script.onload = () => resolve(true)
-      script.onerror = () => resolve(false)
-      document.body.appendChild(script)
-    })
-  }
+  // Razorpay script loaded on mount
 
   // Handle Checkout
   const triggerCheckout = async () => {
@@ -209,7 +212,7 @@ export default function Cart() {
     // Auto-save address to profile if using a new address
     if (!hasSavedAddress) {
       try {
-        await updateSettingsApi({ address: activeAddress, city: activeCity, pincode: activePincode, contact: activeContact })
+        await handleupdatesettings({ address: activeAddress, city: activeCity, pincode: activePincode, contact: activeContact })
       } catch (e) {
         // Non-blocking: address save failure should not block checkout
         console.warn('Could not auto-save address to profile:', e)
@@ -226,9 +229,8 @@ export default function Cart() {
           setCheckoutError(res.error || 'Checkout failed')
         }
       } else if (paymentMethod === 'Razorpay') {
-        const scriptLoaded = await loadRazorpayScript()
-        if (!scriptLoaded) {
-          triggerToast('Failed to load Razorpay Payment Gateway. Please try again.')
+        if (!window.Razorpay) {
+          triggerToast('Razorpay Payment Gateway SDK is loading. Please try again in a moment.')
           setUpdating(false)
           return
         }

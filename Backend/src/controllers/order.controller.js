@@ -5,6 +5,8 @@ import usermodel from '../models/user.model.js';
 import config from '../config/config.js';
 import { sendEmail } from '../services/mailer.service.js';
 import { uploadfile } from '../services/storage.service.js';
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { HumanMessage } from "@langchain/core/messages";
 
 // Verify Razorpay payment signature
 async function verifyPayment(req, res) {
@@ -265,56 +267,63 @@ async function confirmDelivery(req, res) {
             return res.status(400).json({ success: false, msg: "Validation failed: A proof of delivery photo is required" });
         }
 
-        // 4. AI Photo Validation using Ollama (with abort signal / fallback)
+        // 4. AI Photo Validation using Gemini Vision (via LangChain)
         let aiApproved = true;
         let aiExplanation = "AI verified dropoff proof photo successfully.";
         
         try {
-            const base64Image = req.file.buffer.toString('base64');
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
+            if (!config.GEMINI_API_KEY) {
+                throw new Error("GEMINI_API_KEY is not defined in config");
+            }
 
-            const response = await fetch("http://localhost:11434/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                signal: controller.signal,
-                body: JSON.stringify({
-                    model: "llama3.2-vision", // Standard Ollama vision model
-                    messages: [
-                        {
-                            role: "user",
-                            content: `You are an automated delivery validation system. Your job is to verify if the uploaded proof-of-delivery photo corresponds to a valid package delivery or a piece of apparel matching the description.
+            const base64Image = req.file.buffer.toString('base64');
+            const mimeType = req.file.mimetype;
+
+            const geminiModel = new ChatGoogleGenerativeAI({
+                apiKey: config.GEMINI_API_KEY,
+                model: "gemini-2.5-flash",
+                maxRetries: 1,
+            });
+
+            const systemPrompt = `You are an automated delivery validation system. Your job is to verify if the uploaded proof-of-delivery photo corresponds to a valid package delivery, clothing parcel, or a piece of apparel matching the description.
 Product Title: "${validatingProduct.title}"
 Product Description: "${validatingProduct.description || 'N/A'}"
 
-Evaluate if the image is a valid delivery scene, apparel items, or package bag. Reply ONLY with a valid JSON block:
+Evaluate if the image shows a valid delivery dropoff, parcel box/bag, or the apparel itself. Reply ONLY with a valid raw JSON block:
 {
   "valid": true or false,
   "explanation": "Brief explanation of what you see and whether it matches"
-}`,
-                            images: [base64Image]
-                        }
-                    ],
-                    format: "json",
-                    stream: false
-                })
-            });
-            clearTimeout(timeoutId);
+}`;
 
-            if (response.ok) {
-                const resJson = await response.json();
-                const content = JSON.parse(resJson.message?.content || '{}');
-                if (content.valid === false) {
-                    aiApproved = false;
-                    aiExplanation = content.explanation || "AI was unable to confirm the delivery photo contains the matching apparel/parcel.";
-                } else if (content.valid === true) {
-                    aiExplanation = content.explanation || "AI confirmed the dropoff photo matches the product/parcel.";
-                }
-            } else {
-                throw new Error(`Ollama returned status ${response.status}`);
+            const message = new HumanMessage({
+                content: [
+                    { type: "text", text: systemPrompt },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: `data:${mimeType};base64,${base64Image}`
+                        }
+                    }
+                ]
+            });
+
+            const response = await geminiModel.invoke([message]);
+            let contentText = response.content;
+
+            // Clean markdown wrappers if returned (e.g. ```json ... ```)
+            if (contentText.includes("```")) {
+                contentText = contentText.replace(/```json/g, "").replace(/```/g, "").trim();
             }
-        } catch (ollamaErr) {
-            console.warn("Ollama AI Vision verification offline/unsupported, using dynamic validation:", ollamaErr.message);
+
+            const content = JSON.parse(contentText || '{}');
+            if (content.valid === false) {
+                aiApproved = false;
+                aiExplanation = content.explanation || "AI was unable to confirm the delivery photo contains the matching apparel/parcel.";
+            } else if (content.valid === true) {
+                aiExplanation = content.explanation || "AI confirmed the dropoff photo matches the product/parcel.";
+            }
+        } catch (geminiErr) {
+            console.warn("Gemini AI Vision verification failed, using dynamic validation fallback:", geminiErr.message);
             // Dynamic check of image file metadata
             if (!req.file.mimetype.startsWith('image/')) {
                 aiApproved = false;

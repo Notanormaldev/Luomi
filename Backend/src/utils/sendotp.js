@@ -6,6 +6,7 @@ export function generateOtp() {
 }
 
 export async function sendOtpEmail(toEmail, otp) {
+  console.log(`[TESTING/DEBUGGING] OTP for ${toEmail} is: ${otp}`);
   await sendEmail({
     to: toEmail,
     subject: "Your Login OTP - Luomi",

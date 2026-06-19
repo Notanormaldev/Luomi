@@ -24,11 +24,15 @@ const isProduction = config.NODE_ENVIRONMENT === 'production'
 
 const app = express()
 
+// Enable trust proxy so rate limiters extract the correct client IP behind Docker/reverse-proxies
+app.set('trust proxy', 1)
+
 // ─── Security Headers (Helmet) ────────────────────────────────────────────────
 // Sets X-Frame-Options, X-XSS-Protection, HSTS, Content-Security-Policy etc.
 app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow ImageKit images
-    contentSecurityPolicy: false // disabled — frontend handles its own CSP
+    contentSecurityPolicy: false, // disabled — frontend handles its own CSP
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
 }))
 
 // ─── GZIP Compression ─────────────────────────────────────────────────────────
@@ -36,21 +40,28 @@ app.use(helmet({
 app.use(compression())
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-app.use(cors({
-    origin: function (origin, callback) {
-        const allowedOrigins = [
-            config.FRONTEND_URL,
-            'http://localhost:5173'
-        ].filter(Boolean)
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true)
-        } else {
-            callback(new Error('Not allowed by CORS'))
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+app.use(cors((req, callback) => {
+    const origin = req.header('Origin')
+    const host = req.header('Host')
+    const allowedOrigins = [
+        config.FRONTEND_URL,
+        'http://localhost:5173',
+        'http://localhost:3000'
+    ].filter(Boolean)
+
+    // Check if it is same-origin (origin contains the request host)
+    const isSameOrigin = origin && (origin.includes(host) || origin.endsWith(host))
+
+    if (!origin || isSameOrigin || allowedOrigins.includes(origin)) {
+        callback(null, {
+            origin: origin || true,
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE'],
+            allowedHeaders: ['Content-Type', 'Authorization']
+        })
+    } else {
+        callback(new Error('Not allowed by CORS'))
+    }
 }))
 
 // ─── Body Parsing ─────────────────────────────────────────────────────────────
@@ -68,7 +79,7 @@ app.use(morgan(isProduction ? 'combined' : 'dev'))
 // so even if 10 EC2 instances are running, 100 req/15min is global, not per-instance.
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,     // 15 minutes
-    max: 200,                      // 200 requests per window per IP
+    max: 5000,                     // increased limit for local testing to prevent 429 block
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { success: false, msg: 'Too many requests. Please try again after 15 minutes.' },
@@ -80,9 +91,10 @@ const globalLimiter = rateLimit({
 // Strict limiter for auth routes (login, register, OTP) — prevent brute force
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,     // 15 minutes
-    max: 20,                       // max 20 auth attempts per IP per window
+    max: 1000,                     // increased limit for local testing to avoid 429 block
     standardHeaders: 'draft-7',
     legacyHeaders: false,
+    skip: (req) => req.path.includes('/google') || req.originalUrl.includes('/google'),
     message: { success: false, msg: 'Too many authentication attempts. Please try again after 15 minutes.' },
     store: new RedisStore({
         sendCommand: (...args) => redis.call(...args)
@@ -116,7 +128,14 @@ passport.use(new GoogleStrategy({
 }))
 
 // ─── API Routes ────────────────────────────────────────────────────────────────
-app.use('/api/auth', authLimiter, authrouter)   // stricter limit on auth
+// Apply strict auth limiter only to brute-force prone endpoints to avoid rate-limiting get-me or google oauth
+app.use('/api/auth/login', authLimiter)
+app.use('/api/auth/register', authLimiter)
+app.use('/api/auth/verify-otp', authLimiter)
+app.use('/api/auth/forgot-password', authLimiter)
+app.use('/api/auth/reset-password', authLimiter)
+
+app.use('/api/auth', authrouter)
 app.use('/api/product', productroute)
 app.use('/api/cart', cartroute)
 app.use('/api/ai', airoute)
@@ -130,7 +149,7 @@ const publicPath = path.join(__dirname, '..', 'public')
 app.use(express.static(publicPath))
 
 // SPA Fallback: serve index.html for any request that is not an API call
-app.get('*', (req, res, next) => {
+app.get('*splat', (req, res, next) => {
     // If it's an API route that wasn't matched, forward to 404 handler
     if (req.path.startsWith('/api')) {
         return next()
