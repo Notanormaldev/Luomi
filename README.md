@@ -1,230 +1,108 @@
-# Luomi Atelier
+<div align="center">
 
-A full-stack luxury fashion e-commerce platform built with the MERN stack.
+# 🛍️ Luomi Atelier
 
-## 🏗️ Tech Stack
+### A production-grade, auto-scaling luxury fashion e-commerce platform
+
+**Built and deployed on AWS like an actual production system, not a tutorial project.**
+
+[**🌐 Live Demo**](http://luomi-alb-877355459.ap-south-1.elb.amazonaws.com/) · [**📂 Source Code**](https://github.com/Notanormaldev/Luomi)
+
+</div>
+
+---
+
+## 📸 Preview
+
+<p align="center">
+  <img src="./img1.png" alt="Luomi Atelier - Homepage" width="100%" />
+</p>
+
+<p align="center">
+  <img src="./img2.png" alt="Luomi Atelier - Product / Dashboard View" width="100%" />
+</p>
+
+---
+
+## ⚡ Why This Project Stands Out
+
+Most student MERN projects run on a single Node process and call it done. Luomi is built and hosted the way a real engineering team would ship an e-commerce product — containerized, load balanced, auto-scaling, and instrumented for observability.
+
+It's live right now behind an **AWS Application Load Balancer**, traffic is distributed across **auto-scaling containerized instances**, and the backend is hardened with the same security and resilience patterns used in production fintech and retail systems.
+
+---
+
+## 🏗️ Infrastructure & Deployment (AWS)
+
+This isn't "deployed on Render and forgotten." Luomi runs on real cloud infrastructure:
+
+- **Application Load Balancer (ALB)** distributing live traffic across multiple backend instances
+- **Auto Scaling** so the platform handles traffic spikes without manual intervention
+- **Containerized backend** running in isolated, reproducible environments — no "works on my machine" risk
+- **Health check endpoint** (`/health`) wired directly into the ALB so unhealthy instances are automatically pulled out of rotation
+- **Graceful shutdown handling** on `SIGTERM` — when AWS scales an instance down, in-flight requests are allowed to finish instead of being dropped mid-checkout
+- **Distributed, Redis-backed rate limiting** — because in-memory rate limiting breaks the moment you run more than one instance behind a load balancer, and Luomi runs more than one
+
+This means the platform behaves correctly under real auto-scaling conditions, not just on a single dev server.
+
+---
+
+## 🧠 Engineering Highlights
+
+### Security, the way production APIs are actually secured
+- JWT authentication in `httpOnly`, `secure` cookies with **active token blacklisting on logout** via Redis (a logged-out token is dead immediately, not just expired)
+- `Helmet.js` enforcing HSTS, clickjacking protection, MIME-sniffing protection, and XSS headers
+- Brute-force protected auth routes with stricter, separately-tuned rate limits
+- Google OAuth 2.0 alongside traditional email/OTP authentication
+- Role-based access control across three completely separate user types — **buyer, seller, and delivery partner**
+
+### Payments that actually work like payments
+- Razorpay integration with **HMAC-SHA256 signature verification** on every transaction — no trusting the client, every payment is cryptographically verified server-side
+- Automated cleanup job that silently kills abandoned/pending checkouts so stale orders never pollute order history
+
+### AI that's actually doing something useful
+- **Jerry**, an in-app AI shopping assistant powered by **LangChain + Google Gemini 2.5 Flash**, answers real product questions (sizing, fit, material, price), gives body-type-based size recommendations, and handles natural language budget queries — with a smart offline fallback if the model is unreachable
+- **AI-powered delivery photo validation** using a vision model to verify proof-of-delivery photos automatically, falling back to metadata checks if the model is unavailable
+
+### A real order lifecycle, not a fake "place order" button
+Cart → Checkout (COD or Razorpay) → Order confirmation email → Seller marks "Out for Delivery" → stock auto-decremented → delivery partner verifies and uploads proof-of-delivery photo (AI-validated) → buyer and seller both notified at every step via transactional email.
+
+---
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js, Express 5 |
-| Database | MongoDB Atlas (Mongoose) |
-| Cache / Session Blacklist | Redis (ioredis, RedisLabs) |
-| Authentication | JWT (httpOnly cookies) + bcryptjs + Google OAuth 2.0 |
-| Payments | Razorpay (HMAC-SHA256 signature verification) |
-| Email | Brevo (SendinBlue) transactional email API |
-| File Storage | ImageKit CDN |
-| AI Assistant | LangChain + Google Gemini 2.5 Flash (with smart fallback) |
-| AI Photo Validation | Ollama llama3.2-vision (with metadata fallback) |
-| Frontend | React 19, Vite 8, Redux Toolkit |
-| Styling | Vanilla CSS + Tailwind CSS v4 |
+| **Backend** | Node.js, Express 5 |
+| **Database** | MongoDB Atlas (Mongoose, aggregation pipelines) |
+| **Cache & Session Control** | Redis (rate limiting, token blacklisting) |
+| **Auth** | JWT + Google OAuth 2.0 + OTP verification |
+| **Payments** | Razorpay (signature-verified) |
+| **Email** | Brevo transactional email API |
+| **Media/CDN** | ImageKit |
+| **AI** | LangChain + Google Gemini 2.5 Flash, vision-based photo validation |
+| **Frontend** | React 19, Vite, Redux Toolkit, Tailwind CSS v4 |
+| **Infrastructure** | AWS (ALB, Auto Scaling, containerized deployment) |
 
 ---
 
-## 📁 Project Structure
+## 👤 Roles Supported
 
-```
-Luomi/
-├── Backend/           # Node.js Express REST API
-│   ├── server.js      # Entry point
-│   └── src/
-│       ├── app.js               # Express setup, CORS, routes, error handler
-│       ├── config/
-│       │   ├── config.js        # Centralized env validation + config object
-│       │   ├── db.js            # MongoDB connection
-│       │   └── cache.js         # Redis (ioredis) client
-│       ├── Middleware/
-│       │   ├── authtoken.middleware.js    # JWT + Redis blacklist check
-│       │   ├── authbuyer.middleware.js    # Buyer-only routes
-│       │   ├── authseller.middleware.js   # Seller-only routes
-│       │   └── authdelivery.middleware.js # Delivery-only routes
-│       ├── models/              # Mongoose models (user, product, cart, order, wishlist)
-│       ├── controllers/         # Business logic (auth, product, cart, order, wishlist, ai)
-│       ├── services/            # Mailer (Brevo), Storage (ImageKit), Cleanup (cron)
-│       ├── dao/                 # Cart aggregation pipeline (CartDAO)
-│       ├── Routes/              # Express routers
-│       ├── utils/               # OTP generator
-│       └── validator/           # Input validation rules
-└── Frontend/          # React + Vite SPA
-    └── src/app/
-        ├── features/
-        │   ├── auth/      # Login, Register, OTP, Google, Settings
-        │   ├── products/  # Home, Product Details, Seller Dashboard, Delivery Dashboard
-        │   ├── cart/      # Cart, Checkout (COD + Razorpay), Order Success
-        │   └── wishlist/
-        └── app.routes.jsx, app.store.js
-```
+- **Buyer** — browse, AI-assisted shopping, cart, checkout, order tracking, wishlist
+- **Seller** — product management, order fulfillment, dispatch workflow
+- **Delivery Partner** — city-scoped order dashboard, AI-verified proof of delivery
 
 ---
 
-## 🔐 Authentication & Authorization
+## 🔗 Links
 
-- **Email/Password** with OTP verification via Brevo
-- **Google OAuth 2.0** via passport-google-oauth20
-- JWT stored in `httpOnly`, `secure`, `sameSite` cookie (7-day expiry)
-- **Token blacklisting**: On logout, token stored in Redis (TTL 1h) — old tokens immediately rejected
-- **Role-based access**: `buyer`, `seller`, `delivery` — enforced via middleware at the route level
+- **Live App:** http://luomi-alb-877355459.ap-south-1.elb.amazonaws.com/
+- **Repository:** https://github.com/Notanormaldev/Luomi
 
 ---
 
-## 🛡️ Production-Grade Middleware (AWS-Ready)
+<div align="center">
 
-### Helmet.js — HTTP Security Headers
-Automatically sets all recommended headers:
-- `Strict-Transport-Security` (HSTS) — forces HTTPS
-- `X-Frame-Options: DENY` — prevents clickjacking
-- `X-Content-Type-Options` — prevents MIME sniffing
-- `X-XSS-Protection` — browser XSS filter
-- `Referrer-Policy` — controls referrer leakage
+Built end-to-end (backend, frontend, AI, and AWS infrastructure) as a full-stack engineering project.
 
-### Rate Limiting — Redis-Backed (Auto-Scaling Aware ⭐)
-```
-Global API:  200 requests / 15 min / IP
-Auth routes: 20 attempts / 15 min / IP  (brute force protection)
-```
-> **Why Redis store matters for AWS Auto Scaling**: If you use in-memory rate limiting, each EC2 instance has its own counter. So with 5 instances, an attacker can make 5× the requests. The Redis-backed store is **shared across all instances** — rate limiting is truly global regardless of how many servers are running.
-
-### Compression — GZIP Responses
-All API responses are gzip-compressed. Reduces payload size ~70%.
-
-### Health Check Endpoint — `/health`
-```json
-GET /health → 200 OK
-{
-  "status": "ok",
-  "service": "luomi-api",
-  "environment": "production",
-  "timestamp": "2025-01-01T00:00:00.000Z",
-  "uptime": "3600s"
-}
-```
-AWS ALB, ECS, App Runner, and Kubernetes all use this to determine if the instance is healthy.
-
-### Graceful Shutdown — SIGTERM Handler
-When AWS Auto Scaling terminates an instance (scale-in), it sends `SIGTERM`. Without a handler, all in-flight requests are **dropped immediately**.
-
-With our handler:
-1. Server stops accepting new connections
-2. Existing requests get up to **10 seconds** to complete
-3. Process exits cleanly — zero dropped requests during scale events
-
-```js
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
-process.on('SIGINT', () => gracefulShutdown('SIGINT'))
-process.on('uncaughtException', ...)
-process.on('unhandledRejection', ...)
-```
-
-### Morgan — Production Log Format
-- Development: `dev` (coloured, concise)
-- Production: `combined` (Apache-style, compatible with AWS CloudWatch, Datadog, etc.)
-
----
-
-## 🛒 Order Lifecycle
-
-```
-Buyer → Add to Cart → Checkout (COD/Razorpay)
-  ↓ Order created (status: processing)
-  ↓ Confirmation email sent
-Seller → Mark "Out for Delivery"
-  ↓ STOCK DECREMENTED (variant or base stock)
-  ↓ "Out for Delivery" email sent to buyer
-Delivery Partner (same city) → Sees order in dashboard
-  ↓ Validates: product ID code + COD payment tick + delivery photo
-  ↓ AI validates photo (Ollama vision / fallback metadata check)
-  ↓ Photo uploaded to ImageKit
-  ↓ Order status: delivered | paymentStatus: paid (COD)
-  ↓ Seller notification emails sent
-```
-
----
-
-## 🤖 Jerry — AI Shopping Assistant
-
-Powered by **LangChain + Google Gemini 2.5 Flash**. Jerry can:
-- Answer product-specific questions (sizes, colors, fit, material, price, stock)
-- Recommend products from the same category with markdown clickable links
-- Give body-type based size recommendations (slim/heavy build)
-- Handle budget queries — find items under a price limit
-- Smart offline fallback if Gemini is unavailable
-
----
-
-## ⚙️ Environment Variables (Backend)
-
-Create `Backend/.env` with the following:
-
-```env
-MONGO_URI=mongodb+srv://...
-JWT=your_jwt_secret_64_chars
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-BREVO_API_KEY=...
-GOOGLE_EMAIL=your@email.com
-REDIS_HOST=...
-REDIS_PORT=...
-REDIS_PASSWORD=...
-IMAGEKIT_PRIVATE_KEY=...
-RAZORPAY_KEY_ID=rzp_test_or_live_...
-RAZORPAY_KEY_SECRET=...
-NODE_ENVIRONMENT=development  # or: production
-GEMINI_API_KEY=...
-FRONTEND_URL=http://localhost:5173  # or: https://your-domain.com
-```
-
----
-
-## 🚀 Running Locally
-
-### Backend
-```bash
-cd Backend
-npm install
-npm run dev       # nodemon for hot-reload
-```
-
-### Frontend
-```bash
-cd Frontend
-npm install
-npm run dev       # Vite dev server on port 5173
-```
-
-The Vite proxy routes `/api/*` → `http://localhost:3000` automatically in dev.
-
----
-
-## 🏭 Production Deployment (AWS)
-
-### Backend (EC2 / App Runner / Elastic Beanstalk)
-1. Set all environment variables on the server (not in `.env` file)
-2. Set `NODE_ENVIRONMENT=production`, `FRONTEND_URL=https://yourdomain.com`
-3. Switch Razorpay keys to **live** keys
-4. Add Google OAuth callback URI to Google Console
-5. Run: `npm start` (uses `node server.js` directly, no nodemon)
-6. Use **pm2** for process management: `pm2 start server.js --name luomi-api`
-7. Set up nginx reverse proxy with SSL (or use AWS ALB + ACM)
-
-### Frontend (S3 + CloudFront / AWS Amplify)
-1. Build: `npm run build` in `/Frontend`
-2. Upload `dist/` to S3 bucket
-3. Configure CloudFront — redirect all 404s to `index.html` (SPA routing)
-4. Update axios baseURL to point to your backend API domain in production
-
-> ⚠️ **Never commit `.env` to git.** Add it to `.gitignore`.
-
----
-
-## 📧 Email Notifications
-
-Transactional emails are sent at these milestones:
-- ✅ Order Confirmed (COD)
-- ✅ Payment Verified (Razorpay)
-- ✅ Order Out for Delivery
-- ✅ Order Delivered (to seller)
-
----
-
-## 🧹 Background Jobs
-
-- **Cleanup service** (`cleanup.service.js`): Runs every 5 minutes to delete Razorpay `pending` orders older than 10 minutes (abandoned checkouts)
+</div>
