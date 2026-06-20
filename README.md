@@ -32,6 +32,62 @@ It's live right now behind an **AWS Application Load Balancer**, traffic is dist
 
 ---
 
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    U["Buyer / Seller / Delivery App<br/>(React 19 + Redux Toolkit)"] --> ALB
+
+    ALB["AWS Application Load Balancer<br/>routes traffic + runs /health checks"]
+
+    ALB --> I1["Backend Instance 1<br/>(Node.js + Express 5, containerized)"]
+    ALB --> I2["Backend Instance 2<br/>(Node.js + Express 5, containerized)"]
+    ALB -.auto scaling.-> I3["Backend Instance N<br/>(spun up under load)"]
+
+    I1 --> DB[("MongoDB Atlas<br/>Mongoose + aggregation pipelines")]
+    I2 --> DB
+    I3 --> DB
+
+    I1 --> RD[("Redis<br/>rate limiting + JWT blacklist")]
+    I2 --> RD
+    I3 --> RD
+
+    I1 --> EXT
+    I2 --> EXT
+
+    subgraph EXT["External Services"]
+        RZP["Razorpay<br/>(HMAC-verified payments)"]
+        GEM["Google Gemini 2.5 Flash<br/>via LangChain — Jerry AI + photo validation"]
+        IMG["ImageKit<br/>(media/CDN)"]
+        BRV["Brevo<br/>(transactional email)"]
+        GOO["Google OAuth 2.0"]
+    end
+
+    style ALB fill:#1a1a1a,color:#fff
+    style DB fill:#1a1a1a,color:#fff
+    style RD fill:#1a1a1a,color:#fff
+```
+
+**How a request actually flows:** the React app never talks to a single server — it hits the ALB, which health-checks every backend instance and only routes traffic to the ones that are alive. When load spikes, Auto Scaling spins up new containerized instances and the ALB starts routing to them automatically, with zero code changes and zero downtime.
+
+---
+
+## 🧩 Why These Choices (and not the obvious alternative)
+
+A few decisions here were deliberate trade-offs, not defaults:
+
+- **AWS ALB + Auto Scaling instead of Render/Vercel** — Render and Vercel are great, but they hide all the infrastructure decisions. The goal here was to actually *own* the scaling problem: configure health checks, handle instance termination gracefully, and make sure the app behaves correctly when there's more than one backend process running behind a load balancer — which is exactly when most student projects quietly break.
+
+- **Redis-backed token blacklisting instead of just short JWT expiry** — short-lived JWTs alone still leave a window where a "logged out" token is technically still valid until it expires. Blacklisting in Redis makes logout immediate and absolute, which matters for a platform handling real payments.
+
+- **Distributed rate limiting instead of in-memory** — in-memory rate limiting works fine on one server and silently stops working the moment you run two. Since Luomi runs multiple instances behind the ALB by design, the limiter had to be distributed from day one, not patched in later.
+
+- **Gemini 2.5 Flash for Jerry over GPT-4 / Claude** — Flash is fast and cheap enough to power a real-time, always-on shopping assistant without rate-limit anxiety, while still being capable enough for sizing, fit, and budget-based product queries. Jerry also has an offline fallback so a model outage never breaks the shopping flow.
+
+- **Three separate roles (buyer/seller/delivery) instead of a buyer-only flow** — a single-role storefront doesn't actually test order lifecycle, fulfillment, or delivery logistics. Building all three forced real decisions around role-based access control and made the order lifecycle below actually mean something.
+
+---
+
 ## 🏗️ Infrastructure & Deployment (AWS)
 
 This isn't "deployed on Render and forgotten." Luomi runs on real cloud infrastructure:
