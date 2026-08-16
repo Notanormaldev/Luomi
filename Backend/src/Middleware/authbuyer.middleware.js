@@ -11,10 +11,10 @@ export async function authbuyermiddleware(req, res, next) {
             msg: "empty token"
         })
     }
-    
+
     try {
         const decoded = jwt.verify(token, config.JWT)
-        
+
         // Fetch up-to-date user from database to check actual role
         const user = await usermodel.findById(decoded.id || decoded.user?._id)
         if (!user || user.role !== "buyer") {
@@ -23,7 +23,7 @@ export async function authbuyermiddleware(req, res, next) {
                 msg: "Access denied. Only registered Buyers can perform this action."
             });
         }
-        
+
         req.user = user
         next()
     } catch (error) {

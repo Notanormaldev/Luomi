@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 const authapi=axios.create({
-    baseURL:"/api/auth",
+    baseURL:`${API_BASE}/api/auth`,
     withCredentials:true
 })
 export async function register({email,password,fullname,isseller}){

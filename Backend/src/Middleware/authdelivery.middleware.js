@@ -10,10 +10,10 @@ export async function authdeliverymiddleware(req, res, next) {
             msg: "empty token"
         })
     }
-    
+
     try {
         const decoded = jwt.verify(token, config.JWT)
-        
+
         // Fetch up-to-date user from database to check actual role
         const user = await usermodel.findById(decoded.id || decoded.user?._id)
         if (!user || user.role !== "delivery") {
@@ -21,7 +21,7 @@ export async function authdeliverymiddleware(req, res, next) {
                 msg: "only delivery partners can see this action"
             })
         }
-        
+
         req.user = user
         next()
     } catch (error) {

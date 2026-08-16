@@ -104,18 +104,20 @@ const authLimiter = rateLimit({
 // Apply global rate limiting only to API endpoints, avoiding static assets
 app.use('/api', globalLimiter)
 
-// ─── Health Check Endpoint ─────────────────────────────────────────────────────
-// AWS ALB / ECS / App Runner / Kubernetes liveness & readiness probes hit this.
+// ─── Health Check Endpoints ────────────────────────────────────────────────────
+// Render / AWS ALB / ECS / App Runner / Kubernetes liveness & readiness probes hit this.
 // Must return 200 quickly — no DB queries here.
-app.get('/health', (req, res) => {
+const handleHealthCheck = (req, res) => {
     res.status(200).json({
         status: 'ok',
         service: 'luomi-api',
-        environment: config.NODE_ENVIRONMENT,
+        environment: config.NODE_ENVIRONMENT || 'development',
         timestamp: new Date().toISOString(),
         uptime: `${Math.floor(process.uptime())}s`
     })
-})
+}
+app.get('/health', handleHealthCheck)
+app.get('/api/health', handleHealthCheck)
 
 // ─── Passport (Google OAuth) ───────────────────────────────────────────────────
 app.use(passport.initialize())
@@ -149,7 +151,7 @@ const publicPath = path.join(__dirname, '..', 'public')
 app.use(express.static(publicPath))
 
 // SPA Fallback: serve index.html for any request that is not an API call
-app.get('*splat', (req, res, next) => {
+app.get('{*splat}', (req, res, next) => {
     // If it's an API route that wasn't matched, forward to 404 handler
     if (req.path.startsWith('/api')) {
         return next()

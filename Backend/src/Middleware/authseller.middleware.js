@@ -3,27 +3,27 @@ import jwt from 'jsonwebtoken'
 import config from '../config/config.js';
 import usermodel from '../models/user.model.js';
 
-export async function authsellermiddleware(req,res,next){
+export async function authsellermiddleware(req, res, next) {
     const token = req.cookies.token
 
-    if(!token){
+    if (!token) {
         return res.status(401).json({
-            msg:"empty token"
+            msg: "empty token"
         })
     }
-    
+
     try {
-        const decoded=jwt.verify(token,config.JWT)
-        
+        const decoded = jwt.verify(token, config.JWT)
+
         // Fetch up-to-date user from database to check actual role
         const user = await usermodel.findById(decoded.id || decoded.user?._id)
-        if(!user || user.role !== "seller"){
+        if (!user || user.role !== "seller") {
             return res.status(403).json({
-                msg:"only seller can see this action"
+                msg: "only seller can see this action"
             })
         }
-        
-        req.user=user
+
+        req.user = user
         next()
     } catch (error) {
         console.log(error);
