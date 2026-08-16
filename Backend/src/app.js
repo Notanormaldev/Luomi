@@ -146,7 +146,10 @@ app.use('/api/order', orderRoute)
 
 // ─── Serve Frontend Static Files ──────────────────────────────────────────────
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const publicPath = path.join(__dirname, '..', 'public')
+const frontendDistPath = path.join(__dirname, '..', '..', 'Frontend', 'dist')
+const publicPath = fs.existsSync(frontendDistPath)
+    ? frontendDistPath
+    : path.join(__dirname, '..', 'public')
 
 app.use(express.static(publicPath))
 
