@@ -673,7 +673,7 @@ function Settings() {
                   </div>
                   <div className="about-detail-row">
                     <span className="about-detail-label">Contact</span>
-                    <span className="about-detail-value">atelier@luomi.com</span>
+                    <span className="about-detail-value">helloluomi@gmail.com</span>
                   </div>
                 </div>
               </div>
