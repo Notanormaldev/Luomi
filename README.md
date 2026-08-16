@@ -6,7 +6,9 @@
 
 **Built and deployed on AWS like an actual production system, not a tutorial project.**
 
-[**🌐 Live Demo**](http://luomi-alb-877355459.ap-south-1.elb.amazonaws.com/) · [**📂 Source Code**](https://github.com/Notanormaldev/Luomi)
+[**🌐 Live Demo**](https://luomi.onrender.com/) · [**📂 Source Code**](https://github.com/Notanormaldev/Luomi) · [**🎥 AWS Deployment Proof (Video)**](https://youtu.be/SnLs13iJ6Pk)
+
+> ⚠️ **Note:** The AWS-hosted link (ALB) has since been taken down to avoid ongoing AWS billing costs. The linked video above shows the app fully live and running on AWS infrastructure as proof of the original deployment. The project is currently live on Render instead: **https://luomi.onrender.com/**
 
 </div>
 
@@ -29,6 +31,8 @@
 Most student MERN projects run on a single Node process and call it done. Luomi is built and hosted the way a real engineering team would ship an e-commerce product — containerized, load balanced, auto-scaling, and instrumented for observability.
 
 It's live right now behind an **AWS Application Load Balancer**, traffic is distributed across **auto-scaling containerized instances**, and the backend is hardened with the same security and resilience patterns used in production fintech and retail systems.
+
+> 💡 The AWS deployment described in this section was fully built, deployed, and verified live (see the [proof video](https://youtu.be/SnLs13iJ6Pk)). The AWS ALB link itself was later taken down to stop incurring AWS costs — the app is currently hosted on Render at **https://luomi.onrender.com/**.
 
 ---
 
@@ -76,7 +80,7 @@ flowchart TD
 
 A few decisions here were deliberate trade-offs, not defaults:
 
-- **AWS ALB + Auto Scaling instead of Render/Vercel** — Render and Vercel are great, but they hide all the infrastructure decisions. The goal here was to actually *own* the scaling problem: configure health checks, handle instance termination gracefully, and make sure the app behaves correctly when there's more than one backend process running behind a load balancer — which is exactly when most student projects quietly break.
+- **AWS ALB + Auto Scaling instead of Render/Vercel** — Render and Vercel are great, but they hide all the infrastructure decisions. The goal here was to actually *own* the scaling problem: configure health checks, handle instance termination gracefully, and make sure the app behaves correctly when there's more than one backend process running behind a load balancer — which is exactly when most student projects quietly break. *(The AWS deployment was later taken down to avoid ongoing billing — see the proof video linked above. The app currently runs on Render.)*
 
 - **Redis-backed token blacklisting instead of just short JWT expiry** — short-lived JWTs alone still leave a window where a "logged out" token is technically still valid until it expires. Blacklisting in Redis makes logout immediate and absolute, which matters for a platform handling real payments.
 
@@ -90,7 +94,7 @@ A few decisions here were deliberate trade-offs, not defaults:
 
 ## 🏗️ Infrastructure & Deployment (AWS)
 
-This isn't "deployed on Render and forgotten." Luomi runs on real cloud infrastructure:
+This isn't "deployed on Render and forgotten." Luomi was originally built and run on real cloud infrastructure:
 
 - **Application Load Balancer (ALB)** distributing live traffic across multiple backend instances
 - **Auto Scaling** so the platform handles traffic spikes without manual intervention
@@ -100,6 +104,8 @@ This isn't "deployed on Render and forgotten." Luomi runs on real cloud infrastr
 - **Distributed, Redis-backed rate limiting** — because in-memory rate limiting breaks the moment you run more than one instance behind a load balancer, and Luomi runs more than one
 
 This means the platform behaves correctly under real auto-scaling conditions, not just on a single dev server.
+
+> **Status update:** The AWS ALB deployment has since been taken offline to stop ongoing AWS charges. A [video walkthrough](https://youtu.be/SnLs13iJ6Pk) is available as proof that the app was fully deployed and live on AWS. The project is currently live on Render: **https://luomi.onrender.com/**
 
 ---
 
@@ -138,7 +144,7 @@ Cart → Checkout (COD or Razorpay) → Order confirmation email → Seller mark
 | **Media/CDN** | ImageKit |
 | **AI** | LangChain + Google Gemini 2.5 Flash, vision-based photo validation |
 | **Frontend** | React 19, Vite, Redux Toolkit, Tailwind CSS v4 |
-| **Infrastructure** | AWS (ALB, Auto Scaling, containerized deployment) |
+| **Infrastructure** | AWS (ALB, Auto Scaling, containerized deployment) — later taken down due to billing costs; currently hosted on Render |
 
 ---
 
@@ -152,7 +158,8 @@ Cart → Checkout (COD or Razorpay) → Order confirmation email → Seller mark
 
 ## 🔗 Links
 
-- **Live App:** http://luomi-alb-877355459.ap-south-1.elb.amazonaws.com/
+- **Live App (Render):** https://luomi.onrender.com/
+- **AWS Deployment Proof (Video):** https://youtu.be/SnLs13iJ6Pk
 - **Repository:** https://github.com/Notanormaldev/Luomi
 
 ---
