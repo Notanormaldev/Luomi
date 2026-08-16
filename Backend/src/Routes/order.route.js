@@ -17,6 +17,7 @@ const orderRoute = Router();
 
 // Payment verification (buyer)
 orderRoute.post('/verify-payment', authbuyermiddleware, orderController.verifyPayment);
+orderRoute.post('/cancel-payment', authbuyermiddleware, orderController.cancelPayment);
 
 // Get buyer's own orders
 orderRoute.get('/my-orders', authtokenmiddleware, orderController.getMyOrders);

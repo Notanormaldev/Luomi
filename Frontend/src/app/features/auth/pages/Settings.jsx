@@ -161,9 +161,10 @@ function Settings() {
   const handleLogoutClick = async () => {
     try {
       await handlelogout()
-      navigate('/login')
     } catch (err) {
       console.error('Logout error:', err)
+    } finally {
+      navigate('/login')
     }
   }
 

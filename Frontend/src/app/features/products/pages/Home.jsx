@@ -577,7 +577,7 @@ export default function Home() {
                   Settings & Profile
                 </button>
                 <button className="lh-cat-sidebar-link"
-                  onClick={async () => { await handlelogout(); navigate('/'); setIsCatOpen(false); }}>
+                  onClick={async () => { await handlelogout(); navigate('/login'); setIsCatOpen(false); }}>
                   <FiLogOut size={14} style={{ marginRight: 8, verticalAlign: 'middle' }} />
                   Log Out
                 </button>

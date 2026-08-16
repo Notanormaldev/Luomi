@@ -227,15 +227,20 @@ async function googlecallback(req, res) {
   }
 }
 async function logout(req, res) {
-  const token = req.cookies.token;
-  if (token) {
-    await redis.set(token, Date.now().toString(), 'EX', 3600);
+  try {
+    const token = req.cookies?.token;
+    if (token) {
+      await redis.set(token, Date.now().toString(), 'EX', 3600).catch(err => console.log('[Redis Logout Error]', err.message));
+    }
+  } catch (err) {
+    console.log('[Logout Controller Error]', err.message);
+  } finally {
+    clearAuthCookie(res);
+    return res.status(200).json({
+      success: true,
+      msg: "Logged out successfully"
+    })
   }
-  clearAuthCookie(res);
-  return res.status(200).json({
-    success: true,
-    msg: "Logged out successfully"
-  })
 }
 async function deleteaccount(req, res) {
   const id = req.user.id

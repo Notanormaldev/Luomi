@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { getCart, addToCartApi, updateCartApi, removeFromCartApi, checkoutApi, verifyPaymentApi } from "../services/cart.api";
+import { getCart, addToCartApi, updateCartApi, removeFromCartApi, checkoutApi, verifyPaymentApi, cancelPaymentApi } from "../services/cart.api";
 import { setCartItems, setSubtotal, setLoading, setError, clearCart } from "../cart.slice";
 
 export const usecart = () => {
@@ -83,7 +83,9 @@ export const usecart = () => {
         dispatch(setError(null));
         try {
             const data = await checkoutApi(payload);
-            dispatch(clearCart());
+            if (!data.razorpayOrder) {
+                dispatch(clearCart());
+            }
             dispatch(setLoading(false));
             return { success: true, order: data.order, razorpayOrder: data.razorpayOrder, key: data.key, msg: data.msg };
         } catch (err) {
@@ -99,6 +101,7 @@ export const usecart = () => {
         dispatch(setError(null));
         try {
             const data = await verifyPaymentApi({ razorpay_payment_id, razorpay_order_id, razorpay_signature });
+            dispatch(clearCart());
             dispatch(setLoading(false));
             return { success: true, order: data.order, msg: data.msg };
         } catch (err) {
@@ -106,6 +109,15 @@ export const usecart = () => {
             dispatch(setError(err.msg || "Payment verification failed"));
             dispatch(setLoading(false));
             return { success: false, error: err.msg };
+        }
+    }
+
+    async function handleCancelPayment({ razorpay_order_id }) {
+        try {
+            await cancelPaymentApi({ razorpay_order_id });
+            await handleGetCart();
+        } catch (err) {
+            console.error("usecart: handleCancelPayment error", err);
         }
     }
 
@@ -120,6 +132,7 @@ export const usecart = () => {
         handleRemoveFromCart,
         handleClearCart,
         handleCheckout,
-        handleVerifyPayment
+        handleVerifyPayment,
+        handleCancelPayment
     };
 };

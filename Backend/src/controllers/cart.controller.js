@@ -405,13 +405,9 @@ async function checkout(req, res) {
                 receipt: order._id.toString()
             });
 
-            // Save Razorpay order ID to document
+            // Save Razorpay order ID to document (Cart is cleared upon successful payment verification)
             order.razorpayOrderId = rzpOrder.id;
             await order.save();
-
-            // Clear user cart
-            cart.items = [];
-            await cart.save();
 
             return res.status(201).json({
                 success: true,

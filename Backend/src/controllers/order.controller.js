@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import orderModel from '../models/order.model.js';
 import productModel from '../models/product.model.js';
 import usermodel from '../models/user.model.js';
+import cartModel from '../models/cart.model.js';
 import config from '../config/config.js';
 import { sendEmail } from '../services/mailer.service.js';
 import { uploadfile } from '../services/storage.service.js';
@@ -38,6 +39,9 @@ async function verifyPayment(req, res) {
         order.razorpayPaymentId = razorpay_payment_id;
         order.razorpaySignature = razorpay_signature;
         await order.save();
+
+        // Clear user's cart now that payment is confirmed
+        await cartModel.findOneAndUpdate({ user: order.user }, { items: [] });
 
         const userObj = await usermodel.findById(order.user);
         if (userObj) {
@@ -452,8 +456,31 @@ async function getMyOrders(req, res) {
     }
 }
 
+// Handle failed or cancelled Razorpay payment
+async function cancelPayment(req, res) {
+    try {
+        const { razorpay_order_id } = req.body;
+        if (!razorpay_order_id) {
+            return res.status(400).json({ success: false, msg: "Missing order ID" });
+        }
+
+        const order = await orderModel.findOne({ razorpayOrderId: razorpay_order_id });
+        if (order) {
+            order.status = 'cancelled';
+            order.paymentStatus = 'failed';
+            await order.save();
+        }
+
+        return res.status(200).json({ success: true, msg: "Payment status updated to cancelled/failed" });
+    } catch (error) {
+        console.error("cancelPayment Error:", error);
+        return res.status(500).json({ success: false, msg: "Failed to handle payment cancellation" });
+    }
+}
+
 export default {
     verifyPayment,
+    cancelPayment,
     markOutForDelivery,
     getDeliveryPendingOrders,
     confirmDelivery,

@@ -63,7 +63,7 @@ export async function checkoutApi(payload) {
 
 export async function verifyPaymentApi({ razorpay_payment_id, razorpay_order_id, razorpay_signature }) {
     try {
-        const res = await axios.post('/api/order/verify-payment', {
+        const res = await axios.post(`${API_BASE}/api/order/verify-payment`, {
             razorpay_payment_id,
             razorpay_order_id,
             razorpay_signature
@@ -71,6 +71,17 @@ export async function verifyPaymentApi({ razorpay_payment_id, razorpay_order_id,
         return res.data;
     } catch (error) {
         throw error.response?.data || { msg: "Payment verification failed" };
+    }
+}
+
+export async function cancelPaymentApi({ razorpay_order_id }) {
+    try {
+        const res = await axios.post(`${API_BASE}/api/order/cancel-payment`, {
+            razorpay_order_id
+        }, { withCredentials: true });
+        return res.data;
+    } catch (error) {
+        return { success: false, msg: "Payment cancellation reported" };
     }
 }
 

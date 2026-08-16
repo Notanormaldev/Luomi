@@ -177,15 +177,13 @@ export const useauth = () => {
       dispatch(seterror(null))
       try {
         await logoutApi()
+      } catch (err) {
+        console.log("Logout API error:", err)
+      } finally {
         dispatch(setuser(null))
         dispatch(setloading(false))
-        return { success: true }
-      } catch (err) {
-        console.log("Logout error:", err)
-        dispatch(seterror(err))
-        dispatch(setloading(false))
-        throw err
       }
+      return { success: true }
     }
 
     return {

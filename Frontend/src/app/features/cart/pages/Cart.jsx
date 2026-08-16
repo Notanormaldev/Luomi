@@ -34,6 +34,7 @@ export default function Cart() {
     handleRemoveFromCart,
     handleCheckout,
     handleVerifyPayment,
+    handleCancelPayment,
     loading: cartActionLoading
   } = usecart()
 
@@ -271,9 +272,21 @@ export default function Cart() {
             },
             theme: {
               color: '#111111'
+            },
+            modal: {
+              ondismiss: function () {
+                setUpdating(false)
+                triggerToast('Payment cancelled. Your cart items are preserved.')
+                handleCancelPayment({ razorpay_order_id: res.razorpayOrder.id })
+              }
             }
           }
           const rzp = new window.Razorpay(options)
+          rzp.on('payment.failed', function (response) {
+            setUpdating(false)
+            setCheckoutError(response.error?.description || 'Payment transaction failed.')
+            handleCancelPayment({ razorpay_order_id: res.razorpayOrder.id })
+          })
           rzp.open()
         } else {
           setCheckoutError(res.error || 'Failed to initialize payment order.')
